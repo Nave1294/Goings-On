@@ -320,11 +320,61 @@
       border-radius: 999px;
       white-space: nowrap;
       line-height: 1.2;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
+    .event-weather:hover { background: #e6e9ef; }
+    .event-weather:active { transform: scale(0.96); }
     .event-weather .ew-icon { font-size: 0.95rem; line-height: 1; }
     .event-weather .ew-lo { color: var(--text-tertiary); font-weight: 500; margin-left: 1px; }
     .event-weather .ew-sep { color: var(--text-tertiary); margin: 0 1px; }
+
+    .weather-detail {
+      display: none;
+      margin-top: 0.7rem;
+      padding: 0.65rem 0.5rem;
+      background: var(--accent-soft);
+      border-radius: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      animation: detailIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .weather-detail::-webkit-scrollbar { display: none; }
+    .weather-detail.open { display: flex; gap: 0.85rem; }
+
+    @keyframes detailIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hour-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      min-width: 38px;
+      flex-shrink: 0;
+    }
+
+    .hour-time {
+      font-size: 0.62rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+
+    .hour-icon { font-size: 1.05rem; line-height: 1; }
+
+    .hour-temp {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
 
     .event-meta {
       font-size: 0.82rem;
@@ -838,14 +888,70 @@
     };
   }
 
-  function weatherChipHTML(ev) {
+  function weatherChipHTML(ev, idx) {
     const w = getEventWeather(ev);
     if (!w) return '';
     const icon = WEATHER_ICONS[w.code] || '';
+    const target = `wx-${idx}`;
     if (w.type === 'daily') {
-      return `<div class="event-weather"><span class="ew-icon">${icon}</span>${w.hi}°<span class="ew-sep">/</span><span class="ew-lo">${w.lo}°</span></div>`;
+      return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${w.hi}°<span class="ew-sep">/</span><span class="ew-lo">${w.lo}°</span></div>`;
     }
-    return `<div class="event-weather"><span class="ew-icon">${icon}</span>${w.temp}°</div>`;
+    return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${w.temp}°</div>`;
+  }
+
+  function getEventHourly(ev) {
+    const wx = weatherForEvent(ev);
+    if (!wx || !wx.hourly) return [];
+
+    let start, end, step;
+    if (ev.start.dateTime) {
+      start = new Date(ev.start.dateTime);
+      end   = ev.end?.dateTime ? new Date(ev.end.dateTime) : new Date(start.getTime() + 3600000);
+      step  = 60;
+    } else {
+      const d = parseEventDate(ev.start);
+      start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6);
+      end   = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 22);
+      step  = 180;
+    }
+
+    const out = [];
+    const cursor = new Date(start);
+    cursor.setMinutes(0, 0, 0);
+    while (cursor < end) {
+      const key = nyHourKey(cursor);
+      const idx = wx.hourly.time.indexOf(key);
+      if (idx >= 0) {
+        out.push({
+          time: new Date(cursor),
+          temp: Math.round(wx.hourly.temperature_2m[idx]),
+          code: wx.hourly.weather_code[idx],
+        });
+      }
+      cursor.setTime(cursor.getTime() + step * 60000);
+    }
+    return out;
+  }
+
+  function fmtHourLabel(date) {
+    const h = date.getHours();
+    if (h === 0)  return '12a';
+    if (h === 12) return 'Noon';
+    return h < 12 ? `${h}a` : `${h - 12}p`;
+  }
+
+  function weatherDetailHTML(ev, idx) {
+    const hours = getEventHourly(ev);
+    if (hours.length === 0) return '';
+    return `<div class="weather-detail" id="wx-${idx}">
+      ${hours.map(h => `
+        <div class="hour-cell">
+          <div class="hour-time">${fmtHourLabel(h.time)}</div>
+          <div class="hour-icon">${WEATHER_ICONS[h.code] || ''}</div>
+          <div class="hour-temp">${h.temp}°</div>
+        </div>
+      `).join('')}
+    </div>`;
   }
 
   async function fetchWikiImage(page) {
@@ -1112,6 +1218,20 @@
 
     renderCollage(panel.querySelector('#collage'), evs);
     attachSwipe(panel, days, byDay, activeIdx);
+    bindWeatherToggles(panel);
+  }
+
+  function bindWeatherToggles(panel) {
+    panel.querySelectorAll('.event-weather[data-target]').forEach(chip => {
+      const toggle = () => {
+        const detail = document.getElementById(chip.dataset.target);
+        if (detail) detail.classList.toggle('open');
+      };
+      chip.addEventListener('click', toggle);
+      chip.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    });
   }
 
   function attachSwipe(panel, days, byDay, activeIdx) {
@@ -1163,9 +1283,10 @@
         <div class="event-body">
           <div class="event-header">
             <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
-            ${weatherChipHTML(ev)}
+            ${weatherChipHTML(ev, idx)}
           </div>
           ${loc}${desc}${mapBtn}
+          ${weatherDetailHTML(ev, idx)}
         </div>
       </div>`;
   }
