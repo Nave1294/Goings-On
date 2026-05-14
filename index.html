@@ -5,214 +5,325 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Goings On</title>
   <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --text: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #a1a1a6;
+      --accent: #0071e3;
+      --accent-soft: #e8f1fd;
+      --divider: rgba(0, 0, 0, 0.08);
+      --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'kern', 'liga';
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f0f2f5;
-      color: #222;
       min-height: 100vh;
-    }
-
-    header {
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 1.1rem 1.5rem;
+      padding: 2rem 1.25rem 4rem;
       display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
+      justify-content: center;
     }
 
-    header h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #1a1a2e;
+    .container {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.25rem 0 1rem;
+      margin: 0 -0.25rem 2rem;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      flex: 1 0 auto;
+      min-width: 64px;
+      background: var(--surface);
+      border: none;
+      border-radius: 14px;
+      padding: 0.7rem 0.5rem 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .tab:hover { transform: translateY(-1px); }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.32);
+    }
+
+    .tab-day {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .tab.active .tab-day { color: rgba(255,255,255,0.85); }
+
+    .tab-num {
+      font-size: 1.15rem;
+      font-weight: 600;
       letter-spacing: -0.02em;
     }
 
-    header .subtitle {
-      font-size: 0.85rem;
-      color: #888;
-    }
-
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-      background: #d8dce3;
-      margin: 1.25rem;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .day-col {
-      background: #fff;
-      min-height: 420px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .day-header {
-      padding: 0.7rem 0.9rem 0.6rem;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .day-col.today .day-header {
-      background: #2563eb;
-    }
-
-    .day-name {
-      font-size: 0.68rem;
+    .tab-badge {
+      font-size: 0.62rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #999;
-    }
-
-    .day-col.today .day-name { color: rgba(255,255,255,0.75); }
-
-    .day-num {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      line-height: 1.15;
-    }
-
-    .day-col.today .day-num { color: #fff; }
-
-    .day-month {
-      font-size: 0.72rem;
-      color: #aaa;
+      color: var(--accent);
       margin-top: 1px;
     }
+    .tab.active .tab-badge { color: rgba(255,255,255,0.85); }
+    .tab.no-events .tab-badge { color: var(--text-tertiary); }
 
-    .day-col.today .day-month { color: rgba(255,255,255,0.65); }
+    .day-panel {
+      animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-    .events {
-      padding: 0.5rem;
-      flex: 1;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .day-heading {
+      margin-bottom: 1.75rem;
+    }
+
+    .day-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      margin-bottom: 0.3rem;
+    }
+
+    .day-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      color: var(--text);
+    }
+
+    .day-subtitle {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: -0.01em;
+      margin-top: 0.35rem;
+    }
+
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
     }
 
     .event {
-      background: #eff6ff;
-      border-left: 3px solid #2563eb;
-      border-radius: 5px;
-      padding: 0.35rem 0.5rem;
-      margin-bottom: 0.35rem;
-      cursor: default;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 1.05rem 1.2rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: transform 0.15s ease;
     }
 
-    .event.all-day {
-      background: #f0fdf4;
-      border-left-color: #16a34a;
+    .event:hover { transform: scale(1.005); }
+
+    .event-time-block {
+      flex-shrink: 0;
+      min-width: 68px;
+      padding-top: 2px;
     }
 
     .event-time {
-      font-size: 0.68rem;
-      color: #666;
-      font-weight: 500;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .event-time-end {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    .event.all-day .event-time {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .event-body {
+      flex: 1;
+      min-width: 0;
+      border-left: 1px solid var(--divider);
+      padding-left: 1rem;
     }
 
     .event-title {
-      font-size: 0.78rem;
+      font-size: 1.02rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .event-meta {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 0.3rem;
+      line-height: 1.4;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3.5rem 1.5rem;
+      color: var(--text-tertiary);
+    }
+
+    .empty-icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.6rem;
+      opacity: 0.4;
+    }
+
+    .empty-text {
+      font-size: 1rem;
       font-weight: 500;
-      color: #1a1a2e;
-      line-height: 1.3;
-      margin-top: 1px;
+      color: var(--text-secondary);
     }
 
-    .no-events {
-      font-size: 0.72rem;
-      color: #ccc;
-      text-align: center;
-      padding: 1rem 0.5rem;
-    }
-
-    #loading {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: #888;
-      font-size: 0.95rem;
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 0;
+      color: var(--text-tertiary);
     }
 
     .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #ddd;
-      border-top-color: #2563eb;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--divider);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 0.5rem;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .error-box {
-      margin: 1.25rem;
-      padding: 1.25rem 1.5rem;
-      background: #fff5f5;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow);
       color: #b91c1c;
-      font-size: 0.9rem;
     }
 
-    .error-box strong { display: block; margin-bottom: 0.25rem; }
-
-    @media (max-width: 860px) {
-      .calendar {
-        grid-template-columns: repeat(4, 1fr);
-        margin: 0.75rem;
-      }
+    .error-box strong {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-size: 1rem;
+      color: var(--text);
     }
 
     @media (max-width: 540px) {
-      .calendar {
-        grid-template-columns: 1fr 1fr;
-      }
-      .day-col { min-height: 180px; }
+      body { padding: 1.25rem 1rem 3rem; }
+      .day-title { font-size: 2.1rem; }
+      .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
+      .event { padding: 0.95rem 1rem; }
+      .event-time-block { min-width: 58px; }
     }
 
-    @media (max-width: 340px) {
-      .calendar { grid-template-columns: 1fr; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --surface: #1c1c1e;
+        --text: #f5f5f7;
+        --text-secondary: #98989d;
+        --text-tertiary: #6e6e73;
+        --accent: #0a84ff;
+        --accent-soft: #1c2733;
+        --divider: rgba(255, 255, 255, 0.08);
+        --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
+      }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Goings On</h1>
-  <span class="subtitle" id="date-range"></span>
-</header>
-
-<div id="app">
-  <div id="loading"><span class="spinner"></span>Loading events…</div>
+<div class="container">
+  <div class="brand">Goings On</div>
+  <div id="app">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
 </div>
 
 <script>
   const CALENDAR_ID = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
   const API_KEY    = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  function dayKey(d) {
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  }
+  function dayKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 
   function fmtTime(iso) {
     const d = new Date(iso);
     let h = d.getHours(), m = d.getMinutes();
-    const ampm = h >= 12 ? 'pm' : 'am';
+    const ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
-    return m === 0 ? `${h}${ampm}` : `${h}:${String(m).padStart(2,'0')}${ampm}`;
+    return m === 0 ? `${h} ${ampm}` : `${h}:${String(m).padStart(2,'0')} ${ampm}`;
   }
 
-  function fmtShortDate(d) {
-    return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  function relativeLabel(i) {
+    if (i === 0) return 'Today';
+    if (i === 1) return 'Tomorrow';
+    return null;
   }
 
   async function init() {
@@ -225,9 +336,6 @@
       return d;
     });
 
-    document.getElementById('date-range').textContent =
-      `${fmtShortDate(days[0])} – ${fmtShortDate(days[6])}`;
-
     const timeMin = today.toISOString();
     const endDay  = new Date(days[6]); endDay.setDate(endDay.getDate() + 1);
     const timeMax = endDay.toISOString();
@@ -237,13 +345,13 @@
 
     let events;
     try {
-      const res = await fetch(url);
+      const res  = await fetch(url);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error?.message || `HTTP ${res.status}`);
       events = json.items || [];
     } catch (err) {
       document.getElementById('app').innerHTML =
-        `<div class="error-box"><strong>Could not load events</strong>${err.message}</div>`;
+        `<div class="error-box"><strong>Couldn't load events</strong>${err.message}</div>`;
       return;
     }
 
@@ -255,42 +363,81 @@
       if (byDay[k]) byDay[k].push(ev);
     });
 
-    const grid = document.createElement('div');
-    grid.className = 'calendar';
+    render(days, byDay, 0);
+  }
 
-    days.forEach((day, i) => {
-      const evs = byDay[dayKey(day)];
-      const col = document.createElement('div');
-      col.className = 'day-col' + (i === 0 ? ' today' : '');
-
-      const evHTML = evs.length
-        ? evs.map(ev => {
-            const allDay = !ev.start.dateTime;
-            const time   = allDay ? 'All day' : fmtTime(ev.start.dateTime);
-            return `<div class="event${allDay ? ' all-day' : ''}">
-              <div class="event-time">${time}</div>
-              <div class="event-title">${ev.summary || '(No title)'}</div>
-            </div>`;
-          }).join('')
-        : '<div class="no-events">No events</div>';
-
-      col.innerHTML = `
-        <div class="day-header">
-          <div class="day-name">${DAYS[day.getDay()]}</div>
-          <div class="day-num">${day.getDate()}</div>
-          <div class="day-month">${MONTHS[day.getMonth()]}</div>
-        </div>
-        <div class="events">${evHTML}</div>`;
-
-      grid.appendChild(col);
-    });
-
+  function render(days, byDay, activeIdx) {
     const app = document.getElementById('app');
     app.innerHTML = '';
-    app.appendChild(grid);
+
+    const tabs = document.createElement('div');
+    tabs.className = 'tabs';
+
+    days.forEach((day, i) => {
+      const count = byDay[dayKey(day)].length;
+      const btn = document.createElement('button');
+      btn.className = 'tab' + (i === activeIdx ? ' active' : '') + (count === 0 ? ' no-events' : '');
+      btn.innerHTML = `
+        <div class="tab-day">${DAYS_SHORT[day.getDay()]}</div>
+        <div class="tab-num">${day.getDate()}</div>
+        <div class="tab-badge">${count === 0 ? '—' : count + (count === 1 ? ' event' : ' events')}</div>
+      `;
+      btn.onclick = () => render(days, byDay, i);
+      tabs.appendChild(btn);
+    });
+
+    app.appendChild(tabs);
+
+    const panel = document.createElement('div');
+    panel.className = 'day-panel';
+
+    const activeDay = days[activeIdx];
+    const evs = byDay[dayKey(activeDay)];
+    const eyebrow = relativeLabel(activeIdx);
+
+    panel.innerHTML = `
+      <div class="day-heading">
+        ${eyebrow ? `<div class="day-eyebrow">${eyebrow}</div>` : ''}
+        <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
+        <div class="day-subtitle">${MONTHS[activeDay.getMonth()]} ${activeDay.getDate()}</div>
+      </div>
+      ${evs.length ? `<div class="events-list">${evs.map(eventHTML).join('')}</div>`
+                   : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
+    `;
+
+    app.appendChild(panel);
   }
+
+  function eventHTML(ev) {
+    const allDay = !ev.start.dateTime;
+    const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
+    const endLabel = (!allDay && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
+    const loc  = ev.location ? `<div class="event-meta">${escapeHtml(ev.location)}</div>` : '';
+    const desc = ev.description ? `<div class="event-meta">${escapeHtml(stripTags(ev.description)).slice(0, 140)}</div>` : '';
+
+    return `
+      <div class="event${allDay ? ' all-day' : ''}">
+        <div class="event-time-block">
+          <div class="event-time">${timeLabel}</div>
+          ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
+        </div>
+        <div class="event-body">
+          <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
+          ${loc}${desc}
+        </div>
+      </div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
   init();
 </script>
+
 </body>
 </html>
