@@ -895,13 +895,18 @@
     return weatherByCoord[coordKey(coords.lat, coords.lon)] || null;
   }
 
-  function getEventWeather(ev) {
+  function ymd(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function getEventWeather(ev, contextDay) {
     const wx = weatherForEvent(ev);
     if (!wx) return null;
     const allDay = !ev.start.dateTime;
 
     if (allDay) {
-      const idx = wx.daily?.time?.indexOf(ev.start.date);
+      const dateKey = contextDay ? ymd(contextDay) : ev.start.date;
+      const idx = wx.daily?.time?.indexOf(dateKey);
       if (idx === undefined || idx < 0) return null;
       return {
         type: 'daily',
@@ -921,8 +926,8 @@
     };
   }
 
-  function weatherChipHTML(ev, idx) {
-    const w = getEventWeather(ev);
+  function weatherChipHTML(ev, idx, contextDay) {
+    const w = getEventWeather(ev, contextDay);
     if (!w) return '';
     const icon = WEATHER_ICONS[w.code] || '';
     const target = `wx-${idx}`;
@@ -932,7 +937,7 @@
     return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${w.temp}°</div>`;
   }
 
-  function getEventHourly(ev) {
+  function getEventHourly(ev, contextDay) {
     const wx = weatherForEvent(ev);
     if (!wx || !wx.hourly) return [];
 
@@ -942,7 +947,7 @@
       end   = ev.end?.dateTime ? new Date(ev.end.dateTime) : new Date(start.getTime() + 3600000);
       step  = 60;
     } else {
-      const d = parseEventDate(ev.start);
+      const d = contextDay || parseEventDate(ev.start);
       start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6);
       end   = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 22);
       step  = 180;
@@ -973,8 +978,8 @@
     return h < 12 ? `${h}a` : `${h - 12}p`;
   }
 
-  function weatherDetailHTML(ev, idx) {
-    const hours = getEventHourly(ev);
+  function weatherDetailHTML(ev, idx, contextDay) {
+    const hours = getEventHourly(ev, contextDay);
     if (hours.length === 0) return '';
     return `<div class="weather-detail" id="wx-${idx}">
       ${hours.map(h => `
@@ -1247,7 +1252,7 @@
         <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
         <div class="day-subtitle">${MONTHS[activeDay.getMonth()]} ${activeDay.getDate()}</div>
       </div>
-      ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i)).join('')}</div>`
+      ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i, activeDay)).join('')}</div>`
                    : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
     `;
 
@@ -1296,7 +1301,7 @@
     }, { passive: true });
   }
 
-  function eventHTML(ev, idx) {
+  function eventHTML(ev, idx, contextDay) {
     const allDay = !ev.start.dateTime;
     const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
     const endLabel = (!allDay && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
@@ -1320,10 +1325,10 @@
         <div class="event-body">
           <div class="event-header">
             <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
-            ${weatherChipHTML(ev, idx)}
+            ${weatherChipHTML(ev, idx, contextDay)}
           </div>
           ${loc}${desc}${mapBtn}
-          ${weatherDetailHTML(ev, idx)}
+          ${weatherDetailHTML(ev, idx, contextDay)}
         </div>
       </div>`;
   }
