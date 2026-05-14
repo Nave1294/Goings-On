@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Goings On</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       --bg: #f5f5f7;
@@ -727,8 +728,10 @@
 </div>
 
 <script>
-  const CALENDAR_ID = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
-  const API_KEY    = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
+  const CALENDAR_ID      = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
+  const API_KEY          = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
+  const PLACES_API_KEY   = ''; // paste Google Places API key here to enable venue photos
+  const OAUTH_CLIENT_ID  = ''; // paste OAuth 2.0 Web Client ID here to enable one-click add
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -753,6 +756,36 @@
   const wikiImageCache = {};
   const wikiSearchCache = {};
   const commonsSearchCache = {};
+  const placesCache = {};
+
+  async function searchPlacesPhoto(query) {
+    if (!PLACES_API_KEY) return null;
+    const q = (query || '').trim();
+    if (!q) return null;
+    const cacheKey = q.toLowerCase();
+    if (placesCache[cacheKey] !== undefined) return placesCache[cacheKey];
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': PLACES_API_KEY,
+          'X-Goog-FieldMask': 'places.photos,places.displayName',
+        },
+        body: JSON.stringify({ textQuery: q, languageCode: 'en' }),
+      });
+      if (!res.ok) { placesCache[cacheKey] = null; return null; }
+      const data = await res.json();
+      const photo = data.places?.[0]?.photos?.[0];
+      if (!photo?.name) { placesCache[cacheKey] = null; return null; }
+      const url = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}`;
+      placesCache[cacheKey] = url;
+      return url;
+    } catch {
+      placesCache[cacheKey] = null;
+      return null;
+    }
+  }
 
   // Philadelphia coordinates — used as the fallback when geocoding fails
   const PHILLY_LAT = 39.9526;
@@ -1036,14 +1069,18 @@
   async function findImageForEvent(ev) {
     const cleanedLoc = cleanLocation(ev.location);
     if (cleanedLoc) {
-      let src = await searchWikiImage(searchQueryForEvent(ev));
+      let src = await searchPlacesPhoto(cleanedLoc);
+      if (src) return { src, caption: cleanedLoc };
+      src = await searchWikiImage(searchQueryForEvent(ev));
       if (src) return { src, caption: cleanedLoc };
       src = await searchCommonsImage(cleanedLoc);
       if (src) return { src, caption: cleanedLoc };
     }
     if (ev.summary) {
+      let src = await searchPlacesPhoto(ev.summary);
+      if (src) return { src, caption: ev.summary };
       const titleQuery = /phil(adelphia|ly)?/i.test(ev.summary) ? ev.summary : `${ev.summary} Philadelphia`;
-      let src = await searchWikiImage(titleQuery);
+      src = await searchWikiImage(titleQuery);
       if (src) return { src, caption: ev.summary };
       src = await searchCommonsImage(ev.summary);
       if (src) return { src, caption: ev.summary };
@@ -1299,12 +1336,62 @@
 
   function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
+  let tokenClient = null;
+  let cachedAccessToken = null;
+
+  function ensureTokenClient() {
+    if (!OAUTH_CLIENT_ID) return null;
+    if (tokenClient) return tokenClient;
+    if (typeof google === 'undefined' || !google.accounts?.oauth2) return null;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: OAUTH_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: () => {},
+    });
+    return tokenClient;
+  }
+
+  function requestAccessToken() {
+    return new Promise((resolve, reject) => {
+      const client = ensureTokenClient();
+      if (!client) { reject(new Error('Sign-in unavailable')); return; }
+      client.callback = (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        cachedAccessToken = resp.access_token;
+        resolve(resp.access_token);
+      };
+      client.requestAccessToken({ prompt: cachedAccessToken ? '' : 'consent' });
+    });
+  }
+
+  async function insertEventViaApi(body) {
+    const token = await requestAccessToken();
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
   function setupAddEvent() {
     const fab       = document.getElementById('fab');
     const backdrop  = document.getElementById('modal-backdrop');
     const closeBtn  = document.getElementById('modal-close');
     const cancelBtn = document.getElementById('cancel-btn');
     const form      = document.getElementById('add-event-form');
+    const hint      = document.querySelector('.form-hint');
+
+    if (OAUTH_CLIENT_ID && hint) {
+      hint.textContent = "First time you'll be asked to sign in to Google. After that, events are added directly to Goings On.";
+    }
 
     function open() {
       const now = new Date();
@@ -1335,23 +1422,48 @@
     backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
 
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(form);
       const title = (fd.get('title') || '').trim();
       const date  = fd.get('date');
       const start = fd.get('start');
       const end   = fd.get('end');
+      const loc   = (fd.get('location') || '').trim();
+      const desc  = (fd.get('description') || '').trim();
       if (!title || !date || !start || !end) return;
 
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      if (OAUTH_CLIENT_ID) {
+        const original = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding…';
+        try {
+          await insertEventViaApi({
+            summary: title,
+            location: loc || undefined,
+            description: desc || undefined,
+            start: { dateTime: `${date}T${start}:00`, timeZone: 'America/New_York' },
+            end:   { dateTime: `${date}T${end}:00`,   timeZone: 'America/New_York' },
+          });
+          close();
+          init(); // refresh to show the new event
+        } catch (err) {
+          submitBtn.textContent = original;
+          submitBtn.disabled = false;
+          if (hint) hint.textContent = `Couldn't add: ${err.message}`;
+        }
+        return;
+      }
+
+      // Fallback: open Google Calendar pre-filled
       const params = new URLSearchParams({
         action: 'TEMPLATE',
         text: title,
         dates: `${fmtCal(date, start)}/${fmtCal(date, end)}`,
         ctz: 'America/New_York',
       });
-      const loc  = (fd.get('location') || '').trim();
-      const desc = (fd.get('description') || '').trim();
       if (loc)  params.set('location', loc);
       if (desc) params.set('details', desc);
       params.set('src', CALENDAR_ID);
