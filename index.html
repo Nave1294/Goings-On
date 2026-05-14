@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Goings On</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       --bg: #f5f5f7;
@@ -55,12 +54,12 @@
       position: fixed;
       bottom: 1.5rem;
       left: 1.5rem;
-      width: 48px;
-      height: 48px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       background: var(--surface);
       color: var(--accent);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -71,10 +70,10 @@
 
     .explore-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.08);
     }
 
-    .explore-btn svg { width: 22px; height: 22px; stroke: var(--accent); stroke-width: 2; }
+    .explore-btn svg { width: 28px; height: 28px; stroke: var(--accent); stroke-width: 2; }
 
     .explore-tooltip {
       position: absolute;
@@ -446,7 +445,7 @@
       -webkit-overflow-scrolling: touch;
       margin-left: calc((100% - 100vw) / 2);
       margin-right: calc((100% - 100vw) / 2);
-      padding: 4px 1.25rem 10px calc((100vw - 100%) / 2);
+      padding: 4px calc((100vw - 100%) / 2) 10px;
       margin-bottom: 2rem;
       scrollbar-width: none;
     }
@@ -499,159 +498,6 @@
       pointer-events: none;
     }
 
-    .fab {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0, 113, 227, 0.32), 0 1px 3px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      padding: 0;
-    }
-
-    .fab:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,113,227,0.4), 0 2px 4px rgba(0,0,0,0.12); }
-    .fab:active { transform: translateY(0); }
-    .fab svg { width: 22px; height: 22px; stroke: #fff; stroke-width: 2.4; }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.42);
-      backdrop-filter: blur(10px) saturate(140%);
-      -webkit-backdrop-filter: blur(10px) saturate(140%);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      padding: 1rem;
-    }
-
-    .modal-backdrop.open { display: flex; }
-
-    .modal {
-      background: var(--surface);
-      border-radius: 20px;
-      max-width: 440px;
-      width: 100%;
-      padding: 1.6rem 1.6rem 1.4rem;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.28);
-      animation: modalIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.96) translateY(6px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.3rem;
-    }
-
-    .modal h2 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-    }
-
-    .modal-close {
-      background: var(--accent-soft);
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-size: 1.15rem;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-close:hover { color: var(--text); }
-
-    #add-event-form { display: flex; flex-direction: column; gap: 0.85rem; }
-
-    #add-event-form label {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    #add-event-form input,
-    #add-event-form textarea {
-      font-family: inherit;
-      font-size: 0.98rem;
-      font-weight: 400;
-      color: var(--text);
-      background: #f1f3f7;
-      border: 1.5px solid transparent;
-      border-radius: 10px;
-      padding: 0.65rem 0.85rem;
-      transition: border-color 0.15s ease, background 0.15s ease;
-      text-transform: none;
-      letter-spacing: normal;
-      width: 100%;
-      resize: vertical;
-    }
-
-    #add-event-form input:focus,
-    #add-event-form textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      background: var(--surface);
-    }
-
-    .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-
-    .form-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      margin-top: 0.5rem;
-    }
-
-    .btn-primary, .btn-secondary {
-      padding: 0.65rem 1.3rem;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-      letter-spacing: -0.01em;
-      transition: background 0.15s ease;
-    }
-
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: #005bb5; }
-    .btn-secondary { background: var(--accent-soft); color: var(--accent); }
-    .btn-secondary:hover { background: #d8e7fb; }
-
-    .form-hint {
-      font-size: 0.75rem;
-      color: var(--text-tertiary);
-      margin-top: -0.25rem;
-      line-height: 1.4;
-    }
-
     @media (max-width: 540px) {
       body { padding: 1.25rem 1rem 3rem; }
       .day-title { font-size: 2.1rem; }
@@ -659,8 +505,8 @@
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
       .collage > .tile { flex: 0 0 190px; height: 140px; }
-      .fab { bottom: 1rem; right: 1rem; }
-      .explore-btn { bottom: 1rem; left: 1rem; }
+      .explore-btn { bottom: 1rem; left: 1rem; width: 52px; height: 52px; }
+      .explore-btn svg { width: 22px; height: 22px; }
       .explore-tooltip { width: 200px; font-size: 0.74rem; }
     }
   </style>
@@ -684,54 +530,11 @@
   <span class="explore-tooltip">Explore the major Philly project developments to look forward to →</span>
 </a>
 
-<button class="fab" id="fab" aria-label="Add event">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-</button>
-
-<div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-header">
-      <h2 id="modal-title">New Event</h2>
-      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
-    </div>
-    <form id="add-event-form" novalidate>
-      <label>Title
-        <input type="text" name="title" required placeholder="What's happening?">
-      </label>
-      <label>Date
-        <input type="date" name="date" required>
-      </label>
-      <div class="time-row">
-        <label>Start
-          <input type="time" name="start" required>
-        </label>
-        <label>End
-          <input type="time" name="end" required>
-        </label>
-      </div>
-      <label>Location
-        <input type="text" name="location" placeholder="Optional">
-      </label>
-      <label>Notes
-        <textarea name="description" rows="3" placeholder="Optional"></textarea>
-      </label>
-      <div class="form-hint">Opens Google Calendar with the event pre-filled — make sure "Goings On" is the selected calendar, then click Save.</div>
-      <div class="form-actions">
-        <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
-        <button type="submit" class="btn-primary">Add to Calendar</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <script>
   const CALENDAR_ID      = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
   const API_KEY          = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
   const PLACES_API_KEY   = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
-  const OAUTH_CLIENT_ID  = ''; // paste OAuth 2.0 Web Client ID here to enable one-click add
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -1121,6 +924,22 @@
       if (img.complete) img.classList.add('ready');
       else img.addEventListener('load', () => img.classList.add('ready'), { once: true });
     });
+
+    centerCollage(container);
+  }
+
+  function centerCollage(container) {
+    if (!container) return;
+    requestAnimationFrame(() => {
+      const sw = container.scrollWidth;
+      const cw = container.clientWidth;
+      if (sw > cw + 1) {
+        container.style.justifyContent = 'flex-start';
+        container.scrollLeft = (sw - cw) / 2;
+      } else {
+        container.style.justifyContent = 'center';
+      }
+    });
   }
 
   function highlightEvent(idx) {
@@ -1341,144 +1160,6 @@
 
   function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
-  let tokenClient = null;
-  let cachedAccessToken = null;
-
-  function ensureTokenClient() {
-    if (!OAUTH_CLIENT_ID) return null;
-    if (tokenClient) return tokenClient;
-    if (typeof google === 'undefined' || !google.accounts?.oauth2) return null;
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: OAUTH_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/calendar.events',
-      callback: () => {},
-    });
-    return tokenClient;
-  }
-
-  function requestAccessToken() {
-    return new Promise((resolve, reject) => {
-      const client = ensureTokenClient();
-      if (!client) { reject(new Error('Sign-in unavailable')); return; }
-      client.callback = (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        cachedAccessToken = resp.access_token;
-        resolve(resp.access_token);
-      };
-      client.requestAccessToken({ prompt: cachedAccessToken ? '' : 'consent' });
-    });
-  }
-
-  async function insertEventViaApi(body) {
-    const token = await requestAccessToken();
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`,
-      {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }
-    );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-    return res.json();
-  }
-
-  function setupAddEvent() {
-    const fab       = document.getElementById('fab');
-    const backdrop  = document.getElementById('modal-backdrop');
-    const closeBtn  = document.getElementById('modal-close');
-    const cancelBtn = document.getElementById('cancel-btn');
-    const form      = document.getElementById('add-event-form');
-    const hint      = document.querySelector('.form-hint');
-
-    if (OAUTH_CLIENT_ID && hint) {
-      hint.textContent = "First time you'll be asked to sign in to Google. After that, events are added directly to Goings On.";
-    }
-
-    function open() {
-      const now = new Date();
-      const isoDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-      const nextHour = (now.getHours() + 1) % 24;
-      form.elements.date.value  = isoDate;
-      form.elements.start.value = `${String(nextHour).padStart(2,'0')}:00`;
-      form.elements.end.value   = `${String((nextHour + 1) % 24).padStart(2,'0')}:00`;
-      backdrop.classList.add('open');
-      backdrop.setAttribute('aria-hidden', 'false');
-      setTimeout(() => form.elements.title.focus(), 50);
-    }
-
-    function close() {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
-      form.reset();
-    }
-
-    function fmtCal(date, time) {
-      // dateStr YYYY-MM-DD, timeStr HH:MM → YYYYMMDDTHHmmss (floating local time)
-      return date.replace(/-/g, '') + 'T' + time.replace(/:/g, '') + '00';
-    }
-
-    fab.addEventListener('click', open);
-    closeBtn.addEventListener('click', close);
-    cancelBtn.addEventListener('click', close);
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
-
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const fd = new FormData(form);
-      const title = (fd.get('title') || '').trim();
-      const date  = fd.get('date');
-      const start = fd.get('start');
-      const end   = fd.get('end');
-      const loc   = (fd.get('location') || '').trim();
-      const desc  = (fd.get('description') || '').trim();
-      if (!title || !date || !start || !end) return;
-
-      const submitBtn = form.querySelector('button[type="submit"]');
-
-      if (OAUTH_CLIENT_ID) {
-        const original = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding…';
-        try {
-          await insertEventViaApi({
-            summary: title,
-            location: loc || undefined,
-            description: desc || undefined,
-            start: { dateTime: `${date}T${start}:00`, timeZone: 'America/New_York' },
-            end:   { dateTime: `${date}T${end}:00`,   timeZone: 'America/New_York' },
-          });
-          close();
-          init(); // refresh to show the new event
-        } catch (err) {
-          submitBtn.textContent = original;
-          submitBtn.disabled = false;
-          if (hint) hint.textContent = `Couldn't add: ${err.message}`;
-        }
-        return;
-      }
-
-      // Fallback: open Google Calendar pre-filled
-      const params = new URLSearchParams({
-        action: 'TEMPLATE',
-        text: title,
-        dates: `${fmtCal(date, start)}/${fmtCal(date, end)}`,
-        ctz: 'America/New_York',
-      });
-      if (loc)  params.set('location', loc);
-      if (desc) params.set('details', desc);
-      params.set('src', CALENDAR_ID);
-
-      window.open(`https://calendar.google.com/calendar/render?${params}`, '_blank', 'noopener');
-      close();
-    });
-  }
-
-  setupAddEvent();
   init();
 </script>
 
