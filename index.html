@@ -277,20 +277,6 @@
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
     }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #000000;
-        --surface: #1c1c1e;
-        --text: #f5f5f7;
-        --text-secondary: #98989d;
-        --text-tertiary: #6e6e73;
-        --accent: #0a84ff;
-        --accent-soft: #1c2733;
-        --divider: rgba(255, 255, 255, 0.08);
-        --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
-      }
-    }
   </style>
 </head>
 <body>
@@ -357,13 +343,45 @@
 
     const byDay = {};
     days.forEach(d => { byDay[dayKey(d)] = []; });
+
     events.forEach(ev => {
-      const start = ev.start.dateTime || ev.start.date;
-      const k = dayKey(new Date(start));
-      if (byDay[k]) byDay[k].push(ev);
+      const isAllDay = !ev.start.dateTime;
+      const start = parseEventDate(ev.start);
+      const end   = parseEventDate(ev.end);
+
+      if (isAllDay) {
+        // All-day end is exclusive (next day after last day). Add to every day it covers.
+        const cursor = new Date(start);
+        cursor.setHours(0, 0, 0, 0);
+        while (cursor < end) {
+          const k = dayKey(cursor);
+          if (byDay[k]) byDay[k].push(ev);
+          cursor.setDate(cursor.getDate() + 1);
+        }
+      } else {
+        const k = dayKey(start);
+        if (byDay[k]) byDay[k].push(ev);
+      }
+    });
+
+    // Sort within each day: all-day first, then by start time
+    Object.values(byDay).forEach(arr => {
+      arr.sort((a, b) => {
+        const aAll = !a.start.dateTime, bAll = !b.start.dateTime;
+        if (aAll !== bAll) return aAll ? -1 : 1;
+        if (aAll) return 0;
+        return new Date(a.start.dateTime) - new Date(b.start.dateTime);
+      });
     });
 
     render(days, byDay, 0);
+  }
+
+  function parseEventDate(endpoint) {
+    // dateTime: full ISO, parse normally. date: YYYY-MM-DD, parse as LOCAL midnight.
+    if (endpoint.dateTime) return new Date(endpoint.dateTime);
+    const [y, m, d] = endpoint.date.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
 
   function render(days, byDay, activeIdx) {
