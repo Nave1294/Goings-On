@@ -383,6 +383,159 @@
       pointer-events: none;
     }
 
+    .fab {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 113, 227, 0.32), 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      padding: 0;
+    }
+
+    .fab:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,113,227,0.4), 0 2px 4px rgba(0,0,0,0.12); }
+    .fab:active { transform: translateY(0); }
+    .fab svg { width: 22px; height: 22px; stroke: #fff; stroke-width: 2.4; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 20px;
+      max-width: 440px;
+      width: 100%;
+      padding: 1.6rem 1.6rem 1.4rem;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+      animation: modalIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.3rem;
+    }
+
+    .modal h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .modal-close {
+      background: var(--accent-soft);
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 1.15rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    #add-event-form { display: flex; flex-direction: column; gap: 0.85rem; }
+
+    #add-event-form label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    #add-event-form input,
+    #add-event-form textarea {
+      font-family: inherit;
+      font-size: 0.98rem;
+      font-weight: 400;
+      color: var(--text);
+      background: #f1f3f7;
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      text-transform: none;
+      letter-spacing: normal;
+      width: 100%;
+      resize: vertical;
+    }
+
+    #add-event-form input:focus,
+    #add-event-form textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+
+    .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary, .btn-secondary {
+      padding: 0.65rem 1.3rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: -0.01em;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #005bb5; }
+    .btn-secondary { background: var(--accent-soft); color: var(--accent); }
+    .btn-secondary:hover { background: #d8e7fb; }
+
+    .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-top: -0.25rem;
+      line-height: 1.4;
+    }
+
     @media (max-width: 540px) {
       body { padding: 1.25rem 1rem 3rem; }
       .day-title { font-size: 2.1rem; }
@@ -390,6 +543,7 @@
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
       .collage { height: 180px; }
+      .fab { bottom: 1rem; right: 1rem; }
     }
   </style>
 </head>
@@ -399,6 +553,49 @@
   <div class="brand">Goings On</div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<button class="fab" id="fab" aria-label="Add event">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h2 id="modal-title">New Event</h2>
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    </div>
+    <form id="add-event-form" novalidate>
+      <label>Title
+        <input type="text" name="title" required placeholder="What's happening?">
+      </label>
+      <label>Date
+        <input type="date" name="date" required>
+      </label>
+      <div class="time-row">
+        <label>Start
+          <input type="time" name="start" required>
+        </label>
+        <label>End
+          <input type="time" name="end" required>
+        </label>
+      </div>
+      <label>Location
+        <input type="text" name="location" placeholder="Optional">
+      </label>
+      <label>Notes
+        <textarea name="description" rows="3" placeholder="Optional"></textarea>
+      </label>
+      <div class="form-hint">Opens Google Calendar with the event pre-filled — make sure "Goings On" is the selected calendar, then click Save.</div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+        <button type="submit" class="btn-primary">Add to Calendar</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -428,11 +625,13 @@
 
   const wikiImageCache = {};
   const wikiSearchCache = {};
+  const commonsSearchCache = {};
 
-  // Philadelphia coordinates for weather forecast
+  // Philadelphia coordinates — used as the fallback when geocoding fails
   const PHILLY_LAT = 39.9526;
   const PHILLY_LON = -75.1652;
-  let weather = null;
+  const geoCache = {};
+  const weatherByCoord = {};
 
   const WEATHER_ICONS = {
     0: '☀️',  1: '☀️',  2: '⛅',        3: '☁️',
@@ -448,11 +647,35 @@
     95: '⛈️', 96: '⛈️', 99: '⛈️',
   };
 
-  async function fetchWeather() {
+  function coordKey(lat, lon) { return `${lat.toFixed(2)},${lon.toFixed(2)}`; }
+
+  async function geocode(location) {
+    const cleaned = (location || '').trim();
+    if (!cleaned || cleaned.length < 3) return null;
+    const key = cleaned.toLowerCase();
+    if (geoCache[key] !== undefined) return geoCache[key];
+    try {
+      const params = new URLSearchParams({ name: cleaned, count: 1, language: 'en', format: 'json' });
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`);
+      if (!res.ok) { geoCache[key] = null; return null; }
+      const data = await res.json();
+      const r = data.results?.[0];
+      if (!r) { geoCache[key] = null; return null; }
+      geoCache[key] = { lat: r.latitude, lon: r.longitude };
+      return geoCache[key];
+    } catch {
+      geoCache[key] = null;
+      return null;
+    }
+  }
+
+  async function fetchWeatherForCoord(lat, lon) {
+    const key = coordKey(lat, lon);
+    if (weatherByCoord[key] !== undefined) return weatherByCoord[key];
     try {
       const params = new URLSearchParams({
-        latitude: PHILLY_LAT,
-        longitude: PHILLY_LON,
+        latitude: lat,
+        longitude: lon,
         hourly: 'temperature_2m,weather_code',
         daily: 'weather_code,temperature_2m_max,temperature_2m_min',
         temperature_unit: 'fahrenheit',
@@ -460,11 +683,38 @@
         forecast_days: '8',
       });
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-      if (!res.ok) return null;
-      return await res.json();
+      if (!res.ok) { weatherByCoord[key] = null; return null; }
+      weatherByCoord[key] = await res.json();
+      return weatherByCoord[key];
     } catch {
+      weatherByCoord[key] = null;
       return null;
     }
+  }
+
+  async function preloadWeather(events) {
+    // Always have Philly weather ready as the default
+    const fetches = [fetchWeatherForCoord(PHILLY_LAT, PHILLY_LON)];
+
+    const locations = new Set();
+    events.forEach(ev => {
+      const loc = cleanLocation(ev.location);
+      if (loc) locations.add(loc);
+    });
+
+    await Promise.all([...locations].map(loc => geocode(loc)));
+
+    const seen = new Set([coordKey(PHILLY_LAT, PHILLY_LON)]);
+    for (const loc of locations) {
+      const c = geoCache[loc.toLowerCase()];
+      if (!c) continue;
+      const k = coordKey(c.lat, c.lon);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      fetches.push(fetchWeatherForCoord(c.lat, c.lon));
+    }
+
+    await Promise.all(fetches);
   }
 
   function nyHourKey(date) {
@@ -479,28 +729,35 @@
     return `${get('year')}-${get('month')}-${get('day')}T${hour}:00`;
   }
 
+  function weatherForEvent(ev) {
+    const cleaned = cleanLocation(ev.location);
+    const coords = (cleaned && geoCache[cleaned.toLowerCase()]) || { lat: PHILLY_LAT, lon: PHILLY_LON };
+    return weatherByCoord[coordKey(coords.lat, coords.lon)] || null;
+  }
+
   function getEventWeather(ev) {
-    if (!weather) return null;
+    const wx = weatherForEvent(ev);
+    if (!wx) return null;
     const allDay = !ev.start.dateTime;
 
     if (allDay) {
-      const idx = weather.daily?.time?.indexOf(ev.start.date);
+      const idx = wx.daily?.time?.indexOf(ev.start.date);
       if (idx === undefined || idx < 0) return null;
       return {
         type: 'daily',
-        code: weather.daily.weather_code[idx],
-        hi: Math.round(weather.daily.temperature_2m_max[idx]),
-        lo: Math.round(weather.daily.temperature_2m_min[idx]),
+        code: wx.daily.weather_code[idx],
+        hi: Math.round(wx.daily.temperature_2m_max[idx]),
+        lo: Math.round(wx.daily.temperature_2m_min[idx]),
       };
     }
 
     const key = nyHourKey(new Date(ev.start.dateTime));
-    const idx = weather.hourly?.time?.indexOf(key);
+    const idx = wx.hourly?.time?.indexOf(key);
     if (idx === undefined || idx < 0) return null;
     return {
       type: 'hourly',
-      code: weather.hourly.weather_code[idx],
-      temp: Math.round(weather.hourly.temperature_2m[idx]),
+      code: wx.hourly.weather_code[idx],
+      temp: Math.round(wx.hourly.temperature_2m[idx]),
     };
   }
 
@@ -561,15 +818,51 @@
     return phillyHint.test(base) ? base : `${base} Philadelphia`;
   }
 
+  async function searchCommonsImage(query) {
+    const q = (query || '').trim();
+    if (!q) return null;
+    if (commonsSearchCache[q] !== undefined) return commonsSearchCache[q];
+    try {
+      const params = new URLSearchParams({
+        action: 'query',
+        generator: 'search',
+        gsrnamespace: '6',
+        gsrsearch: `${q} filetype:bitmap`,
+        gsrlimit: '1',
+        prop: 'imageinfo',
+        iiprop: 'url',
+        iiurlwidth: '500',
+        format: 'json',
+        origin: '*',
+      });
+      const res = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
+      if (!res.ok) { commonsSearchCache[q] = null; return null; }
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (!pages) { commonsSearchCache[q] = null; return null; }
+      const first = Object.values(pages)[0];
+      const url = first?.imageinfo?.[0]?.thumburl || first?.imageinfo?.[0]?.url || null;
+      commonsSearchCache[q] = url;
+      return url;
+    } catch {
+      commonsSearchCache[q] = null;
+      return null;
+    }
+  }
+
   async function findImageForEvent(ev) {
     const cleanedLoc = cleanLocation(ev.location);
     if (cleanedLoc) {
-      const src = await searchWikiImage(searchQueryForEvent(ev));
+      let src = await searchWikiImage(searchQueryForEvent(ev));
+      if (src) return { src, caption: cleanedLoc };
+      src = await searchCommonsImage(cleanedLoc);
       if (src) return { src, caption: cleanedLoc };
     }
     if (ev.summary) {
       const titleQuery = /phil(adelphia|ly)?/i.test(ev.summary) ? ev.summary : `${ev.summary} Philadelphia`;
-      const src = await searchWikiImage(titleQuery);
+      let src = await searchWikiImage(titleQuery);
+      if (src) return { src, caption: ev.summary };
+      src = await searchCommonsImage(ev.summary);
       if (src) return { src, caption: ev.summary };
     }
     return null;
@@ -641,7 +934,8 @@
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`
       + `?key=${API_KEY}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
 
-    const weatherPromise = fetchWeather();
+    // Start the default Philly forecast fetch in parallel; per-location lookups happen once events arrive.
+    const phillyWeatherPromise = fetchWeatherForCoord(PHILLY_LAT, PHILLY_LON);
 
     let events;
     try {
@@ -655,7 +949,7 @@
       return;
     }
 
-    weather = await weatherPromise;
+    await Promise.all([phillyWeatherPromise, preloadWeather(events)]);
 
     const byDay = {};
     days.forEach(d => { byDay[dayKey(d)] = []; });
@@ -784,6 +1078,69 @@
 
   function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
+  function setupAddEvent() {
+    const fab       = document.getElementById('fab');
+    const backdrop  = document.getElementById('modal-backdrop');
+    const closeBtn  = document.getElementById('modal-close');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const form      = document.getElementById('add-event-form');
+
+    function open() {
+      const now = new Date();
+      const isoDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const nextHour = (now.getHours() + 1) % 24;
+      form.elements.date.value  = isoDate;
+      form.elements.start.value = `${String(nextHour).padStart(2,'0')}:00`;
+      form.elements.end.value   = `${String((nextHour + 1) % 24).padStart(2,'0')}:00`;
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      setTimeout(() => form.elements.title.focus(), 50);
+    }
+
+    function close() {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      form.reset();
+    }
+
+    function fmtCal(date, time) {
+      // dateStr YYYY-MM-DD, timeStr HH:MM → YYYYMMDDTHHmmss (floating local time)
+      return date.replace(/-/g, '') + 'T' + time.replace(/:/g, '') + '00';
+    }
+
+    fab.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const title = (fd.get('title') || '').trim();
+      const date  = fd.get('date');
+      const start = fd.get('start');
+      const end   = fd.get('end');
+      if (!title || !date || !start || !end) return;
+
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: title,
+        dates: `${fmtCal(date, start)}/${fmtCal(date, end)}`,
+        ctz: 'America/New_York',
+      });
+      const loc  = (fd.get('location') || '').trim();
+      const desc = (fd.get('description') || '').trim();
+      if (loc)  params.set('location', loc);
+      if (desc) params.set('details', desc);
+      params.set('src', CALENDAR_ID);
+
+      window.open(`https://calendar.google.com/calendar/render?${params}`, '_blank', 'noopener');
+      close();
+    });
+  }
+
+  setupAddEvent();
   init();
 </script>
 
