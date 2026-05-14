@@ -270,12 +270,70 @@
       color: var(--text);
     }
 
+    .collage {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 6px;
+      height: 220px;
+      margin-bottom: 2rem;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: var(--surface);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .collage.loaded { opacity: 1; }
+
+    .collage > .tile {
+      position: relative;
+      background: #e8e8ed;
+      overflow: hidden;
+    }
+
+    .collage > .tile:first-child {
+      grid-row: 1 / 3;
+    }
+
+    .collage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+
+    .collage .tile:hover img { transform: scale(1.04); }
+
+    .collage .caption {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      opacity: 0.9;
+    }
+
+    .collage .tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 45%);
+      pointer-events: none;
+    }
+
     @media (max-width: 540px) {
       body { padding: 1.25rem 1rem 3rem; }
       .day-title { font-size: 2.1rem; }
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
+      .collage { height: 180px; }
     }
   </style>
 </head>
@@ -310,6 +368,83 @@
     if (i === 0) return 'Today';
     if (i === 1) return 'Tomorrow';
     return null;
+  }
+
+  // Philly landmark categories — keywords matched against event text, page used for Wikipedia image.
+  const PHILLY_CATEGORIES = [
+    { id: 'art',     label: 'Art Museum',         page: 'Philadelphia Museum of Art',     keywords: ['art', 'museum', 'gallery', 'exhibit', 'painting', 'sculpture', 'pma'] },
+    { id: 'history', label: 'Independence Hall',  page: 'Independence Hall',              keywords: ['liberty', 'independence', 'history', 'historical', 'colonial', 'old city'] },
+    { id: 'food',    label: 'Reading Terminal',   page: 'Reading Terminal Market',        keywords: ['food', 'lunch', 'dinner', 'brunch', 'restaurant', 'eat', 'market', 'cheesesteak', 'breakfast'] },
+    { id: 'music',   label: 'Academy of Music',   page: 'Academy of Music (Philadelphia)',keywords: ['music', 'concert', 'show', 'band', 'symphony', 'orchestra', 'opera', 'jazz', 'recital'] },
+    { id: 'drinks',  label: "McGillin's",         page: "McGillin's Olde Ale House",      keywords: ['beer', 'bar', 'drinks', 'happy hour', 'cocktail', 'pub', 'wine', 'brewery'] },
+    { id: 'park',    label: 'Rittenhouse Square', page: 'Rittenhouse Square',             keywords: ['park', 'picnic', 'rittenhouse', 'square', 'outside', 'outdoor'] },
+    { id: 'sports',  label: 'Citizens Bank Park', page: 'Citizens Bank Park',             keywords: ['phillies', 'baseball', 'game', 'citizens bank'] },
+    { id: 'eagles',  label: 'The Linc',           page: 'Lincoln Financial Field',        keywords: ['eagles', 'football', 'linc'] },
+    { id: 'river',   label: 'Boathouse Row',      page: 'Boathouse Row',                  keywords: ['boat', 'row', 'kayak', 'schuylkill', 'river', 'fairmount'] },
+    { id: 'gardens', label: 'Magic Gardens',      page: "Philadelphia's Magic Gardens",   keywords: ['garden', 'magic gardens', 'south street'] },
+    { id: 'city',    label: 'City Hall',          page: 'Philadelphia City Hall',         keywords: ['city hall', 'love park', 'downtown', 'center city'] },
+    { id: 'skyline', label: 'Philadelphia',       page: 'Philadelphia',                   keywords: [] },
+  ];
+
+  const DEFAULT_TILES = ['skyline', 'history', 'art'];
+  const wikiImageCache = {};
+
+  async function fetchWikiImage(page) {
+    if (wikiImageCache[page] !== undefined) return wikiImageCache[page];
+    try {
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`);
+      if (!res.ok) { wikiImageCache[page] = null; return null; }
+      const data = await res.json();
+      const src = data.originalimage?.source || data.thumbnail?.source || null;
+      wikiImageCache[page] = src;
+      return src;
+    } catch {
+      wikiImageCache[page] = null;
+      return null;
+    }
+  }
+
+  function pickCategories(events) {
+    const text = events
+      .map(e => `${e.summary || ''} ${e.location || ''} ${e.description || ''}`)
+      .join(' ')
+      .toLowerCase();
+
+    const scored = PHILLY_CATEGORIES
+      .map(c => ({ c, score: c.keywords.reduce((n, kw) => n + (text.includes(kw) ? 1 : 0), 0) }))
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(s => s.c.id);
+
+    const picks = [...new Set(scored)].slice(0, 3);
+    for (const id of DEFAULT_TILES) {
+      if (picks.length >= 3) break;
+      if (!picks.includes(id)) picks.push(id);
+    }
+    return picks.map(id => PHILLY_CATEGORIES.find(c => c.id === id));
+  }
+
+  async function renderCollage(container, events) {
+    const cats = pickCategories(events);
+    const images = await Promise.all(cats.map(c => fetchWikiImage(c.page)));
+    const tiles = cats.map((c, i) => ({ cat: c, src: images[i] })).filter(t => t.src);
+    if (tiles.length === 0) return;
+
+    container.innerHTML = tiles.map(t => `
+      <div class="tile">
+        <img src="${t.src}" alt="${t.cat.label}" loading="lazy">
+        <div class="caption">${t.cat.label}</div>
+      </div>
+    `).join('');
+
+    // Wait for at least the first image to load before fading in
+    const firstImg = container.querySelector('img');
+    if (firstImg) {
+      if (firstImg.complete) container.classList.add('loaded');
+      else firstImg.addEventListener('load', () => container.classList.add('loaded'), { once: true });
+    } else {
+      container.classList.add('loaded');
+    }
   }
 
   async function init() {
@@ -414,6 +549,7 @@
     const eyebrow = relativeLabel(activeIdx);
 
     panel.innerHTML = `
+      <div class="collage" id="collage"></div>
       <div class="day-heading">
         ${eyebrow ? `<div class="day-eyebrow">${eyebrow}</div>` : ''}
         <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
@@ -424,6 +560,8 @@
     `;
 
     app.appendChild(panel);
+
+    renderCollage(panel.querySelector('#collage'), evs);
   }
 
   function eventHTML(ev) {
