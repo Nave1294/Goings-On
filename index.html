@@ -226,13 +226,41 @@
       padding-left: 1rem;
     }
 
+    .event-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
     .event-title {
       font-size: 1.02rem;
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--text);
       line-height: 1.35;
+      flex: 1;
+      min-width: 0;
     }
+
+    .event-weather {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+      padding: 4px 9px;
+      background: #f1f3f7;
+      border-radius: 999px;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .event-weather .ew-icon { font-size: 0.95rem; line-height: 1; }
+    .event-weather .ew-lo { color: var(--text-tertiary); font-weight: 500; margin-left: 1px; }
+    .event-weather .ew-sep { color: var(--text-tertiary); margin: 0 1px; }
 
     .event-meta {
       font-size: 0.82rem;
@@ -401,6 +429,91 @@
   const wikiImageCache = {};
   const wikiSearchCache = {};
 
+  // Philadelphia coordinates for weather forecast
+  const PHILLY_LAT = 39.9526;
+  const PHILLY_LON = -75.1652;
+  let weather = null;
+
+  const WEATHER_ICONS = {
+    0: '☀️',  1: '☀️',  2: '⛅',        3: '☁️',
+    45: '🌫️', 48: '🌫️',
+    51: '🌦️', 53: '🌦️', 55: '🌦️',
+    56: '🌧️', 57: '🌧️',
+    61: '🌧️', 63: '🌧️', 65: '🌧️',
+    66: '🌧️', 67: '🌧️',
+    71: '🌨️', 73: '🌨️', 75: '🌨️',
+    77: '❄️',
+    80: '🌦️', 81: '🌧️', 82: '⛈️',
+    85: '🌨️', 86: '🌨️',
+    95: '⛈️', 96: '⛈️', 99: '⛈️',
+  };
+
+  async function fetchWeather() {
+    try {
+      const params = new URLSearchParams({
+        latitude: PHILLY_LAT,
+        longitude: PHILLY_LON,
+        hourly: 'temperature_2m,weather_code',
+        daily: 'weather_code,temperature_2m_max,temperature_2m_min',
+        temperature_unit: 'fahrenheit',
+        timezone: 'America/New_York',
+        forecast_days: '8',
+      });
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  function nyHourKey(date) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    const get = t => parts.find(p => p.type === t).value;
+    let hour = get('hour');
+    if (hour === '24') hour = '00';
+    return `${get('year')}-${get('month')}-${get('day')}T${hour}:00`;
+  }
+
+  function getEventWeather(ev) {
+    if (!weather) return null;
+    const allDay = !ev.start.dateTime;
+
+    if (allDay) {
+      const idx = weather.daily?.time?.indexOf(ev.start.date);
+      if (idx === undefined || idx < 0) return null;
+      return {
+        type: 'daily',
+        code: weather.daily.weather_code[idx],
+        hi: Math.round(weather.daily.temperature_2m_max[idx]),
+        lo: Math.round(weather.daily.temperature_2m_min[idx]),
+      };
+    }
+
+    const key = nyHourKey(new Date(ev.start.dateTime));
+    const idx = weather.hourly?.time?.indexOf(key);
+    if (idx === undefined || idx < 0) return null;
+    return {
+      type: 'hourly',
+      code: weather.hourly.weather_code[idx],
+      temp: Math.round(weather.hourly.temperature_2m[idx]),
+    };
+  }
+
+  function weatherChipHTML(ev) {
+    const w = getEventWeather(ev);
+    if (!w) return '';
+    const icon = WEATHER_ICONS[w.code] || '';
+    if (w.type === 'daily') {
+      return `<div class="event-weather"><span class="ew-icon">${icon}</span>${w.hi}°<span class="ew-sep">/</span><span class="ew-lo">${w.lo}°</span></div>`;
+    }
+    return `<div class="event-weather"><span class="ew-icon">${icon}</span>${w.temp}°</div>`;
+  }
+
   async function fetchWikiImage(page) {
     if (wikiImageCache[page] !== undefined) return wikiImageCache[page];
     try {
@@ -528,6 +641,8 @@
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`
       + `?key=${API_KEY}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
 
+    const weatherPromise = fetchWeather();
+
     let events;
     try {
       const res  = await fetch(url);
@@ -539,6 +654,8 @@
         `<div class="error-box"><strong>Couldn't load events</strong>${err.message}</div>`;
       return;
     }
+
+    weather = await weatherPromise;
 
     const byDay = {};
     days.forEach(d => { byDay[dayKey(d)] = []; });
@@ -650,7 +767,10 @@
           ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
         </div>
         <div class="event-body">
-          <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
+          <div class="event-header">
+            <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
+            ${weatherChipHTML(ev)}
+          </div>
           ${loc}${desc}${mapBtn}
         </div>
       </div>`;
