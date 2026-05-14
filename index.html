@@ -295,44 +295,45 @@
     }
 
     .collage {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      gap: 6px;
-      height: 220px;
-      margin-bottom: 2rem;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      background: var(--surface);
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -1.25rem 2rem;
+      padding: 4px 1.25rem 10px;
+      scrollbar-width: none;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
 
+    .collage::-webkit-scrollbar { display: none; }
     .collage.loaded { opacity: 1; }
 
     .collage > .tile {
+      flex: 0 0 230px;
+      height: 170px;
       position: relative;
-      background: #e8e8ed;
+      border-radius: 16px;
       overflow: hidden;
+      background: #e8e8ed;
+      scroll-snap-align: start;
+      box-shadow: var(--shadow);
+      cursor: pointer;
     }
 
-    .collage > .tile.clickable { cursor: pointer; }
-    .collage > .tile.clickable:active img { transform: scale(0.98); }
-
-    .collage > .tile:first-child {
-      grid-row: 1 / 3;
-    }
+    .collage > .tile:active img { transform: scale(0.98); }
 
     .collage img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.6s ease;
+      transition: transform 0.5s ease;
     }
 
-    .collage .tile:hover img { transform: scale(1.04); }
+    .collage .tile:hover img { transform: scale(1.05); }
 
     .collage .caption {
       position: absolute;
@@ -397,23 +398,6 @@
     return null;
   }
 
-  // Philly landmark categories — keywords matched against event text, page used for Wikipedia image.
-  const PHILLY_CATEGORIES = [
-    { id: 'art',     label: 'Art Museum',         page: 'Philadelphia Museum of Art',     keywords: ['art', 'museum', 'gallery', 'exhibit', 'painting', 'sculpture', 'pma'] },
-    { id: 'history', label: 'Independence Hall',  page: 'Independence Hall',              keywords: ['liberty', 'independence', 'history', 'historical', 'colonial', 'old city'] },
-    { id: 'food',    label: 'Reading Terminal',   page: 'Reading Terminal Market',        keywords: ['food', 'lunch', 'dinner', 'brunch', 'restaurant', 'eat', 'market', 'cheesesteak', 'breakfast'] },
-    { id: 'music',   label: 'Academy of Music',   page: 'Academy of Music (Philadelphia)',keywords: ['music', 'concert', 'show', 'band', 'symphony', 'orchestra', 'opera', 'jazz', 'recital'] },
-    { id: 'drinks',  label: "McGillin's",         page: "McGillin's Olde Ale House",      keywords: ['beer', 'bar', 'drinks', 'happy hour', 'cocktail', 'pub', 'wine', 'brewery'] },
-    { id: 'park',    label: 'Rittenhouse Square', page: 'Rittenhouse Square',             keywords: ['park', 'picnic', 'rittenhouse', 'square', 'outside', 'outdoor'] },
-    { id: 'sports',  label: 'Citizens Bank Park', page: 'Citizens Bank Park',             keywords: ['phillies', 'baseball', 'game', 'citizens bank'] },
-    { id: 'eagles',  label: 'The Linc',           page: 'Lincoln Financial Field',        keywords: ['eagles', 'football', 'linc'] },
-    { id: 'river',   label: 'Boathouse Row',      page: 'Boathouse Row',                  keywords: ['boat', 'row', 'kayak', 'schuylkill', 'river', 'fairmount'] },
-    { id: 'gardens', label: 'Magic Gardens',      page: "Philadelphia's Magic Gardens",   keywords: ['garden', 'magic gardens', 'south street'] },
-    { id: 'city',    label: 'City Hall',          page: 'Philadelphia City Hall',         keywords: ['city hall', 'love park', 'downtown', 'center city'] },
-    { id: 'skyline', label: 'Philadelphia',       page: 'Philadelphia',                   keywords: [] },
-  ];
-
-  const DEFAULT_TILES = ['skyline', 'history', 'art'];
   const wikiImageCache = {};
   const wikiSearchCache = {};
 
@@ -464,67 +448,41 @@
     return phillyHint.test(base) ? base : `${base} Philadelphia`;
   }
 
-  function keywordFallback(ev) {
-    const text = `${ev.summary || ''} ${ev.location || ''} ${ev.description || ''}`.toLowerCase();
-    for (const cat of PHILLY_CATEGORIES) {
-      if (cat.keywords.some(kw => text.includes(kw))) return cat;
-    }
-    return null;
-  }
-
   async function findImageForEvent(ev) {
-    const query = searchQueryForEvent(ev);
-    let src = await searchWikiImage(query);
-    if (src) return { src, caption: cleanLocation(ev.location) || ev.summary || '' };
-
     const cleanedLoc = cleanLocation(ev.location);
-    if (cleanedLoc && ev.summary) {
-      src = await searchWikiImage(ev.summary);
+    if (cleanedLoc) {
+      const src = await searchWikiImage(searchQueryForEvent(ev));
+      if (src) return { src, caption: cleanedLoc };
+    }
+    if (ev.summary) {
+      const titleQuery = /phil(adelphia|ly)?/i.test(ev.summary) ? ev.summary : `${ev.summary} Philadelphia`;
+      const src = await searchWikiImage(titleQuery);
       if (src) return { src, caption: ev.summary };
     }
-
-    const fallbackCat = keywordFallback(ev);
-    if (fallbackCat) {
-      src = await fetchWikiImage(fallbackCat.page);
-      if (src) return { src, caption: fallbackCat.label };
-    }
-
     return null;
   }
 
   async function renderCollage(container, events) {
-    const slots = [];
+    if (events.length === 0) return;
 
-    for (let i = 0; i < Math.min(events.length, 3); i++) {
-      slots.push({ kind: 'event', eventIdx: i, event: events[i] });
-    }
-
-    const defaults = DEFAULT_TILES.map(id => PHILLY_CATEGORIES.find(c => c.id === id));
-    while (slots.length < 3 && defaults.length) {
-      const cat = defaults.shift();
-      slots.push({ kind: 'default', page: cat.page, caption: cat.label });
-    }
-
-    const resolved = await Promise.all(slots.map(async s => {
-      if (s.kind === 'event') {
-        const r = await findImageForEvent(s.event);
-        return r ? { ...s, src: r.src, caption: r.caption } : null;
-      }
-      const src = await fetchWikiImage(s.page);
-      return src ? { ...s, src } : null;
-    }));
+    const resolved = await Promise.all(
+      events.map(async (ev, i) => {
+        const r = await findImageForEvent(ev);
+        return r ? { eventIdx: i, src: r.src, caption: r.caption } : null;
+      })
+    );
 
     const tiles = resolved.filter(Boolean);
     if (tiles.length === 0) return;
 
     container.innerHTML = tiles.map(t => `
-      <div class="tile${t.kind === 'event' ? ' clickable' : ''}"${t.kind === 'event' ? ` data-event-idx="${t.eventIdx}"` : ''}>
-        <img src="${escapeAttr(t.src)}" alt="${escapeAttr(t.caption || '')}" loading="lazy">
-        ${t.caption ? `<div class="caption">${escapeHtml(t.caption).slice(0, 48)}</div>` : ''}
+      <div class="tile" data-event-idx="${t.eventIdx}">
+        <img src="${escapeAttr(t.src)}" alt="${escapeAttr(t.caption)}" loading="lazy">
+        <div class="caption">${escapeHtml(t.caption).slice(0, 48)}</div>
       </div>
     `).join('');
 
-    container.querySelectorAll('.tile.clickable').forEach(tile => {
+    container.querySelectorAll('.tile').forEach(tile => {
       tile.addEventListener('click', () => highlightEvent(tile.dataset.eventIdx));
     });
 
