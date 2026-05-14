@@ -162,10 +162,34 @@
       display: flex;
       align-items: flex-start;
       gap: 1rem;
-      transition: transform 0.15s ease;
+      transition: background-color 0.4s ease, box-shadow 0.4s ease, transform 0.15s ease;
+      scroll-margin-top: 1rem;
     }
 
     .event:hover { transform: scale(1.005); }
+
+    .event.highlight {
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.45), var(--shadow);
+    }
+
+    .event-map {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      transition: background 0.15s ease;
+    }
+
+    .event-map:hover { background: #d8e7fb; }
+    .event-map svg { stroke: var(--accent); }
 
     .event-time-block {
       flex-shrink: 0;
@@ -293,6 +317,9 @@
       overflow: hidden;
     }
 
+    .collage > .tile.clickable { cursor: pointer; }
+    .collage > .tile.clickable:active img { transform: scale(0.98); }
+
     .collage > .tile:first-child {
       grid-row: 1 / 3;
     }
@@ -388,6 +415,7 @@
 
   const DEFAULT_TILES = ['skyline', 'history', 'art'];
   const wikiImageCache = {};
+  const wikiSearchCache = {};
 
   async function fetchWikiImage(page) {
     if (wikiImageCache[page] !== undefined) return wikiImageCache[page];
@@ -404,40 +432,102 @@
     }
   }
 
-  function pickCategories(events) {
-    const text = events
-      .map(e => `${e.summary || ''} ${e.location || ''} ${e.description || ''}`)
-      .join(' ')
-      .toLowerCase();
-
-    const scored = PHILLY_CATEGORIES
-      .map(c => ({ c, score: c.keywords.reduce((n, kw) => n + (text.includes(kw) ? 1 : 0), 0) }))
-      .filter(s => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(s => s.c.id);
-
-    const picks = [...new Set(scored)].slice(0, 3);
-    for (const id of DEFAULT_TILES) {
-      if (picks.length >= 3) break;
-      if (!picks.includes(id)) picks.push(id);
+  async function searchWikiImage(query) {
+    const q = (query || '').trim();
+    if (!q) return null;
+    if (wikiSearchCache[q] !== undefined) return wikiSearchCache[q];
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(q)}&limit=1&namespace=0&format=json&origin=*`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const title = data?.[1]?.[0];
+      if (!title) { wikiSearchCache[q] = null; return null; }
+      const img = await fetchWikiImage(title);
+      wikiSearchCache[q] = img;
+      return img;
+    } catch {
+      wikiSearchCache[q] = null;
+      return null;
     }
-    return picks.map(id => PHILLY_CATEGORIES.find(c => c.id === id));
+  }
+
+  function cleanLocation(loc) {
+    if (!loc) return '';
+    return loc.split(',')[0].replace(/^\d+\s+/, '').trim();
+  }
+
+  function searchQueryForEvent(ev) {
+    const cleanedLoc = cleanLocation(ev.location);
+    const base = cleanedLoc || ev.summary || '';
+    if (!base) return '';
+    const phillyHint = /phil(adelphia|ly)?|penn|liberty|rittenhouse|fishtown|fairmount|citizen[s]? bank|temple|drexel|wissahickon|reading terminal|love park|boathouse|rocky|south street|old city/i;
+    return phillyHint.test(base) ? base : `${base} Philadelphia`;
+  }
+
+  function keywordFallback(ev) {
+    const text = `${ev.summary || ''} ${ev.location || ''} ${ev.description || ''}`.toLowerCase();
+    for (const cat of PHILLY_CATEGORIES) {
+      if (cat.keywords.some(kw => text.includes(kw))) return cat;
+    }
+    return null;
+  }
+
+  async function findImageForEvent(ev) {
+    const query = searchQueryForEvent(ev);
+    let src = await searchWikiImage(query);
+    if (src) return { src, caption: cleanLocation(ev.location) || ev.summary || '' };
+
+    const cleanedLoc = cleanLocation(ev.location);
+    if (cleanedLoc && ev.summary) {
+      src = await searchWikiImage(ev.summary);
+      if (src) return { src, caption: ev.summary };
+    }
+
+    const fallbackCat = keywordFallback(ev);
+    if (fallbackCat) {
+      src = await fetchWikiImage(fallbackCat.page);
+      if (src) return { src, caption: fallbackCat.label };
+    }
+
+    return null;
   }
 
   async function renderCollage(container, events) {
-    const cats = pickCategories(events);
-    const images = await Promise.all(cats.map(c => fetchWikiImage(c.page)));
-    const tiles = cats.map((c, i) => ({ cat: c, src: images[i] })).filter(t => t.src);
+    const slots = [];
+
+    for (let i = 0; i < Math.min(events.length, 3); i++) {
+      slots.push({ kind: 'event', eventIdx: i, event: events[i] });
+    }
+
+    const defaults = DEFAULT_TILES.map(id => PHILLY_CATEGORIES.find(c => c.id === id));
+    while (slots.length < 3 && defaults.length) {
+      const cat = defaults.shift();
+      slots.push({ kind: 'default', page: cat.page, caption: cat.label });
+    }
+
+    const resolved = await Promise.all(slots.map(async s => {
+      if (s.kind === 'event') {
+        const r = await findImageForEvent(s.event);
+        return r ? { ...s, src: r.src, caption: r.caption } : null;
+      }
+      const src = await fetchWikiImage(s.page);
+      return src ? { ...s, src } : null;
+    }));
+
+    const tiles = resolved.filter(Boolean);
     if (tiles.length === 0) return;
 
     container.innerHTML = tiles.map(t => `
-      <div class="tile">
-        <img src="${t.src}" alt="${t.cat.label}" loading="lazy">
-        <div class="caption">${t.cat.label}</div>
+      <div class="tile${t.kind === 'event' ? ' clickable' : ''}"${t.kind === 'event' ? ` data-event-idx="${t.eventIdx}"` : ''}>
+        <img src="${escapeAttr(t.src)}" alt="${escapeAttr(t.caption || '')}" loading="lazy">
+        ${t.caption ? `<div class="caption">${escapeHtml(t.caption).slice(0, 48)}</div>` : ''}
       </div>
     `).join('');
 
-    // Wait for at least the first image to load before fading in
+    container.querySelectorAll('.tile.clickable').forEach(tile => {
+      tile.addEventListener('click', () => highlightEvent(tile.dataset.eventIdx));
+    });
+
     const firstImg = container.querySelector('img');
     if (firstImg) {
       if (firstImg.complete) container.classList.add('loaded');
@@ -446,6 +536,22 @@
       container.classList.add('loaded');
     }
   }
+
+  function highlightEvent(idx) {
+    const card = document.querySelector(`.event[data-event-idx="${idx}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('highlight');
+    void card.offsetWidth;
+    card.classList.add('highlight');
+    setTimeout(() => card.classList.remove('highlight'), 2200);
+  }
+
+  function mapUrl(location) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+  }
+
+  function escapeAttr(s) { return escapeHtml(s); }
 
   async function init() {
     const today = new Date();
@@ -555,7 +661,7 @@
         <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
         <div class="day-subtitle">${MONTHS[activeDay.getMonth()]} ${activeDay.getDate()}</div>
       </div>
-      ${evs.length ? `<div class="events-list">${evs.map(eventHTML).join('')}</div>`
+      ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i)).join('')}</div>`
                    : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
     `;
 
@@ -564,22 +670,30 @@
     renderCollage(panel.querySelector('#collage'), evs);
   }
 
-  function eventHTML(ev) {
+  function eventHTML(ev, idx) {
     const allDay = !ev.start.dateTime;
     const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
     const endLabel = (!allDay && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
     const loc  = ev.location ? `<div class="event-meta">${escapeHtml(ev.location)}</div>` : '';
     const desc = ev.description ? `<div class="event-meta">${escapeHtml(stripTags(ev.description)).slice(0, 140)}</div>` : '';
+    const mapBtn = ev.location ? `
+      <a class="event-map" href="${escapeAttr(mapUrl(ev.location))}" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        View on map
+      </a>` : '';
 
     return `
-      <div class="event${allDay ? ' all-day' : ''}">
+      <div class="event${allDay ? ' all-day' : ''}" data-event-idx="${idx}">
         <div class="event-time-block">
           <div class="event-time">${timeLabel}</div>
           ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
         </div>
         <div class="event-body">
           <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
-          ${loc}${desc}
+          ${loc}${desc}${mapBtn}
         </div>
       </div>`;
   }
