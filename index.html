@@ -26,6 +26,7 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: 'kern', 'liga';
+      overflow-x: hidden;
     }
 
     body {
@@ -45,30 +46,72 @@
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--text-secondary);
-      margin-bottom: 0.65rem;
+      margin-bottom: 2.5rem;
       text-align: center;
     }
 
-    .brand-link {
+    .explore-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--accent);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      width: fit-content;
-      margin: 0 auto 2.5rem;
-      padding: 6px 14px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: -0.005em;
       text-decoration: none;
-      border-radius: 999px;
-      transition: background 0.15s ease, transform 0.15s ease;
+      z-index: 50;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .brand-link:hover { background: #d8e7fb; transform: translateY(-1px); }
-    .brand-link svg { width: 12px; height: 12px; stroke: var(--accent); stroke-width: 2.4; }
+    .explore-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .explore-btn svg { width: 22px; height: 22px; stroke: var(--accent); stroke-width: 2; }
+
+    .explore-tooltip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      background: var(--text);
+      color: var(--surface);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      line-height: 1.35;
+      padding: 0.6rem 0.85rem;
+      border-radius: 12px;
+      width: 220px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    .explore-tooltip::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 18px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid var(--text);
+    }
+
+    .explore-btn:hover .explore-tooltip,
+    .explore-btn:focus .explore-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     .tabs {
       display: flex;
@@ -350,15 +393,14 @@
       overflow-y: hidden;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
-      margin: 0 -1.25rem 2rem;
-      padding: 4px 1.25rem 10px;
+      margin-left: calc((100% - 100vw) / 2);
+      margin-right: calc((100% - 100vw) / 2);
+      padding: 4px 1.25rem 10px calc((100vw - 100%) / 2);
+      margin-bottom: 2rem;
       scrollbar-width: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
     }
 
     .collage::-webkit-scrollbar { display: none; }
-    .collage.loaded { opacity: 1; }
 
     .collage > .tile {
       flex: 0 0 230px;
@@ -379,10 +421,12 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.5s ease;
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.5s ease;
     }
 
-    .collage .tile:hover img { transform: scale(1.05); }
+    .collage img.ready { opacity: 1; }
+    .collage .tile:hover img.ready { transform: scale(1.05); }
 
     .collage .caption {
       position: absolute;
@@ -563,8 +607,10 @@
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
-      .collage { height: 180px; }
+      .collage > .tile { flex: 0 0 190px; height: 140px; }
       .fab { bottom: 1rem; right: 1rem; }
+      .explore-btn { bottom: 1rem; left: 1rem; }
+      .explore-tooltip { width: 200px; font-size: 0.74rem; }
     }
   </style>
 </head>
@@ -572,17 +618,20 @@
 
 <div class="container">
   <div class="brand">Goings On</div>
-  <a class="brand-link" href="https://nave1294.github.io/Philly-Things-to-Watch/" target="_blank" rel="noopener">
-    Things to look forward to in Philly
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <line x1="7" y1="17" x2="17" y2="7"/>
-      <polyline points="7 7 17 7 17 17"/>
-    </svg>
-  </a>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
   </div>
 </div>
+
+<a class="explore-btn" href="https://nave1294.github.io/Philly-Things-to-Watch/" target="_blank" rel="noopener" aria-label="Explore Philly project developments">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M3 21h18"/>
+    <path d="M5 21V11l3-2v12"/>
+    <path d="M10 21V7l4-3v17"/>
+    <path d="M16 21v-9l4 2v7"/>
+  </svg>
+  <span class="explore-tooltip">Explore the major Philly project developments to look forward to →</span>
+</a>
 
 <button class="fab" id="fab" aria-label="Add event">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -920,13 +969,10 @@
       tile.addEventListener('click', () => highlightEvent(tile.dataset.eventIdx));
     });
 
-    const firstImg = container.querySelector('img');
-    if (firstImg) {
-      if (firstImg.complete) container.classList.add('loaded');
-      else firstImg.addEventListener('load', () => container.classList.add('loaded'), { once: true });
-    } else {
-      container.classList.add('loaded');
-    }
+    container.querySelectorAll('img').forEach(img => {
+      if (img.complete) img.classList.add('ready');
+      else img.addEventListener('load', () => img.classList.add('ready'), { once: true });
+    });
   }
 
   function highlightEvent(idx) {
@@ -1065,6 +1111,32 @@
     app.appendChild(panel);
 
     renderCollage(panel.querySelector('#collage'), evs);
+    attachSwipe(panel, days, byDay, activeIdx);
+  }
+
+  function attachSwipe(panel, days, byDay, activeIdx) {
+    let swipe = null;
+    panel.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { swipe = null; return; }
+      if (e.target.closest('.collage') || e.target.closest('.tabs')) { swipe = null; return; }
+      const t = e.touches[0];
+      swipe = { x: t.clientX, y: t.clientY, t: Date.now() };
+    }, { passive: true });
+
+    panel.addEventListener('touchend', e => {
+      if (!swipe) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - swipe.x;
+      const dy = t.clientY - swipe.y;
+      const dt = Date.now() - swipe.t;
+      swipe = null;
+      if (dt > 700) return;
+      if (Math.abs(dx) < 55) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      const next = activeIdx + (dx < 0 ? 1 : -1);
+      if (next < 0 || next >= days.length) return;
+      render(days, byDay, next);
+    }, { passive: true });
   }
 
   function eventHTML(ev, idx) {
