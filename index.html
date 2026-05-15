@@ -29,6 +29,20 @@
       overflow-x: hidden;
     }
 
+    .bg {
+      position: fixed;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .bg.ready { opacity: 0.4; }
+
     body {
       min-height: 100vh;
       padding: 2rem 1.25rem 4rem;
@@ -436,75 +450,12 @@
       color: var(--text);
     }
 
-    .collage {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      margin-left: calc((100% - 100vw) / 2);
-      margin-right: calc((100% - 100vw) / 2);
-      padding: 4px calc((100vw - 100%) / 2) 10px;
-      margin-bottom: 2rem;
-      scrollbar-width: none;
-    }
-
-    .collage::-webkit-scrollbar { display: none; }
-
-    .collage > .tile {
-      flex: 0 0 230px;
-      height: 170px;
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #e8e8ed;
-      scroll-snap-align: start;
-      box-shadow: var(--shadow);
-      cursor: pointer;
-    }
-
-    .collage > .tile:active img { transform: scale(0.98); }
-
-    .collage img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.5s ease;
-    }
-
-    .collage img.ready { opacity: 1; }
-    .collage .tile:hover img.ready { transform: scale(1.05); }
-
-    .collage .caption {
-      position: absolute;
-      left: 10px;
-      bottom: 8px;
-      color: #fff;
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-      opacity: 0.9;
-    }
-
-    .collage .tile::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 45%);
-      pointer-events: none;
-    }
-
     @media (max-width: 540px) {
       body { padding: 1.25rem 1rem 3rem; }
       .day-title { font-size: 2.1rem; }
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
-      .collage > .tile { flex: 0 0 190px; height: 140px; }
       .explore-btn { bottom: 1rem; left: 1rem; width: 52px; height: 52px; }
       .explore-btn svg { width: 22px; height: 22px; }
       .explore-tooltip { width: 200px; font-size: 0.74rem; }
@@ -512,6 +463,8 @@
   </style>
 </head>
 <body>
+
+<div class="bg" id="bg"></div>
 
 <div class="container">
   <div class="brand">Goings On</div>
@@ -532,9 +485,8 @@
 
 
 <script>
-  const CALENDAR_ID      = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
-  const API_KEY          = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
-  const PLACES_API_KEY   = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
+  const CALENDAR_ID = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
+  const API_KEY     = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -554,40 +506,6 @@
     if (i === 0) return 'Today';
     if (i === 1) return 'Tomorrow';
     return null;
-  }
-
-  const wikiImageCache = {};
-  const wikiSearchCache = {};
-  const commonsSearchCache = {};
-  const placesCache = {};
-
-  async function searchPlacesPhoto(query) {
-    if (!PLACES_API_KEY) return null;
-    const q = (query || '').trim();
-    if (!q) return null;
-    const cacheKey = q.toLowerCase();
-    if (placesCache[cacheKey] !== undefined) return placesCache[cacheKey];
-    try {
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': PLACES_API_KEY,
-          'X-Goog-FieldMask': 'places.photos,places.displayName',
-        },
-        body: JSON.stringify({ textQuery: q, languageCode: 'en' }),
-      });
-      if (!res.ok) { placesCache[cacheKey] = null; return null; }
-      const data = await res.json();
-      const photo = data.places?.[0]?.photos?.[0];
-      if (!photo?.name) { placesCache[cacheKey] = null; return null; }
-      const url = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}`;
-      placesCache[cacheKey] = url;
-      return url;
-    } catch {
-      placesCache[cacheKey] = null;
-      return null;
-    }
   }
 
   // Philadelphia coordinates — used as the fallback when geocoding fails
@@ -690,6 +608,11 @@
     let hour = get('hour');
     if (hour === '24') hour = '00';
     return `${get('year')}-${get('month')}-${get('day')}T${hour}:00`;
+  }
+
+  function cleanLocation(loc) {
+    if (!loc) return '';
+    return loc.split(',')[0].replace(/^\d+\s+/, '').trim();
   }
 
   function weatherForEvent(ev) {
@@ -795,161 +718,51 @@
     </div>`;
   }
 
-  async function fetchWikiImage(page) {
-    if (wikiImageCache[page] !== undefined) return wikiImageCache[page];
-    try {
-      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`);
-      if (!res.ok) { wikiImageCache[page] = null; return null; }
-      const data = await res.json();
-      const src = data.originalimage?.source || data.thumbnail?.source || null;
-      wikiImageCache[page] = src;
-      return src;
-    } catch {
-      wikiImageCache[page] = null;
-      return null;
-    }
-  }
+  const PHILLY_BG_PAGES = [
+    'Philadelphia',
+    'Philadelphia City Hall',
+    'Independence Hall',
+    'Liberty Bell',
+    'Philadelphia Museum of Art',
+    'Boathouse Row',
+    'Reading Terminal Market',
+    'Rittenhouse Square',
+    'One Liberty Place',
+    'Comcast Technology Center',
+    'Benjamin Franklin Parkway',
+    "Elfreth's Alley",
+    'Schuylkill River',
+    'Benjamin Franklin Bridge',
+    'Love Park',
+    'Old City, Philadelphia',
+    'Fairmount Park',
+    'Fishtown, Philadelphia',
+    'Society Hill, Philadelphia',
+    'Philadelphia skyline',
+  ];
 
-  async function searchWikiImage(query) {
-    const q = (query || '').trim();
-    if (!q) return null;
-    if (wikiSearchCache[q] !== undefined) return wikiSearchCache[q];
-    try {
-      const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(q)}&limit=1&namespace=0&format=json&origin=*`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const title = data?.[1]?.[0];
-      if (!title) { wikiSearchCache[q] = null; return null; }
-      const img = await fetchWikiImage(title);
-      wikiSearchCache[q] = img;
-      return img;
-    } catch {
-      wikiSearchCache[q] = null;
-      return null;
-    }
-  }
-
-  function cleanLocation(loc) {
-    if (!loc) return '';
-    return loc.split(',')[0].replace(/^\d+\s+/, '').trim();
-  }
-
-  function searchQueryForEvent(ev) {
-    const cleanedLoc = cleanLocation(ev.location);
-    const base = cleanedLoc || ev.summary || '';
-    if (!base) return '';
-    const phillyHint = /phil(adelphia|ly)?|penn|liberty|rittenhouse|fishtown|fairmount|citizen[s]? bank|temple|drexel|wissahickon|reading terminal|love park|boathouse|rocky|south street|old city/i;
-    return phillyHint.test(base) ? base : `${base} Philadelphia`;
-  }
-
-  async function searchCommonsImage(query) {
-    const q = (query || '').trim();
-    if (!q) return null;
-    if (commonsSearchCache[q] !== undefined) return commonsSearchCache[q];
-    try {
-      const params = new URLSearchParams({
-        action: 'query',
-        generator: 'search',
-        gsrnamespace: '6',
-        gsrsearch: `${q} filetype:bitmap`,
-        gsrlimit: '1',
-        prop: 'imageinfo',
-        iiprop: 'url',
-        iiurlwidth: '500',
-        format: 'json',
-        origin: '*',
-      });
-      const res = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
-      if (!res.ok) { commonsSearchCache[q] = null; return null; }
-      const data = await res.json();
-      const pages = data?.query?.pages;
-      if (!pages) { commonsSearchCache[q] = null; return null; }
-      const first = Object.values(pages)[0];
-      const url = first?.imageinfo?.[0]?.thumburl || first?.imageinfo?.[0]?.url || null;
-      commonsSearchCache[q] = url;
-      return url;
-    } catch {
-      commonsSearchCache[q] = null;
-      return null;
-    }
-  }
-
-  async function findImageForEvent(ev) {
-    const cleanedLoc = cleanLocation(ev.location);
-    if (cleanedLoc) {
-      let src = await searchPlacesPhoto(cleanedLoc);
-      if (src) return { src, caption: cleanedLoc };
-      src = await searchWikiImage(searchQueryForEvent(ev));
-      if (src) return { src, caption: cleanedLoc };
-      src = await searchCommonsImage(cleanedLoc);
-      if (src) return { src, caption: cleanedLoc };
-    }
-    if (ev.summary) {
-      let src = await searchPlacesPhoto(ev.summary);
-      if (src) return { src, caption: ev.summary };
-      const titleQuery = /phil(adelphia|ly)?/i.test(ev.summary) ? ev.summary : `${ev.summary} Philadelphia`;
-      src = await searchWikiImage(titleQuery);
-      if (src) return { src, caption: ev.summary };
-      src = await searchCommonsImage(ev.summary);
-      if (src) return { src, caption: ev.summary };
-    }
-    return null;
-  }
-
-  async function renderCollage(container, events) {
-    if (events.length === 0) return;
-
-    const resolved = await Promise.all(
-      events.map(async (ev, i) => {
-        const r = await findImageForEvent(ev);
-        return r ? { eventIdx: i, src: r.src, caption: r.caption } : null;
-      })
-    );
-
-    const tiles = resolved.filter(Boolean);
-    if (tiles.length === 0) return;
-
-    container.innerHTML = tiles.map(t => `
-      <div class="tile" data-event-idx="${t.eventIdx}">
-        <img src="${escapeAttr(t.src)}" alt="${escapeAttr(t.caption)}" loading="lazy">
-        <div class="caption">${escapeHtml(t.caption).slice(0, 48)}</div>
-      </div>
-    `).join('');
-
-    container.querySelectorAll('.tile').forEach(tile => {
-      tile.addEventListener('click', () => highlightEvent(tile.dataset.eventIdx));
-    });
-
-    container.querySelectorAll('img').forEach(img => {
-      if (img.complete) img.classList.add('ready');
-      else img.addEventListener('load', () => img.classList.add('ready'), { once: true });
-    });
-
-    centerCollage(container);
-  }
-
-  function centerCollage(container) {
-    if (!container) return;
-    requestAnimationFrame(() => {
-      const sw = container.scrollWidth;
-      const cw = container.clientWidth;
-      if (sw > cw + 1) {
-        container.style.justifyContent = 'flex-start';
-        container.scrollLeft = (sw - cw) / 2;
-      } else {
-        container.style.justifyContent = 'center';
+  async function setRandomPhillyBackground() {
+    const bg = document.getElementById('bg');
+    if (!bg) return;
+    const shuffled = [...PHILLY_BG_PAGES].sort(() => Math.random() - 0.5);
+    for (const page of shuffled) {
+      try {
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        const src = data.originalimage?.source || data.thumbnail?.source;
+        if (!src) continue;
+        const img = new Image();
+        img.onload = () => {
+          bg.style.backgroundImage = `url('${src}')`;
+          bg.classList.add('ready');
+        };
+        img.src = src;
+        return;
+      } catch {
+        // try next
       }
-    });
-  }
-
-  function highlightEvent(idx) {
-    const card = document.querySelector(`.event[data-event-idx="${idx}"]`);
-    if (!card) return;
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.classList.remove('highlight');
-    void card.offsetWidth;
-    card.classList.add('highlight');
-    setTimeout(() => card.classList.remove('highlight'), 2200);
+    }
   }
 
   function mapUrl(location) {
@@ -1065,7 +878,6 @@
     const eyebrow = relativeLabel(activeIdx);
 
     panel.innerHTML = `
-      <div class="collage" id="collage"></div>
       <div class="day-heading">
         ${eyebrow ? `<div class="day-eyebrow">${eyebrow}</div>` : ''}
         <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
@@ -1077,7 +889,6 @@
 
     app.appendChild(panel);
 
-    renderCollage(panel.querySelector('#collage'), evs);
     attachSwipe(panel, days, byDay, activeIdx);
     bindWeatherToggles(panel);
   }
@@ -1099,7 +910,7 @@
     let swipe = null;
     panel.addEventListener('touchstart', e => {
       if (e.touches.length !== 1) { swipe = null; return; }
-      if (e.target.closest('.collage') || e.target.closest('.tabs')) { swipe = null; return; }
+      if (e.target.closest('.tabs')) { swipe = null; return; }
       const t = e.touches[0];
       swipe = { x: t.clientX, y: t.clientY, t: Date.now() };
     }, { passive: true });
@@ -1160,6 +971,7 @@
 
   function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
+  setRandomPhillyBackground();
   init();
 </script>
 
