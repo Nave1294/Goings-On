@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Goings On</title>
   <style>
     :root {
@@ -914,27 +917,35 @@
     'Philadelphia skyline',
   ];
 
+  function tryLoadBg(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const done = ok => { img.onload = img.onerror = null; resolve(ok); };
+      img.onload = () => done(true);
+      img.onerror = () => done(false);
+      img.src = src;
+    });
+  }
+
   async function setRandomPhillyBackground() {
     const bg = document.getElementById('bg');
     if (!bg) return;
     const shuffled = [...PHILLY_BG_PAGES].sort(() => Math.random() - 0.5);
     for (const page of shuffled) {
+      let src = null;
       try {
         const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`);
         if (!res.ok) continue;
         const data = await res.json();
-        const src = data.originalimage?.source || data.thumbnail?.source;
-        if (!src) continue;
-        const img = new Image();
-        img.onload = () => {
-          bg.style.backgroundImage = `url('${src}')`;
-          bg.classList.add('ready');
-        };
-        img.src = src;
-        return;
-      } catch {
-        // try next
-      }
+        src = data.originalimage?.source || data.thumbnail?.source;
+      } catch { continue; }
+      if (!src) continue;
+      bg.style.backgroundImage = `url("${src}")`;
+      bg.classList.add('ready');
+      const ok = await tryLoadBg(src);
+      if (ok) return;
+      bg.classList.remove('ready');
+      bg.style.backgroundImage = '';
     }
   }
 
