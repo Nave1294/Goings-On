@@ -340,7 +340,35 @@
     }
 
     .day-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.25rem;
       margin-bottom: 1.75rem;
+    }
+
+    .day-heading-left { min-width: 0; }
+
+    .day-quote {
+      flex: 1;
+      max-width: 280px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+      font-style: italic;
+      text-align: right;
+      letter-spacing: -0.005em;
+      padding-bottom: 0.35rem;
+    }
+
+    .day-quote-author {
+      display: block;
+      font-style: normal;
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      margin-top: 0.25rem;
+      letter-spacing: 0.005em;
     }
 
     .day-eyebrow {
@@ -593,6 +621,17 @@
 
     @media (max-width: 540px) {
       body { padding: 1.25rem 1rem 3rem; }
+      .day-heading {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
+      .day-quote {
+        max-width: none;
+        text-align: left;
+        padding-bottom: 0;
+        font-size: 0.85rem;
+      }
       .day-title { font-size: 2.1rem; }
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
@@ -901,6 +940,39 @@
     </div>`;
   }
 
+  const QUOTES = [
+    { text: "The world is a book, and those who do not travel read only one page.", author: "Saint Augustine" },
+    { text: "Life is either a daring adventure or nothing at all.", author: "Helen Keller" },
+    { text: "Twenty years from now you will be more disappointed by the things you didn't do than by the ones you did.", author: "Mark Twain" },
+    { text: "We do not remember days, we remember moments.", author: "Cesare Pavese" },
+    { text: "Wherever you go, go with all your heart.", author: "Confucius" },
+    { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
+    { text: "Live in the sunshine, swim the sea, drink the wild air.", author: "Ralph Waldo Emerson" },
+    { text: "Adventure is worthwhile in itself.", author: "Amelia Earhart" },
+    { text: "The purpose of life is to live it, to taste experience to the utmost.", author: "Eleanor Roosevelt" },
+    { text: "Life begins at the end of your comfort zone.", author: "Neale Donald Walsch" },
+    { text: "Travel far enough, you meet yourself.", author: "David Mitchell" },
+    { text: "Jobs fill your pocket, adventures fill your soul.", author: "Jaime Lyn Beatty" },
+    { text: "To live will be an awfully big adventure.", author: "J.M. Barrie" },
+    { text: "Not all those who wander are lost.", author: "J.R.R. Tolkien" },
+    { text: "Once a year, go someplace you've never been before.", author: "Dalai Lama" },
+    { text: "Experience is the teacher of all things.", author: "Julius Caesar" },
+    { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+    { text: "Today was good. Today was fun. Tomorrow is another one.", author: "Dr. Seuss" },
+    { text: "Get busy living, or get busy dying.", author: "Stephen King" },
+    { text: "Live with no excuses, travel with no regrets.", author: "Oscar Wilde" },
+    { text: "Collect moments, not things.", author: "Anonymous" },
+    { text: "The biggest adventure you can take is to live the life of your dreams.", author: "Oprah Winfrey" },
+    { text: "Go where you feel most alive.", author: "Anonymous" },
+    { text: "Life is short, the world is wide.", author: "Anonymous" },
+    { text: "Say yes to new adventures.", author: "Anonymous" },
+  ];
+
+  function pickQuote(date) {
+    const seed = date.getFullYear() * 1000 + date.getMonth() * 50 + date.getDate();
+    return QUOTES[seed % QUOTES.length];
+  }
+
   const PHILLY_BG_PAGES = [
     'Philadelphia',
     'Philadelphia City Hall',
@@ -1068,11 +1140,15 @@
     const evs = byDay[dayKey(activeDay)];
     const eyebrow = relativeLabel(activeIdx);
 
+    const quote = pickQuote(activeDay);
     panel.innerHTML = `
       <div class="day-heading">
-        ${eyebrow ? `<div class="day-eyebrow">${eyebrow}</div>` : ''}
-        <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
-        <div class="day-subtitle">${MONTHS[activeDay.getMonth()]} ${activeDay.getDate()}</div>
+        <div class="day-heading-left">
+          ${eyebrow ? `<div class="day-eyebrow">${eyebrow}</div>` : ''}
+          <div class="day-title">${DAYS_LONG[activeDay.getDay()]}</div>
+          <div class="day-subtitle">${MONTHS[activeDay.getMonth()]} ${activeDay.getDate()}</div>
+        </div>
+        <div class="day-quote">"${escapeHtml(quote.text)}"<span class="day-quote-author">— ${escapeHtml(quote.author)}</span></div>
       </div>
       ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i, activeDay)).join('')}</div>`
                    : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
