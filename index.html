@@ -19,14 +19,25 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html {
+      background: var(--bg);
+    }
+
     html, body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
-      background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: 'kern', 'liga';
       overflow-x: hidden;
+    }
+
+    body {
+      background: transparent;
+      min-height: 100vh;
+      padding: 2rem 1.25rem 4rem;
+      display: flex;
+      justify-content: center;
     }
 
     .bg {
@@ -42,13 +53,6 @@
     }
 
     .bg.ready { opacity: 0.4; }
-
-    body {
-      min-height: 100vh;
-      padding: 2rem 1.25rem 4rem;
-      display: flex;
-      justify-content: center;
-    }
 
     .container {
       width: 100%;
