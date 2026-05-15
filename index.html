@@ -1140,7 +1140,7 @@
     const evs = byDay[dayKey(activeDay)];
     const eyebrow = relativeLabel(activeIdx);
 
-    const quote = pickQuote(activeDay);
+    const quote = pickQuote(days[0]);
     panel.innerHTML = `
       <div class="day-heading">
         <div class="day-heading-left">
