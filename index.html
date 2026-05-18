@@ -9,15 +9,15 @@
   <title>Goings On</title>
   <style>
     :root {
-      --bg: #f5f5f7;
-      --surface: #ffffff;
-      --text: #1d1d1f;
-      --text-secondary: #86868b;
-      --text-tertiary: #a1a1a6;
-      --accent: #0071e3;
-      --accent-soft: #e8f1fd;
-      --divider: rgba(0, 0, 0, 0.08);
-      --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+      --bg: #f2ede3;
+      --surface: #faf7f0;
+      --text: #1c2616;
+      --text-secondary: #6b7560;
+      --text-tertiary: #9aa08e;
+      --accent: #2d6a4f;
+      --accent-soft: #d8ead2;
+      --divider: rgba(45, 106, 79, 0.1);
+      --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -145,7 +145,7 @@
       color: #fff;
       border: none;
       cursor: pointer;
-      box-shadow: 0 8px 22px rgba(0, 113, 227, 0.35), 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 22px rgba(45, 106, 79, 0.35), 0 1px 3px rgba(0,0,0,0.08);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -156,7 +156,7 @@
 
     .add-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0, 113, 227, 0.4), 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 12px 28px rgba(45, 106, 79, 0.4), 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.4; }
@@ -302,7 +302,7 @@
     .tab.active {
       background: var(--accent);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.32);
+      box-shadow: 0 4px 14px rgba(45, 106, 79, 0.32);
     }
 
     .tab-day {
@@ -417,7 +417,7 @@
 
     .event.highlight {
       background: var(--accent-soft);
-      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.45), var(--shadow);
+      box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.35), var(--shadow);
     }
 
     .event-map {
@@ -435,7 +435,7 @@
       transition: background 0.15s ease;
     }
 
-    .event-map:hover { background: #d8e7fb; }
+    .event-map:hover { background: #c4ddbf; }
     .event-map svg { stroke: var(--accent); }
 
     .event-time-block {
@@ -499,7 +499,7 @@
       font-weight: 600;
       color: var(--text);
       padding: 4px 9px;
-      background: #f1f3f7;
+      background: #e4ede0;
       border-radius: 999px;
       white-space: nowrap;
       line-height: 1.2;
@@ -508,7 +508,7 @@
       transition: background 0.15s ease, transform 0.1s ease;
     }
 
-    .event-weather:hover { background: #e6e9ef; }
+    .event-weather:hover { background: #cfdecb; }
     .event-weather:active { transform: scale(0.96); }
     .event-weather .ew-icon { font-size: 0.95rem; line-height: 1; }
     .event-weather .ew-lo { color: var(--text-tertiary); font-weight: 500; margin-left: 1px; }
