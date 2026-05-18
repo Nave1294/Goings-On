@@ -62,14 +62,43 @@
       max-width: 720px;
     }
 
+    .brand-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+
     .brand {
+      grid-column: 2;
       font-size: 1.05rem;
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--text-secondary);
-      margin-bottom: 2.5rem;
       text-align: center;
     }
+
+    .today-btn {
+      grid-column: 3;
+      justify-self: end;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.15s ease;
+    }
+
+    .today-btn.show { opacity: 1; pointer-events: auto; }
+    .today-btn:hover { transform: translateY(-1px); }
+    .today-btn:active { transform: scale(0.96); }
 
     .explore-btn {
       position: fixed;
@@ -656,7 +685,10 @@
 <div class="bg" id="bg"></div>
 
 <div class="container">
-  <div class="brand">Goings On</div>
+  <div class="brand-row">
+    <div class="brand">Goings On</div>
+    <button class="today-btn" id="todayBtn" type="button">Today</button>
+  </div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
   </div>
@@ -1114,6 +1146,12 @@
   function render(days, byDay, activeIdx) {
     const app = document.getElementById('app');
     app.innerHTML = '';
+
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+      todayBtn.classList.toggle('show', activeIdx !== 0);
+      todayBtn.onclick = () => render(days, byDay, 0);
+    }
 
     const tabs = document.createElement('div');
     tabs.className = 'tabs';
