@@ -802,11 +802,20 @@
       display: flex;
       gap: 0.4rem;
       overflow-x: auto;
-      scrollbar-width: none;
-      padding: 0.1rem 0 1.25rem;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-soft) transparent;
+      padding: 0.1rem 0.25rem 0.9rem;
       margin: 0 -0.25rem 0.5rem;
+      /* fade the trailing edge so it's clear there's more to scroll */
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
     }
-    .sub-tabs::-webkit-scrollbar { display: none; }
+    .sub-tabs::-webkit-scrollbar { height: 5px; }
+    .sub-tabs::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 999px; }
+    .sub-tabs::-webkit-scrollbar-track { background: transparent; }
+    .sub-tab { scroll-snap-align: start; }
     .sub-tab {
       display: inline-flex;
       align-items: center;
@@ -860,14 +869,13 @@
     .back-btn:active { transform: scale(0.96); }
 
     .eat-section-header {
-      font-size: 0.78rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--accent);
-      padding: 1.4rem 0.25rem 0.6rem;
-      border-bottom: 1px solid var(--divider);
-      margin-bottom: 0.85rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      padding: 1.6rem 0.1rem 0.7rem;
+      border-bottom: 2px solid var(--accent-soft);
+      margin-bottom: 1rem;
     }
     .eat-section-header:first-child { padding-top: 0.25rem; }
 
