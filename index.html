@@ -1120,6 +1120,31 @@
   </div>
 </div>
 
+<div class="container view" id="view-bookstores">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Bookstores</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="bookSubTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="books" type="button" title="Sort by distance from you">📍 Near me</button>
+  </div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow" id="bookEyebrow">Bookstores</div>
+        <div class="day-title" id="bookTitle">By Neighborhood</div>
+        <div class="day-subtitle" id="bookSubtitle">Philly's best indie bookshops</div>
+      </div>
+    </div>
+    <div id="bookList"></div>
+  </div>
+</div>
+
 <a class="explore-btn" href="https://nave1294.github.io/Philly-Things-to-Watch/" target="_blank" rel="noopener" aria-label="Explore Philly project developments">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M3 21h18"/>
@@ -1876,6 +1901,71 @@
     { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',             sections: [] },
   ];
 
+  // ── Bookstore data ──────────────────────────────────────────────
+  const BOOKSTORES = [
+    {
+      id: 'neighborhood',
+      emoji: '🗺️',
+      label: 'By Neighborhood',
+      subtitle: 'Philly's indie bookshops, block by block',
+      sections: [
+        { label: '🐟 Fishtown', places: [
+          { name: "Harriett's Bookshop", location: '258 E Girard Ave, Fishtown', specialty: 'Women of Color & BIPOC', website: 'https://www.oursisterbookshops.com', desc: 'Named for Harriet Tubman, this Fishtown shop amplifies women, gender-expansive authors, and voices of color. Founded by Jeannine Cook — curated picks, author events, and a warm community spirit.' },
+        ]},
+        { label: '🏛️ Italian Market', places: [
+          { name: 'Binding Agents', location: '908 Christian St, Italian Market', specialty: 'Cookbooks', website: 'https://www.bindingagentsphilly.com', desc: 'Philly\'s only cookbook-focused bookstore, in the heart of the Italian Market. Deep selection of culinary titles from Philly chefs and beyond — food writing, memoirs, and technique. Opened 2024.' },
+          { name: "Molly's Books & Records", location: '1010 S 9th St, Italian Market', specialty: 'Used Books & Vinyl', website: '', desc: 'South Philly staple where you can buy, sell, and trade used books, records, and CDs. A digger\'s paradise — good finds, good prices, good vibes.' },
+        ]},
+        { label: '🌿 East Passyunk', places: [
+          { name: 'A Novel Idea on Passyunk', location: '1726 E Passyunk Ave', specialty: 'Community & Occult', website: 'https://anovelideaphilly.com', desc: 'Part bookstore, part witch shop, part event space — a community-minded East Passyunk gem. Curated fiction, occult titles, local author events, and true neighborhood warmth.' },
+        ]},
+        { label: '🎸 South Street', places: [
+          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
+        ]},
+        { label: '🏘️ West Philadelphia', places: [
+          { name: "Hakim's Bookstore & Gift Shop", location: '210 S 52nd St, West Philadelphia', specialty: 'Black History & Culture', website: 'https://www.hakimsbookstore.com', desc: 'Philadelphia\'s oldest Black-owned bookstore, founded in 1959. A West Philly institution carrying Black history, Pan-Africanism, culture, and gift items. A true community anchor for over 65 years.' },
+          { name: 'House of Our Own', location: '3920 Spruce St, West Philadelphia', specialty: 'General & Scholarly', website: 'https://shopsatpenn.com/house-our-own-books', desc: 'A rambling Victorian house on the edge of Penn\'s campus filled with new and used books — scholarly titles, fiction, arts, and much more. Calm, browsable, beloved by students and neighbors.' },
+        ]},
+        { label: '🌳 Germantown', places: [
+          { name: "Uncle Bobbie's Coffee & Books", location: '5445 Germantown Ave, Germantown', specialty: 'Black & Community Books', website: 'https://www.unclebobbies.com', desc: 'Marc Lamont Hill\'s Germantown cultural hub. A Black-owned bookstore and coffee shop hosting readings with literary heavyweights. Strong in Black authors, politics, and fiction. A cornerstone since 2017.' },
+        ]},
+        { label: '🌈 Gayborhood', places: [
+          { name: "Giovanni's Room", location: '345 S 12th St, Center City', specialty: 'LGBTQ+ & Feminist', website: 'https://www.giovannisroom.com', desc: 'One of the oldest LGBTQ+ bookstores in the country, founded in 1973. Now run by Philly AIDS Thrift, it carries thousands of queer and feminist books, magazines, film, music, and apparel.' },
+        ]},
+      ],
+    },
+    {
+      id: 'community',
+      emoji: '✊',
+      label: 'Community & Mission',
+      subtitle: 'Bookstores built around a purpose',
+      sections: [
+        { label: '✊ Mission-Driven Shops', places: [
+          { name: "Harriett's Bookshop", location: '258 E Girard Ave, Fishtown', specialty: 'Women of Color & BIPOC', website: 'https://www.oursisterbookshops.com', desc: 'Named for Harriet Tubman, this Fishtown shop amplifies women, gender-expansive authors, and voices of color. Founded by Jeannine Cook — curated picks, author events, and a warm community spirit.' },
+          { name: "Giovanni's Room", location: '345 S 12th St, Center City', specialty: 'LGBTQ+ & Feminist', website: 'https://www.giovannisroom.com', desc: 'One of the oldest LGBTQ+ bookstores in the country, founded in 1973. Now run by Philly AIDS Thrift, it carries thousands of queer and feminist books, magazines, film, music, and apparel.' },
+          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
+          { name: "Hakim's Bookstore & Gift Shop", location: '210 S 52nd St, West Philadelphia', specialty: 'Black History & Culture', website: 'https://www.hakimsbookstore.com', desc: 'Philadelphia\'s oldest Black-owned bookstore, founded in 1959. A West Philly institution carrying Black history, Pan-Africanism, culture, and gift items. A true community anchor for over 65 years.' },
+          { name: "Uncle Bobbie's Coffee & Books", location: '5445 Germantown Ave, Germantown', specialty: 'Black & Community Books', website: 'https://www.unclebobbies.com', desc: 'Marc Lamont Hill\'s Germantown cultural hub. A Black-owned bookstore and coffee shop hosting readings with literary heavyweights. Strong in Black authors, politics, and fiction. A cornerstone since 2017.' },
+        ]},
+      ],
+    },
+    {
+      id: 'specialty',
+      emoji: '📖',
+      label: 'Specialty Picks',
+      subtitle: 'Stores with a unique focus',
+      sections: [
+        { label: '📖 Find Your Niche', places: [
+          { name: 'Binding Agents', location: '908 Christian St, Italian Market', specialty: 'Cookbooks', website: 'https://www.bindingagentsphilly.com', desc: 'Philly\'s only cookbook-focused bookstore, in the heart of the Italian Market. Deep selection of culinary titles from Philly chefs and beyond — food writing, memoirs, and technique. Opened 2024.' },
+          { name: 'A Novel Idea on Passyunk', location: '1726 E Passyunk Ave', specialty: 'Community & Occult', website: 'https://anovelideaphilly.com', desc: 'Part bookstore, part witch shop, part event space — a community-minded East Passyunk gem. Curated fiction, occult titles, local author events, and true neighborhood warmth.' },
+          { name: "Molly's Books & Records", location: '1010 S 9th St, Italian Market', specialty: 'Used Books & Vinyl', website: '', desc: 'South Philly staple where you can buy, sell, and trade used books, records, and CDs. A digger\'s paradise — good finds, good prices, good vibes.' },
+          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
+          { name: 'House of Our Own', location: '3920 Spruce St, West Philadelphia', specialty: 'General & Scholarly', website: 'https://shopsatpenn.com/house-our-own-books', desc: 'A rambling Victorian house on the edge of Penn\'s campus filled with new and used books — scholarly titles, fiction, arts, and much more. Calm, browsable, beloved by students and neighbors.' },
+        ]},
+      ],
+    },
+  ];
+
   function priceLabel(p) {
     const map = { '$': 'Budget', '$$': 'Moderate', '$$$': 'Upscale', '$$$$': 'Fine Dining' };
     return map[p] || p;
@@ -2005,6 +2095,40 @@
       </div>`;
   }
 
+  function bookTileHTML(r) {
+    const fullLoc = r.name + ' ' + (r.location || '');
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
+    const imgEl = r.image
+      ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
+      : `<div class="resto-img-placeholder">📚</div>`;
+    const query = r.location ? `${r.name}, ${r.location}` : r.name;
+    return `
+      <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
+        <div class="resto-main">
+          ${imgEl}
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(r.name)}</div>
+            <div class="resto-meta">
+              ${r.specialty ? `<span class="resto-meta-item">📚 ${escapeHtml(r.specialty)}</span>` : ''}
+              ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
+            </div>
+            ${r.season ? `<div class="resto-season">🗓️ ${escapeHtml(r.season)}</div>` : ''}
+            <div class="resto-dist"></div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${r.desc ? `<div class="resto-desc">${escapeHtml(r.desc)}</div>` : ''}
+            <div class="resto-actions">
+              ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Directions</a>
+            </div>
+            <iframe class="resto-map" data-dest="${escapeAttr(fullLoc)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${escapeAttr(r.name)}"></iframe>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function updateTileDistance(tile) {
     const slot = tile.querySelector('.resto-dist');
     if (!slot) return;
@@ -2037,6 +2161,7 @@
   const CATEGORIES = [
     { view: 'home',           emoji: '📅', label: 'Goings On' },
     { view: 'places-to-eat',  emoji: '🍽️', label: 'Places to Eat' },
+    { view: 'bookstores',     emoji: '📚', label: 'Bookstores' },
   ];
 
   function showView(viewId) {
@@ -2120,6 +2245,63 @@
     renderEatCategory(firstPopulated.id);
   }
 
+  // ── Bookstores: sub-category tabs ──
+  let currentBookCat = null;
+
+  async function renderBookCategory(catId) {
+    const cat = BOOKSTORES.find(c => c.id === catId) || BOOKSTORES[0];
+    currentBookCat = cat.id;
+    document.querySelectorAll('#bookSubTabs .sub-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.cat === cat.id));
+
+    document.getElementById('bookEyebrow').textContent = 'Bookstores';
+    document.getElementById('bookTitle').textContent = cat.label;
+    document.getElementById('bookSubtitle').innerHTML = cat.subtitle || '';
+
+    const list = document.getElementById('bookList');
+    const allPlaces = cat.sections.flatMap(s => s.places);
+    if (!allPlaces.length) {
+      list.innerHTML = `<div class="eat-content eat-empty">
+        <div class="eat-empty-icon">${cat.emoji}</div>
+        <div class="eat-empty-text">Coming soon — no spots added here yet.</div>
+      </div>`;
+      return;
+    }
+
+    if (proximityActive && userLoc) {
+      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const sorted = [...allPlaces].sort((a, b) => {
+        const da = placeDist(a), db = placeDist(b);
+        return da === db ? 0 : da - db;
+      });
+      list.innerHTML = `<div class="eat-content">
+        <div class="eat-section-header">📍 Nearest first</div>
+        ${sorted.map(bookTileHTML).join('')}
+      </div>`;
+    } else {
+      list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
+        ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
+        ${section.places.map(bookTileHTML).join('')}
+      `).join('')}</div>`;
+    }
+
+    loadRestoImages(list);
+  }
+
+  function setupBookTabs() {
+    const tabsEl = document.getElementById('bookSubTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = BOOKSTORES.map(c =>
+      `<button class="sub-tab" data-cat="${c.id}" type="button">
+         <span class="sub-tab-emoji">${c.emoji}</span>${escapeHtml(c.label)}
+       </button>`).join('');
+    tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => renderBookCategory(tab.dataset.cat));
+    });
+    document.getElementById('bookList').addEventListener('click', onRestoMainClick);
+    renderBookCategory(BOOKSTORES[0].id);
+  }
+
   // Toggle proximity sort on; re-renders both windows and reflects all buttons.
   async function toggleProximity(btn) {
     if (!proximityActive) {
@@ -2138,6 +2320,7 @@
   // Re-render whatever is on screen so distances/sorting reflect the latest location.
   function refreshForLocation() {
     if (currentEatCat) renderEatCategory(currentEatCat);
+    if (currentBookCat) renderBookCategory(currentBookCat);
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
 
@@ -2182,6 +2365,7 @@
     });
 
     setupEatTabs();
+    setupBookTabs();
   }
 
   // Translate vertical mouse-wheel into horizontal scroll over tab rows
