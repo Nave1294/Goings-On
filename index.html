@@ -785,7 +785,61 @@
 
     /* ── Full-page views ── */
     .view { display: none; }
-    .view.active { display: block; }
+    .view.active {
+      display: block;
+      animation: viewIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    @keyframes viewIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .view.active { animation: none; }
+    }
+
+    /* ── Sub-category tabs (within a view) ── */
+    .sub-tabs {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 0.1rem 0 1.25rem;
+      margin: 0 -0.25rem 0.5rem;
+    }
+    .sub-tabs::-webkit-scrollbar { display: none; }
+    .sub-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.45rem 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+    }
+    .sub-tab:hover { background: var(--accent-soft); color: var(--accent); }
+    .sub-tab:active { transform: scale(0.96); }
+    .sub-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .sub-tab-emoji { font-size: 0.95rem; line-height: 1; }
+
+    .eat-content { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .eat-empty {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-tertiary);
+    }
+    .eat-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+    .eat-empty-text { font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); }
 
     .back-btn {
       grid-column: 3;
@@ -934,15 +988,16 @@
     <button class="back-btn" data-view="home" type="button">← Back</button>
   </div>
   <div class="cat-nav"></div>
+  <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
-        <div class="day-eyebrow">Curated Picks</div>
-        <div class="day-title">Outdoor Dining</div>
-        <div class="day-subtitle">Rooftops, gardens, waterfronts &amp; patios</div>
+        <div class="day-eyebrow" id="eatEyebrow">Curated Picks</div>
+        <div class="day-title" id="eatTitle">Outdoor Dining</div>
+        <div class="day-subtitle" id="eatSubtitle">Rooftops, gardens, waterfronts &amp; patios</div>
       </div>
     </div>
-    <div id="outdoor-dining-list"></div>
+    <div id="eatList"></div>
   </div>
 </div>
 
@@ -1548,7 +1603,7 @@
   }
 
   // ── Restaurant data ──────────────────────────────────────────────
-  // Add entries here. image: URL or '' for placeholder emoji.
+  // Each entry: image: URL or '' for placeholder emoji.
   const OUTDOOR_DINING_SECTIONS = [
     {
       label: '🏙️ Rooftop Bars',
@@ -1614,6 +1669,26 @@
     },
   ];
 
+  // Sub-categories shown as tabs inside the Places to Eat window.
+  // Add restaurants to `sections` (each section = { label, places: [...] }).
+  const PLACES_TO_EAT = [
+    {
+      id: 'outdoor-dining',
+      emoji: '🌿',
+      label: 'Outdoor Dining',
+      subtitle: 'Rooftops, gardens, waterfronts &amp; patios',
+      sections: OUTDOOR_DINING_SECTIONS,
+    },
+    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [] },
+    { id: 'breakfast',    emoji: '🍳', label: 'Breakfast',          subtitle: 'Morning starts & brunch',          sections: [] },
+    { id: 'lunch',        emoji: '🥪', label: 'Lunch',              subtitle: 'Midday bites',                      sections: [] },
+    { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',              sections: [] },
+    { id: 'unique',       emoji: '✨', label: 'Unique',             subtitle: 'Only-in-Philly experiences',        sections: [] },
+    { id: 'date-night',   emoji: '🌙', label: 'Date Night',         subtitle: 'Romantic & memorable',              sections: [] },
+    { id: 'cheap-eats',   emoji: '💵', label: 'Cheap Eats',         subtitle: 'Big flavor, small tab',             sections: [] },
+    { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',             sections: [] },
+  ];
+
   function priceLabel(p) {
     const map = { '$': 'Budget', '$$': 'Moderate', '$$$': 'Upscale', '$$$$': 'Fine Dining' };
     return map[p] || p;
@@ -1646,8 +1721,9 @@
     }
   }
 
-  async function loadRestoImages() {
-    const tiles = document.querySelectorAll('.resto-tile[data-place]');
+  async function loadRestoImages(root) {
+    const scope = root || document;
+    const tiles = scope.querySelectorAll('.resto-tile[data-place]');
     await Promise.all([...tiles].map(async tile => {
       const placeholder = tile.querySelector('.resto-img-placeholder');
       if (!placeholder) return; // already has an image
@@ -1694,8 +1770,6 @@
     { view: 'places-to-eat',  emoji: '🍽️', label: 'Places to Eat' },
   ];
 
-  let restoImagesLoaded = false;
-
   function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById('view-' + viewId);
@@ -1703,10 +1777,51 @@
     document.querySelectorAll('.cat-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.view === viewId));
     window.scrollTo(0, 0);
-    if (viewId === 'places-to-eat' && !restoImagesLoaded) {
-      restoImagesLoaded = true;
-      loadRestoImages();
+  }
+
+  // ── Places to Eat: sub-category tabs ──
+  const eatImagesLoaded = {};
+
+  function renderEatCategory(catId) {
+    const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
+    document.querySelectorAll('#eatSubTabs .sub-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.cat === cat.id));
+
+    document.getElementById('eatEyebrow').textContent = 'Places to Eat';
+    document.getElementById('eatTitle').textContent = cat.label;
+    document.getElementById('eatSubtitle').innerHTML = cat.subtitle || '';
+
+    const list = document.getElementById('eatList');
+    const hasPlaces = cat.sections.some(s => s.places.length);
+    if (!hasPlaces) {
+      list.innerHTML = `<div class="eat-content eat-empty">
+        <div class="eat-empty-icon">${cat.emoji}</div>
+        <div class="eat-empty-text">Coming soon — no spots added here yet.</div>
+      </div>`;
+      return;
     }
+    list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
+      ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
+      ${section.places.map(restoTileHTML).join('')}
+    `).join('')}</div>`;
+
+    if (!eatImagesLoaded[cat.id]) {
+      eatImagesLoaded[cat.id] = true;
+      loadRestoImages(list);
+    }
+  }
+
+  function setupEatTabs() {
+    const tabsEl = document.getElementById('eatSubTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = PLACES_TO_EAT.map(c =>
+      `<button class="sub-tab" data-cat="${c.id}" type="button">
+         <span class="sub-tab-emoji">${c.emoji}</span>${escapeHtml(c.label)}
+       </button>`).join('');
+    tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => renderEatCategory(tab.dataset.cat));
+    });
+    renderEatCategory(PLACES_TO_EAT[0].id);
   }
 
   function setupNav() {
@@ -1744,14 +1859,7 @@
       btn.addEventListener('click', () => showView(btn.dataset.view));
     });
 
-    // Render outdoor dining tiles by section
-    const list = document.getElementById('outdoor-dining-list');
-    if (list) {
-      list.innerHTML = OUTDOOR_DINING_SECTIONS.map(section => `
-        <div class="eat-section-header">${escapeHtml(section.label)}</div>
-        ${section.places.map(restoTileHTML).join('')}
-      `).join('');
-    }
+    setupEatTabs();
   }
 
   setRandomPhillyBackground();
