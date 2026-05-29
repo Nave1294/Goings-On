@@ -1045,8 +1045,9 @@
 
 
 <script>
-  const CALENDAR_ID = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
-  const API_KEY     = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
+  const CALENDAR_ID    = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
+  const API_KEY        = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
+  const PLACES_API_KEY = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -1672,14 +1673,59 @@
     return map[p] || p;
   }
 
+  const placesPhotoCache = {};
+
+  async function fetchPlacesPhoto(query) {
+    if (placesPhotoCache[query] !== undefined) return placesPhotoCache[query];
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': PLACES_API_KEY,
+          'X-Goog-FieldMask': 'places.photos',
+        },
+        body: JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' }),
+      });
+      if (!res.ok) { placesPhotoCache[query] = null; return null; }
+      const data = await res.json();
+      const photo = data.places?.[0]?.photos?.[0];
+      if (!photo?.name) { placesPhotoCache[query] = null; return null; }
+      const url = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}`;
+      placesPhotoCache[query] = url;
+      return url;
+    } catch {
+      placesPhotoCache[query] = null;
+      return null;
+    }
+  }
+
+  async function loadRestoImages() {
+    const tiles = document.querySelectorAll('.resto-tile[data-place]');
+    await Promise.all([...tiles].map(async tile => {
+      const placeholder = tile.querySelector('.resto-img-placeholder');
+      if (!placeholder) return; // already has an image
+      const url = await fetchPlacesPhoto(tile.dataset.place);
+      if (!url) return;
+      const img = document.createElement('img');
+      img.className = 'resto-img';
+      img.alt = tile.dataset.place;
+      img.style.opacity = '0';
+      img.style.transition = 'opacity 0.4s ease';
+      img.onload = () => { img.style.opacity = '1'; };
+      img.src = url;
+      placeholder.replaceWith(img);
+    }));
+  }
+
   function restoTileHTML(r) {
-    const img = r.image
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
     return `
-      <div class="resto-tile">
-        ${img}
+      <div class="resto-tile" data-place="${escapeAttr(r.name)}">
+        ${imgEl}
         <div class="resto-info">
           <div class="resto-name">${escapeHtml(r.name)}</div>
           <div class="resto-meta">
@@ -1696,6 +1742,8 @@
       </div>`;
   }
 
+  let restoImagesLoaded = false;
+
   function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById('view-' + viewId);
@@ -1703,6 +1751,10 @@
     document.querySelectorAll('.drawer-nav-item').forEach(i =>
       i.classList.toggle('active', i.dataset.view === viewId));
     window.scrollTo(0, 0);
+    if (viewId === 'places-to-eat' && !restoImagesLoaded) {
+      restoImagesLoaded = true;
+      loadRestoImages();
+    }
   }
 
   function setupNav() {
