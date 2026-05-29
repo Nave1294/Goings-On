@@ -613,6 +613,32 @@
       color: var(--text-secondary);
     }
 
+    .our-philly-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1.25rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 7px 14px;
+      background: var(--accent-soft);
+      border-radius: 999px;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .our-philly-link:hover {
+      background: #c4ddbf;
+      transform: translateY(-1px);
+    }
+
+    .discover-row {
+      margin-top: 1.75rem;
+      text-align: center;
+      padding-bottom: 0.5rem;
+    }
+
     .loading {
       display: flex;
       justify-content: center;
@@ -1190,6 +1216,12 @@
       </div>
       ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i, activeDay)).join('')}</div>`
                    : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
+      <div class="discover-row">
+        <a class="our-philly-link" href="https://www.ourphilly.org/tonight" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Not seeing anything? Discover more →
+        </a>
+      </div>
     `;
 
     app.appendChild(panel);
