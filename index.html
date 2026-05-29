@@ -837,6 +837,15 @@
     .drawer-subcategory {
       padding: 0 0.75rem 1.25rem;
     }
+    .drawer-subsection-header {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 0.9rem 0.5rem 0.45rem;
+      margin-top: 0.25rem;
+    }
     .drawer-subcategory-label {
       font-size: 0.82rem;
       font-weight: 700;
@@ -1575,17 +1584,69 @@
 
   // ── Restaurant data ──────────────────────────────────────────────
   // Add entries here. image: URL or '' for placeholder emoji.
-  const OUTDOOR_DINING = [
-    // Example — fill in or remove:
-    // {
-    //   name: 'Vernick Food & Drink',
-    //   image: '',
-    //   location: '2031 Walnut St, Philadelphia',
-    //   cuisine: 'American',
-    //   price: '$$$',
-    //   website: 'https://vernickphilly.com',
-    //   reservation: 'https://resy.com/cities/phi/vernick-food-drink',
-    // },
+  const OUTDOOR_DINING_SECTIONS = [
+    {
+      label: '🏙️ Rooftop Bars',
+      places: [
+        { name: 'Bok Bar', location: '1901 South 9th St, South Philly', cuisine: 'Bar & Events', price: '$', website: 'https://www.bokbar.com' },
+        { name: "Irwin's", location: '1901 South 9th St (8th Fl), South Philly', cuisine: 'Italian', price: '$$$', website: 'https://www.irwinsbok.com', reservation: 'https://www.exploretock.com/irwins' },
+        { name: 'Assembly Rooftop Lounge', location: '1840 Benjamin Franklin Pkwy', cuisine: 'Cocktails & Small Plates', price: '$$$', website: 'https://www.theloganhotel.com/eat-drink/assembly-rooftop-lounge' },
+        { name: 'Stratus Lounge', location: '433 Chestnut St, Old City', cuisine: 'Cocktails & DJ', price: '$$$', website: 'https://www.hotelmonaco-philadelphia.com/stratus-rooftop-lounge' },
+        { name: 'Sunset Social', location: '129 South 30th St, University City', cuisine: 'Bar & Events', price: '$$', website: 'https://ciragreen.com' },
+        { name: 'Continental Midtown', location: '1801 Chestnut St', cuisine: 'American', price: '$$$', website: 'https://www.continentalmidtown.com', reservation: 'https://www.opentable.com/continental-midtown' },
+        { name: 'El Techo', location: '1830 Ludlow St', cuisine: 'Mexican & Mezcal', price: '$$$', website: 'https://www.eltechobar.com', reservation: 'https://resy.com/cities/phi/el-techo' },
+        { name: 'Attico Rooftop & Bar', location: '219 South Broad St, Avenue of the Arts', cuisine: 'Bar & Small Bites', price: '$$', website: 'https://www.cambriahotelphiladelphia.com/dining' },
+        { name: 'Balcony Bar at Kimmel Center', location: '300 South Broad St', cuisine: 'Bar (Seasonal Wed)', price: '$$', website: 'https://www.kimmelculturalfoundation.org' },
+        { name: 'Revolution House', location: '200 Market St, Old City', cuisine: 'American Brunch & Bar', price: '$$', website: 'https://www.revolutionhousephilly.com', reservation: 'https://www.opentable.com/revolution-house' },
+        { name: 'Emmy Squared', location: '632 South 5th St', cuisine: 'Pizza & Cocktails', price: '$$', website: 'https://emmysquaredpizza.com', reservation: 'https://resy.com/cities/phi/emmy-squared-philadelphia' },
+      ],
+    },
+    {
+      label: '🌿 Beer Gardens & Green Spaces',
+      places: [
+        { name: 'PHS Pop-Up Gardens', location: '1438 South St & 106 Jamestown Ave, Manayunk', cuisine: 'Beer Garden', price: '$', website: 'https://phsonline.org/programs/pop-up-garden' },
+        { name: "Parks on Tap", location: 'Various City Parks', cuisine: 'Beer Garden (Touring)', price: '$', website: 'https://www.parksontap.com' },
+        { name: "Frankie's Summer Club", location: '355 South 15th St', cuisine: 'Bar & Soft Serve', price: '$$', website: 'https://www.frankiessummerclub.com' },
+        { name: 'Jet Wine Bar', location: '1525 South St', cuisine: 'Wine Bar & Tapas', price: '$$', website: 'https://www.jetwinebarphilly.com', reservation: 'https://www.opentable.com/jet-wine-bar' },
+        { name: 'Walnut Garden', location: '1706 Walnut St, Rittenhouse', cuisine: 'Beer Garden & Cheesesteaks', price: '$$', website: 'https://www.walnutgardenphilly.com' },
+        { name: 'Attic Brewing Company', location: '137 Berkley St, Germantown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.atticbrewing.com' },
+        { name: 'Rodin Garden Bar', location: '2151 Benjamin Franklin Pkwy', cuisine: 'Bar (Seasonal Fri)', price: '$', website: 'https://www.rodinmuseum.org' },
+        { name: 'Uptown Beer Garden', location: '1500 JFK Blvd, Center City', cuisine: 'Tiki Bar & Seasonal Events', price: '$$', website: 'https://uptownbeergarden.com' },
+        { name: 'Evil Genius Beer Co.', location: '1727 North Front St, Fishtown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.evilgeniusbeer.com' },
+        { name: 'Independence Beer Garden', location: '100 South Independence Mall W', cuisine: 'Beer Garden & Bar Bites', price: '$$', website: 'https://www.indybeergarden.com' },
+        { name: 'Frankford Hall', location: '1210 Frankford Ave, Fishtown', cuisine: 'German Biergarten', price: '$$', website: 'https://www.frankfordhall.com', reservation: 'https://www.opentable.com/frankford-hall' },
+      ],
+    },
+    {
+      label: '💧 Waterfront',
+      places: [
+        { name: 'Cherry Street Pier', location: '121 North Columbus Blvd', cuisine: 'Bar & Pop-Ups', price: '$', website: 'https://www.cherrystreetpier.com' },
+        { name: 'Spruce Street Harbor Park', location: '301 South Columbus Blvd', cuisine: 'Bar & Live Music', price: '$$', website: 'https://www.delawareriverwaterfront.com/places/spruce-street-harbor-park' },
+        { name: "Morgan's Pier", location: '221 North Columbus Blvd', cuisine: 'Bar & Brunch', price: '$$', website: 'https://www.morganspier.com' },
+        { name: 'Liberty Point', location: '211 South Columbus Blvd', cuisine: 'American', price: '$$', website: 'https://www.libertypointhospitality.com' },
+        { name: 'Fringe Bar', location: '140 North Columbus Blvd', cuisine: 'Bar & Pizza (Weekends)', price: '$', website: 'https://fringearts.com/visit/fringe-bar' },
+      ],
+    },
+    {
+      label: '🌸 Patios & Courtyards',
+      places: [
+        { name: 'Southwark', location: '701 South 4th St, Queen Village', cuisine: 'American', price: '$$$', website: 'https://www.southwarkrestaurant.com', reservation: 'https://resy.com/cities/phi/southwark' },
+        { name: 'Caletta', location: '1401 East Susquehanna Ave, Fishtown', cuisine: 'Italian Cocktail Lounge', price: '$$$', website: 'https://calettaphilly.com' },
+        { name: 'Royal Boucherie', location: '52 South 2nd St, Old City', cuisine: 'French', price: '$$$', website: 'https://www.royalboucherie.com', reservation: 'https://resy.com/cities/phi/royal-boucherie' },
+        { name: 'El Chingon Fishtown', location: '1431 Frankford Ave, Fishtown', cuisine: 'Mexican', price: '$$', website: 'https://www.elchingonphilly.com', reservation: 'https://resy.com/cities/phi/el-chingon-fishtown' },
+        { name: "Wm. Mulherin's Sons", location: '1355 North Front St, Fishtown', cuisine: 'Italian & Wood-Fired Pizza', price: '$$$', website: 'https://www.wmmulherinssons.com', reservation: 'https://resy.com/cities/phi/wm-mulherin-s-sons' },
+        { name: 'Front Street Cafe', location: '1253 North Front St, Fishtown', cuisine: 'All-Day Cafe', price: '$$', website: 'https://www.frontstreetcafe.net' },
+        { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', reservation: 'https://resy.com/cities/phi/suraya' },
+        { name: 'Sor Ynéz', location: '1800 North American St, Kensington', cuisine: 'Mexican', price: '$$', website: 'https://www.sorynezmexicankitchen.com', reservation: 'https://www.exploretock.com/sorynez' },
+        { name: 'Le Virtù', location: '1927 East Passyunk Ave', cuisine: 'Italian (Abruzzo)', price: '$$$', website: 'https://www.levirtu.com', reservation: 'https://resy.com/cities/phi/le-virtu' },
+        { name: 'Osteria', location: '640 North Broad St', cuisine: 'Italian', price: '$$$', website: 'https://www.osteriaphilly.com', reservation: 'https://resy.com/cities/phi/osteria' },
+        { name: 'American Sardine Bar', location: '1800 Federal St, Point Breeze', cuisine: 'Bar & Small Plates', price: '$$', website: 'https://www.americansardinebar.com' },
+        { name: "Talula's Garden", location: '210 West Washington Square', cuisine: 'Farm-to-Table', price: '$$$', website: 'https://www.talulasgarden.com', reservation: 'https://resy.com/cities/phi/talulas-garden' },
+        { name: 'Parc', location: '227 South 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: 'https://www.parc-restaurant.com', reservation: 'https://www.opentable.com/parc-restaurant' },
+        { name: "Harper's Garden", location: '31 South 18th St, Rittenhouse', cuisine: 'Bar & Cocktails', price: '$$', website: 'https://www.harpersgardenphilly.com' },
+        { name: "Booker's Restaurant & Bar", location: '5021 Baltimore Ave, West Philly', cuisine: 'Southern American', price: '$$', website: 'https://www.bookersrestaurant.com', reservation: 'https://www.opentable.com/bookers-restaurant-and-bar' },
+      ],
+    },
   ];
 
   function priceLabel(p) {
@@ -1642,14 +1703,13 @@
       });
     });
 
-    // Render outdoor dining tiles
+    // Render outdoor dining tiles by section
     const list = document.getElementById('outdoor-dining-list');
     if (list) {
-      if (OUTDOOR_DINING.length === 0) {
-        list.innerHTML = `<div style="padding:0.5rem;font-size:0.82rem;color:var(--text-tertiary);text-align:center;">No restaurants added yet.</div>`;
-      } else {
-        list.innerHTML = OUTDOOR_DINING.map(restoTileHTML).join('');
-      }
+      list.innerHTML = OUTDOOR_DINING_SECTIONS.map(section => `
+        <div class="drawer-subsection-header">${escapeHtml(section.label)}</div>
+        ${section.places.map(restoTileHTML).join('')}
+      `).join('');
     }
   }
 
