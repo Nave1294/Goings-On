@@ -1014,6 +1014,22 @@
       display: block;
     }
 
+    /* ── Seasonal / day-specific badge ── */
+    .resto-season {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 0.4rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+      color: #8a5a13;
+      background: rgba(232, 165, 53, 0.16);
+      border-radius: 999px;
+      padding: 2px 8px;
+      width: fit-content;
+    }
+
     /* ── Distance bubble ── */
     .distance-bubble {
       display: inline-flex;
@@ -1772,15 +1788,15 @@
     {
       label: '🏙️ Rooftop Bars',
       places: [
-        { name: 'Bok Bar', location: '1901 South 9th St, South Philly', cuisine: 'Bar & Events', price: '$', website: 'https://www.bokbar.com', desc: 'Rooftop atop a former South Philly high school with incredible skyline views, weekly events, and a rotating chef residency. Kid-friendly before sunset, dog-friendly always. Seasonal, mid-April through October.' },
+        { name: 'Bok Bar', location: '1901 South 9th St, South Philly', cuisine: 'Bar & Events', price: '$', season: 'Seasonal · Apr–Oct', website: 'https://www.bokbar.com', desc: 'Rooftop atop a former South Philly high school with incredible skyline views, weekly events, and a rotating chef residency. Kid-friendly before sunset, dog-friendly always. Seasonal, mid-April through October.' },
         { name: "Irwin's", location: '1901 South 9th St (8th Fl), South Philly', cuisine: 'Italian', price: '$$$', website: 'https://www.irwinsbok.com', reservation: 'https://www.exploretock.com/irwins', desc: 'Eighth-floor Italian patio in the Bok Building. Book around sunset and order the gnocchi sardi, tiramisu, and plenty of Italian wine.' },
         { name: 'Assembly Rooftop Lounge', location: '1840 Benjamin Franklin Pkwy', cuisine: 'Cocktails & Small Plates', price: '$$$', website: 'https://www.theloganhotel.com/eat-drink/assembly-rooftop-lounge', desc: 'Atop the Logan Hotel with Parkway views, cocktails, and small plates. Cozy fire pits in winter, and a prime perch for July 4th fireworks and the Thanksgiving parade.' },
-        { name: 'Stratus Lounge', location: '433 Chestnut St, Old City', cuisine: 'Cocktails & DJ', price: '$$$', website: 'https://www.hotelmonaco-philadelphia.com/stratus-rooftop-lounge', desc: 'Chic, high-walled rooftop in Old City’s Hotel Monaco. A great weekend spot (Thursday–Saturday) for cocktails, small plates, and DJ sets.' },
+        { name: 'Stratus Lounge', location: '433 Chestnut St, Old City', cuisine: 'Cocktails & DJ', price: '$$$', season: 'Thu–Sat only', website: 'https://www.hotelmonaco-philadelphia.com/stratus-rooftop-lounge', desc: 'Chic, high-walled rooftop in Old City’s Hotel Monaco. A great weekend spot (Thursday–Saturday) for cocktails, small plates, and DJ sets.' },
         { name: 'Sunset Social', location: '129 South 30th St, University City', cuisine: 'Bar & Events', price: '$$', website: 'https://ciragreen.com', desc: 'Constant lawn-party vibe on the Cira Green rooftop park. Always kid- and dog-friendly, with outdoor movies, quizzo, DJ dance parties, and yappy hours.' },
         { name: 'Continental Midtown', location: '1801 Chestnut St', cuisine: 'American', price: '$$$', website: 'https://www.continentalmidtown.com', reservation: 'https://www.opentable.com/continental-midtown', desc: '1960s-vibe Stephen Starr rooftop with heat lamps, occasional DJ sets, and the famous Tang-dusted Astronaut martini.' },
         { name: 'El Techo', location: '1830 Ludlow St', cuisine: 'Mexican & Mezcal', price: '$$$', website: 'https://www.eltechobar.com', reservation: 'https://resy.com/cities/phi/el-techo', desc: 'Retractable-roof rooftop above Condesa — good even in iffy weather. Mezcal margaritas and “All of the Salsas.” 21+ except Sunday brunch.' },
         { name: 'Attico Rooftop & Bar', location: '219 South Broad St, Avenue of the Arts', cuisine: 'Bar & Small Bites', price: '$$', website: 'https://www.cambriahotelphiladelphia.com/dining', desc: 'Sixteen floors above the Avenue of the Arts at the Cambria Hotel — a plant-filled indoor-outdoor oasis with small bites, weekend brunch, and Friday/Saturday DJ sets.' },
-        { name: 'Balcony Bar at Kimmel Center', location: '300 South Broad St', cuisine: 'Bar (Seasonal Wed)', price: '$$', website: 'https://www.kimmelculturalfoundation.org', desc: 'The Kimmel Center’s second-tier balcony, open summer Wednesdays for Center City Sips. Grab a selfie with City Hall behind you and a hot dog in hand.' },
+        { name: 'Balcony Bar at Kimmel Center', location: '300 South Broad St', cuisine: 'Bar', price: '$$', season: 'Summer Weds only', website: 'https://www.kimmelculturalfoundation.org', desc: 'The Kimmel Center’s second-tier balcony, open summer Wednesdays for Center City Sips. Grab a selfie with City Hall behind you and a hot dog in hand.' },
         { name: 'Revolution House', location: '200 Market St, Old City', cuisine: 'American Brunch & Bar', price: '$$', website: 'https://www.revolutionhousephilly.com', reservation: 'https://www.opentable.com/revolution-house', desc: 'Second-floor Old City deck with a retractable roof. A sun-drenched weekend brunch is the move.' },
         { name: 'Emmy Squared', location: '632 South 5th St', cuisine: 'Pizza & Cocktails', price: '$$', website: 'https://emmysquaredpizza.com', reservation: 'https://resy.com/cities/phi/emmy-squared-philadelphia', desc: 'Rooftop Detroit-style pizza, sandwiches, and really good drinks — a solid date spot.' },
       ],
@@ -1788,16 +1804,16 @@
     {
       label: '🌿 Beer Gardens & Green Spaces',
       places: [
-        { name: 'PHS Pop-Up Gardens', location: '1438 South St & 106 Jamestown Ave, Manayunk', cuisine: 'Beer Garden', price: '$', website: 'https://phsonline.org/programs/pop-up-garden', desc: 'The original Philly pop-up beer garden. Food, craft brews, cocktails, plant swaps, and craft workshops — plus a frozen Gritty Marg. South St location and a Manayunk “urban forest” spot with a game room.' },
-        { name: "Parks on Tap", location: 'Various City Parks', cuisine: 'Beer Garden (Touring)', price: '$', website: 'https://www.parksontap.com', desc: 'A traveling beer garden popping up across city parks over 27 weeks. Room to roam, burgers and hot dogs, and a portion of proceeds benefits each park.' },
-        { name: "Frankie's Summer Club", location: '355 South 15th St', cuisine: 'Bar & Soft Serve', price: '$$', website: 'https://www.frankiessummerclub.com', desc: 'Beer garden in the courtyard of former UArts’ Furness Hall, with food and a must-try soft-serve by Irwin’s and backyard-party vibes.' },
+        { name: 'PHS Pop-Up Gardens', location: '1438 South St & 106 Jamestown Ave, Manayunk', cuisine: 'Beer Garden', price: '$', season: 'Seasonal · Spring–Fall', website: 'https://phsonline.org/programs/pop-up-garden', desc: 'The original Philly pop-up beer garden. Food, craft brews, cocktails, plant swaps, and craft workshops — plus a frozen Gritty Marg. South St location and a Manayunk “urban forest” spot with a game room.' },
+        { name: "Parks on Tap", location: 'Various City Parks', cuisine: 'Beer Garden', price: '$', season: 'Seasonal · Touring (27 wks)', website: 'https://www.parksontap.com', desc: 'A traveling beer garden popping up across city parks over 27 weeks. Room to roam, burgers and hot dogs, and a portion of proceeds benefits each park.' },
+        { name: "Frankie's Summer Club", location: '355 South 15th St', cuisine: 'Bar & Soft Serve', price: '$$', season: 'Seasonal · Summer', website: 'https://www.frankiessummerclub.com', desc: 'Beer garden in the courtyard of former UArts’ Furness Hall, with food and a must-try soft-serve by Irwin’s and backyard-party vibes.' },
         { name: 'Jet Wine Bar', location: '1525 South St', cuisine: 'Wine Bar & Tapas', price: '$$', website: 'https://www.jetwinebarphilly.com', reservation: 'https://www.opentable.com/jet-wine-bar', desc: 'A wine garden, not a beer garden — comfortable, casual, and colorful with global wines and shareable Mediterranean and Spanish bites.' },
-        { name: 'Walnut Garden', location: '1706 Walnut St, Rittenhouse', cuisine: 'Beer Garden & Cheesesteaks', price: '$$', website: 'https://www.walnutgardenphilly.com', desc: '11,500-sq-ft Rittenhouse beer garden, kid- and dog-friendly, with cheesesteaks, chicken sandwiches, game-day big screens, and a mini playground.' },
+        { name: 'Walnut Garden', location: '1706 Walnut St, Rittenhouse', cuisine: 'Beer Garden & Cheesesteaks', price: '$$', season: 'Seasonal · Spring–Dec', website: 'https://www.walnutgardenphilly.com', desc: '11,500-sq-ft Rittenhouse beer garden, kid- and dog-friendly, with cheesesteaks, chicken sandwiches, game-day big screens, and a mini playground.' },
         { name: 'Attic Brewing Company', location: '137 Berkley St, Germantown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.atticbrewing.com', desc: 'Germantown brewery with a dog- and kid-friendly beer garden out back, a full schedule of food trucks, and live music and comedy.' },
-        { name: 'Rodin Garden Bar', location: '2151 Benjamin Franklin Pkwy', cuisine: 'Bar (Seasonal Fri)', price: '$', website: 'https://www.rodinmuseum.org', desc: 'Summer-Friday bar in the Rodin Museum’s oasis-like courtyard among eight Rodin sculptures, with live music and a food truck. Kid- and dog-friendly.' },
-        { name: 'Uptown Beer Garden', location: '1500 JFK Blvd, Center City', cuisine: 'Tiki Bar & Seasonal Events', price: '$$', website: 'https://uptownbeergarden.com', desc: 'Center City spot across three bars with ever-changing themes — tiki in summer, spooky at Halloween, Santa’s Workshop for the holidays.' },
+        { name: 'Rodin Garden Bar', location: '2151 Benjamin Franklin Pkwy', cuisine: 'Bar', price: '$', season: 'Summer Fri · thru Aug', website: 'https://www.rodinmuseum.org', desc: 'Summer-Friday bar in the Rodin Museum’s oasis-like courtyard among eight Rodin sculptures, with live music and a food truck. Kid- and dog-friendly.' },
+        { name: 'Uptown Beer Garden', location: '1500 JFK Blvd, Center City', cuisine: 'Tiki Bar & Events', price: '$$', season: 'Seasonal', website: 'https://uptownbeergarden.com', desc: 'Center City spot across three bars with ever-changing themes — tiki in summer, spooky at Halloween, Santa’s Workshop for the holidays.' },
         { name: 'Evil Genius Beer Co.', location: '1727 North Front St, Fishtown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.evilgeniusbeer.com', desc: 'Fishtown brewery (the “Lab”) with a delightful, colorful beer garden, whimsically named beers, and Friday off-leash Yappy Hours.' },
-        { name: 'Independence Beer Garden', location: '100 South Independence Mall W', cuisine: 'Beer Garden & Bar Bites', price: '$$', website: 'https://www.indybeergarden.com', desc: '20,000-sq-ft Michael Schulson space across from the Liberty Bell with a big beer list, wings, fried pickles, TVs, and outdoor games like shuffleboard and cornhole.' },
+        { name: 'Independence Beer Garden', location: '100 South Independence Mall W', cuisine: 'Beer Garden & Bar Bites', price: '$$', season: 'Seasonal', website: 'https://www.indybeergarden.com', desc: '20,000-sq-ft Michael Schulson space across from the Liberty Bell with a big beer list, wings, fried pickles, TVs, and outdoor games like shuffleboard and cornhole.' },
         { name: 'Frankford Hall', location: '1210 Frankford Ave, Fishtown', cuisine: 'German Biergarten', price: '$$', website: 'https://www.frankfordhall.com', reservation: 'https://www.opentable.com/frankford-hall', desc: 'Year-round Fishtown German biergarten with giant soft pretzels, schnitzel, and bratwurst. The huge outdoor area stays warm with heat lamps and fire pits.' },
       ],
     },
@@ -1805,8 +1821,8 @@
       label: '💧 Waterfront',
       places: [
         { name: 'Cherry Street Pier', location: '121 North Columbus Blvd', cuisine: 'Bar & Pop-Ups', price: '$', website: 'https://www.cherrystreetpier.com', desc: 'Open-air riverfront space with Ben Franklin Bridge views, a pop-up bar, artist galleries, art installations, and craft markets. Seating is first-come, first-served.' },
-        { name: 'Spruce Street Harbor Park', location: '301 South Columbus Blvd', cuisine: 'Bar & Live Music', price: '$$', website: 'https://www.delawareriverwaterfront.com/places/spruce-street-harbor-park', desc: 'The waterfront classic with the floating Lazy Hammock bar, reservable hammock lounges, a 16-ft video wall, and a full summer concert lineup.' },
-        { name: "Morgan's Pier", location: '221 North Columbus Blvd', cuisine: 'Bar & Brunch', price: '$$', website: 'https://www.morganspier.com', desc: 'Seasonal Delaware River hotspot with DJs, specialty cocktails, several outdoor bars, family-friendly weekend brunch, and monthly Yappy Hours.' },
+        { name: 'Spruce Street Harbor Park', location: '301 South Columbus Blvd', cuisine: 'Bar & Live Music', price: '$$', season: 'Seasonal · Summer', website: 'https://www.delawareriverwaterfront.com/places/spruce-street-harbor-park', desc: 'The waterfront classic with the floating Lazy Hammock bar, reservable hammock lounges, a 16-ft video wall, and a full summer concert lineup.' },
+        { name: "Morgan's Pier", location: '221 North Columbus Blvd', cuisine: 'Bar & Brunch', price: '$$', season: 'Seasonal · Spring–Summer', website: 'https://www.morganspier.com', desc: 'Seasonal Delaware River hotspot with DJs, specialty cocktails, several outdoor bars, family-friendly weekend brunch, and monthly Yappy Hours.' },
         { name: 'Liberty Point', location: '211 South Columbus Blvd', cuisine: 'American', price: '$$', website: 'https://www.libertypointhospitality.com', desc: 'Massive outdoor restaurant at the Independence Seaport Museum — three levels, five bars, panoramic waterfront views, and live entertainment.' },
         { name: 'Fringe Bar', location: '140 North Columbus Blvd', cuisine: 'Bar & Pizza (Weekends)', price: '$', website: 'https://fringearts.com/visit/fringe-bar', desc: 'FringeArts’ outdoor beer garden — a calmer waterfront option with weekend Pumphouse Pizza, brunch, and Ben Franklin Bridge views.' },
       ],
@@ -1971,6 +1987,7 @@
               ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
               ${r.price ? `<span class="resto-price" title="${priceLabel(r.price)}">${escapeHtml(r.price)}</span>` : ''}
             </div>
+            ${r.season ? `<div class="resto-season">🗓️ ${escapeHtml(r.season)}</div>` : ''}
             <div class="resto-dist"></div>
           </div>
         </div>
