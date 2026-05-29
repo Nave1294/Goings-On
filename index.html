@@ -1727,7 +1727,7 @@
     await Promise.all([...tiles].map(async tile => {
       const placeholder = tile.querySelector('.resto-img-placeholder');
       if (!placeholder) return; // already has an image
-      const url = await fetchPlacesPhoto(tile.dataset.place);
+      const url = await fetchPlacesPhoto(tile.dataset.query || tile.dataset.place);
       if (!url) return;
       const img = document.createElement('img');
       img.className = 'resto-img';
@@ -1745,8 +1745,9 @@
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
+    const query = r.location ? `${r.name}, ${r.location}` : r.name;
     return `
-      <div class="resto-tile" data-place="${escapeAttr(r.name)}">
+      <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
         ${imgEl}
         <div class="resto-info">
           <div class="resto-name">${escapeHtml(r.name)}</div>
