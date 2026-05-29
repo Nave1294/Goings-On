@@ -882,15 +882,34 @@
     /* ── Restaurant tile ── */
     .resto-tile {
       display: flex;
-      align-items: stretch;
+      flex-direction: column;
       background: var(--bg);
       border-radius: 16px;
       overflow: hidden;
       margin-bottom: 0.65rem;
       box-shadow: var(--shadow);
-      transition: transform 0.15s ease;
+      transition: box-shadow 0.18s ease;
     }
-    .resto-tile:hover { transform: scale(1.01); }
+    .resto-tile.expanded { box-shadow: 0 4px 18px rgba(45,106,79,0.18); }
+
+    .resto-main {
+      display: flex;
+      align-items: stretch;
+      cursor: pointer;
+      position: relative;
+    }
+    .resto-main::after {
+      content: '›';
+      position: absolute;
+      right: 0.7rem;
+      top: 0.6rem;
+      font-size: 1.1rem;
+      color: var(--text-tertiary);
+      transform: rotate(90deg);
+      transition: transform 0.25s ease;
+      line-height: 1;
+    }
+    .resto-tile.expanded .resto-main::after { transform: rotate(-90deg); }
 
     .resto-img {
       width: 110px;
@@ -967,6 +986,76 @@
       transition: background 0.15s ease;
     }
     .resto-action:hover { background: #c4ddbf; }
+
+    /* ── Restaurant expand panel ── */
+    .resto-expand {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .resto-tile.expanded .resto-expand { max-height: 560px; }
+    .resto-expand-inner {
+      padding: 0.25rem 0.95rem 0.95rem;
+      border-top: 1px solid var(--divider);
+    }
+    .resto-desc {
+      font-size: 0.86rem;
+      line-height: 1.5;
+      color: var(--text);
+      margin: 0.85rem 0 0.9rem;
+    }
+    .resto-map {
+      width: 100%;
+      height: 200px;
+      border: none;
+      border-radius: 12px;
+      background: #e4ede0;
+      display: block;
+    }
+
+    /* ── Distance bubble ── */
+    .distance-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .event-distance { margin-top: 0.35rem; }
+    .resto-dist:not(:empty) { margin-top: 0.4rem; }
+
+    /* ── Proximity toggle ── */
+    .proximity-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1.25rem;
+    }
+    .near-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--accent);
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .near-btn:hover { background: var(--accent-soft); }
+    .near-btn:active { transform: scale(0.96); }
+    .near-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .near-btn.loading { opacity: 0.6; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -982,6 +1071,9 @@
     <button class="today-btn" id="todayBtn" type="button">Today</button>
   </div>
   <div class="cat-nav"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="events" type="button">📍 Sort by distance</button>
+  </div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
   </div>
@@ -997,6 +1089,9 @@
   </div>
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="places" type="button">📍 Sort by distance</button>
+  </div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
@@ -1459,7 +1554,10 @@
     return new Date(y, m - 1, d);
   }
 
+  let lastRender = null;
+
   function render(days, byDay, activeIdx) {
+    lastRender = { days, byDay, activeIdx };
     const app = document.getElementById('app');
     app.innerHTML = '';
 
@@ -1491,7 +1589,10 @@
     panel.className = 'day-panel';
 
     const activeDay = days[activeIdx];
-    const evs = byDay[dayKey(activeDay)];
+    let evs = byDay[dayKey(activeDay)];
+    if (proximityActive && userLoc) {
+      evs = [...evs].sort((a, b) => eventDistance(a) - eventDistance(b));
+    }
     const eyebrow = relativeLabel(activeIdx);
 
     const quote = pickQuote(days[0]);
@@ -1558,6 +1659,24 @@
     }, { passive: true });
   }
 
+  function eventCoords(ev) {
+    if (!ev.location) return null;
+    return geoCache[cleanLocation(ev.location).toLowerCase()] || null;
+  }
+
+  function eventDistance(ev) {
+    const c = eventCoords(ev);
+    return (userLoc && c) ? haversineMiles(userLoc.lat, userLoc.lon, c.lat, c.lon) : Infinity;
+  }
+
+  function eventDistanceHTML(ev) {
+    if (!userLoc) return '';
+    const c = eventCoords(ev);
+    if (!c) return '';
+    const mi = haversineMiles(userLoc.lat, userLoc.lon, c.lat, c.lon);
+    return `<div class="event-distance"><span class="distance-bubble">📍 ${fmtMiles(mi)} away</span></div>`;
+  }
+
   function eventHTML(ev, idx, contextDay) {
     const allDay = !ev.start.dateTime;
     const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
@@ -1584,7 +1703,7 @@
             <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
             ${weatherChipHTML(ev, idx, contextDay)}
           </div>
-          ${loc}${desc}${mapBtn}
+          ${loc}${eventDistanceHTML(ev)}${desc}${mapBtn}
           ${weatherDetailHTML(ev, idx, contextDay)}
         </div>
       </div>`;
@@ -1616,63 +1735,63 @@
     {
       label: '🏙️ Rooftop Bars',
       places: [
-        { name: 'Bok Bar', location: '1901 South 9th St, South Philly', cuisine: 'Bar & Events', price: '$', website: 'https://www.bokbar.com' },
-        { name: "Irwin's", location: '1901 South 9th St (8th Fl), South Philly', cuisine: 'Italian', price: '$$$', website: 'https://www.irwinsbok.com', reservation: 'https://www.exploretock.com/irwins' },
-        { name: 'Assembly Rooftop Lounge', location: '1840 Benjamin Franklin Pkwy', cuisine: 'Cocktails & Small Plates', price: '$$$', website: 'https://www.theloganhotel.com/eat-drink/assembly-rooftop-lounge' },
-        { name: 'Stratus Lounge', location: '433 Chestnut St, Old City', cuisine: 'Cocktails & DJ', price: '$$$', website: 'https://www.hotelmonaco-philadelphia.com/stratus-rooftop-lounge' },
-        { name: 'Sunset Social', location: '129 South 30th St, University City', cuisine: 'Bar & Events', price: '$$', website: 'https://ciragreen.com' },
-        { name: 'Continental Midtown', location: '1801 Chestnut St', cuisine: 'American', price: '$$$', website: 'https://www.continentalmidtown.com', reservation: 'https://www.opentable.com/continental-midtown' },
-        { name: 'El Techo', location: '1830 Ludlow St', cuisine: 'Mexican & Mezcal', price: '$$$', website: 'https://www.eltechobar.com', reservation: 'https://resy.com/cities/phi/el-techo' },
-        { name: 'Attico Rooftop & Bar', location: '219 South Broad St, Avenue of the Arts', cuisine: 'Bar & Small Bites', price: '$$', website: 'https://www.cambriahotelphiladelphia.com/dining' },
-        { name: 'Balcony Bar at Kimmel Center', location: '300 South Broad St', cuisine: 'Bar (Seasonal Wed)', price: '$$', website: 'https://www.kimmelculturalfoundation.org' },
-        { name: 'Revolution House', location: '200 Market St, Old City', cuisine: 'American Brunch & Bar', price: '$$', website: 'https://www.revolutionhousephilly.com', reservation: 'https://www.opentable.com/revolution-house' },
-        { name: 'Emmy Squared', location: '632 South 5th St', cuisine: 'Pizza & Cocktails', price: '$$', website: 'https://emmysquaredpizza.com', reservation: 'https://resy.com/cities/phi/emmy-squared-philadelphia' },
+        { name: 'Bok Bar', location: '1901 South 9th St, South Philly', cuisine: 'Bar & Events', price: '$', website: 'https://www.bokbar.com', desc: 'Rooftop atop a former South Philly high school with incredible skyline views, weekly events, and a rotating chef residency. Kid-friendly before sunset, dog-friendly always. Seasonal, mid-April through October.' },
+        { name: "Irwin's", location: '1901 South 9th St (8th Fl), South Philly', cuisine: 'Italian', price: '$$$', website: 'https://www.irwinsbok.com', reservation: 'https://www.exploretock.com/irwins', desc: 'Eighth-floor Italian patio in the Bok Building. Book around sunset and order the gnocchi sardi, tiramisu, and plenty of Italian wine.' },
+        { name: 'Assembly Rooftop Lounge', location: '1840 Benjamin Franklin Pkwy', cuisine: 'Cocktails & Small Plates', price: '$$$', website: 'https://www.theloganhotel.com/eat-drink/assembly-rooftop-lounge', desc: 'Atop the Logan Hotel with Parkway views, cocktails, and small plates. Cozy fire pits in winter, and a prime perch for July 4th fireworks and the Thanksgiving parade.' },
+        { name: 'Stratus Lounge', location: '433 Chestnut St, Old City', cuisine: 'Cocktails & DJ', price: '$$$', website: 'https://www.hotelmonaco-philadelphia.com/stratus-rooftop-lounge', desc: 'Chic, high-walled rooftop in Old City’s Hotel Monaco. A great weekend spot (Thursday–Saturday) for cocktails, small plates, and DJ sets.' },
+        { name: 'Sunset Social', location: '129 South 30th St, University City', cuisine: 'Bar & Events', price: '$$', website: 'https://ciragreen.com', desc: 'Constant lawn-party vibe on the Cira Green rooftop park. Always kid- and dog-friendly, with outdoor movies, quizzo, DJ dance parties, and yappy hours.' },
+        { name: 'Continental Midtown', location: '1801 Chestnut St', cuisine: 'American', price: '$$$', website: 'https://www.continentalmidtown.com', reservation: 'https://www.opentable.com/continental-midtown', desc: '1960s-vibe Stephen Starr rooftop with heat lamps, occasional DJ sets, and the famous Tang-dusted Astronaut martini.' },
+        { name: 'El Techo', location: '1830 Ludlow St', cuisine: 'Mexican & Mezcal', price: '$$$', website: 'https://www.eltechobar.com', reservation: 'https://resy.com/cities/phi/el-techo', desc: 'Retractable-roof rooftop above Condesa — good even in iffy weather. Mezcal margaritas and “All of the Salsas.” 21+ except Sunday brunch.' },
+        { name: 'Attico Rooftop & Bar', location: '219 South Broad St, Avenue of the Arts', cuisine: 'Bar & Small Bites', price: '$$', website: 'https://www.cambriahotelphiladelphia.com/dining', desc: 'Sixteen floors above the Avenue of the Arts at the Cambria Hotel — a plant-filled indoor-outdoor oasis with small bites, weekend brunch, and Friday/Saturday DJ sets.' },
+        { name: 'Balcony Bar at Kimmel Center', location: '300 South Broad St', cuisine: 'Bar (Seasonal Wed)', price: '$$', website: 'https://www.kimmelculturalfoundation.org', desc: 'The Kimmel Center’s second-tier balcony, open summer Wednesdays for Center City Sips. Grab a selfie with City Hall behind you and a hot dog in hand.' },
+        { name: 'Revolution House', location: '200 Market St, Old City', cuisine: 'American Brunch & Bar', price: '$$', website: 'https://www.revolutionhousephilly.com', reservation: 'https://www.opentable.com/revolution-house', desc: 'Second-floor Old City deck with a retractable roof. A sun-drenched weekend brunch is the move.' },
+        { name: 'Emmy Squared', location: '632 South 5th St', cuisine: 'Pizza & Cocktails', price: '$$', website: 'https://emmysquaredpizza.com', reservation: 'https://resy.com/cities/phi/emmy-squared-philadelphia', desc: 'Rooftop Detroit-style pizza, sandwiches, and really good drinks — a solid date spot.' },
       ],
     },
     {
       label: '🌿 Beer Gardens & Green Spaces',
       places: [
-        { name: 'PHS Pop-Up Gardens', location: '1438 South St & 106 Jamestown Ave, Manayunk', cuisine: 'Beer Garden', price: '$', website: 'https://phsonline.org/programs/pop-up-garden' },
-        { name: "Parks on Tap", location: 'Various City Parks', cuisine: 'Beer Garden (Touring)', price: '$', website: 'https://www.parksontap.com' },
-        { name: "Frankie's Summer Club", location: '355 South 15th St', cuisine: 'Bar & Soft Serve', price: '$$', website: 'https://www.frankiessummerclub.com' },
-        { name: 'Jet Wine Bar', location: '1525 South St', cuisine: 'Wine Bar & Tapas', price: '$$', website: 'https://www.jetwinebarphilly.com', reservation: 'https://www.opentable.com/jet-wine-bar' },
-        { name: 'Walnut Garden', location: '1706 Walnut St, Rittenhouse', cuisine: 'Beer Garden & Cheesesteaks', price: '$$', website: 'https://www.walnutgardenphilly.com' },
-        { name: 'Attic Brewing Company', location: '137 Berkley St, Germantown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.atticbrewing.com' },
-        { name: 'Rodin Garden Bar', location: '2151 Benjamin Franklin Pkwy', cuisine: 'Bar (Seasonal Fri)', price: '$', website: 'https://www.rodinmuseum.org' },
-        { name: 'Uptown Beer Garden', location: '1500 JFK Blvd, Center City', cuisine: 'Tiki Bar & Seasonal Events', price: '$$', website: 'https://uptownbeergarden.com' },
-        { name: 'Evil Genius Beer Co.', location: '1727 North Front St, Fishtown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.evilgeniusbeer.com' },
-        { name: 'Independence Beer Garden', location: '100 South Independence Mall W', cuisine: 'Beer Garden & Bar Bites', price: '$$', website: 'https://www.indybeergarden.com' },
-        { name: 'Frankford Hall', location: '1210 Frankford Ave, Fishtown', cuisine: 'German Biergarten', price: '$$', website: 'https://www.frankfordhall.com', reservation: 'https://www.opentable.com/frankford-hall' },
+        { name: 'PHS Pop-Up Gardens', location: '1438 South St & 106 Jamestown Ave, Manayunk', cuisine: 'Beer Garden', price: '$', website: 'https://phsonline.org/programs/pop-up-garden', desc: 'The original Philly pop-up beer garden. Food, craft brews, cocktails, plant swaps, and craft workshops — plus a frozen Gritty Marg. South St location and a Manayunk “urban forest” spot with a game room.' },
+        { name: "Parks on Tap", location: 'Various City Parks', cuisine: 'Beer Garden (Touring)', price: '$', website: 'https://www.parksontap.com', desc: 'A traveling beer garden popping up across city parks over 27 weeks. Room to roam, burgers and hot dogs, and a portion of proceeds benefits each park.' },
+        { name: "Frankie's Summer Club", location: '355 South 15th St', cuisine: 'Bar & Soft Serve', price: '$$', website: 'https://www.frankiessummerclub.com', desc: 'Beer garden in the courtyard of former UArts’ Furness Hall, with food and a must-try soft-serve by Irwin’s and backyard-party vibes.' },
+        { name: 'Jet Wine Bar', location: '1525 South St', cuisine: 'Wine Bar & Tapas', price: '$$', website: 'https://www.jetwinebarphilly.com', reservation: 'https://www.opentable.com/jet-wine-bar', desc: 'A wine garden, not a beer garden — comfortable, casual, and colorful with global wines and shareable Mediterranean and Spanish bites.' },
+        { name: 'Walnut Garden', location: '1706 Walnut St, Rittenhouse', cuisine: 'Beer Garden & Cheesesteaks', price: '$$', website: 'https://www.walnutgardenphilly.com', desc: '11,500-sq-ft Rittenhouse beer garden, kid- and dog-friendly, with cheesesteaks, chicken sandwiches, game-day big screens, and a mini playground.' },
+        { name: 'Attic Brewing Company', location: '137 Berkley St, Germantown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.atticbrewing.com', desc: 'Germantown brewery with a dog- and kid-friendly beer garden out back, a full schedule of food trucks, and live music and comedy.' },
+        { name: 'Rodin Garden Bar', location: '2151 Benjamin Franklin Pkwy', cuisine: 'Bar (Seasonal Fri)', price: '$', website: 'https://www.rodinmuseum.org', desc: 'Summer-Friday bar in the Rodin Museum’s oasis-like courtyard among eight Rodin sculptures, with live music and a food truck. Kid- and dog-friendly.' },
+        { name: 'Uptown Beer Garden', location: '1500 JFK Blvd, Center City', cuisine: 'Tiki Bar & Seasonal Events', price: '$$', website: 'https://uptownbeergarden.com', desc: 'Center City spot across three bars with ever-changing themes — tiki in summer, spooky at Halloween, Santa’s Workshop for the holidays.' },
+        { name: 'Evil Genius Beer Co.', location: '1727 North Front St, Fishtown', cuisine: 'Craft Brewery', price: '$', website: 'https://www.evilgeniusbeer.com', desc: 'Fishtown brewery (the “Lab”) with a delightful, colorful beer garden, whimsically named beers, and Friday off-leash Yappy Hours.' },
+        { name: 'Independence Beer Garden', location: '100 South Independence Mall W', cuisine: 'Beer Garden & Bar Bites', price: '$$', website: 'https://www.indybeergarden.com', desc: '20,000-sq-ft Michael Schulson space across from the Liberty Bell with a big beer list, wings, fried pickles, TVs, and outdoor games like shuffleboard and cornhole.' },
+        { name: 'Frankford Hall', location: '1210 Frankford Ave, Fishtown', cuisine: 'German Biergarten', price: '$$', website: 'https://www.frankfordhall.com', reservation: 'https://www.opentable.com/frankford-hall', desc: 'Year-round Fishtown German biergarten with giant soft pretzels, schnitzel, and bratwurst. The huge outdoor area stays warm with heat lamps and fire pits.' },
       ],
     },
     {
       label: '💧 Waterfront',
       places: [
-        { name: 'Cherry Street Pier', location: '121 North Columbus Blvd', cuisine: 'Bar & Pop-Ups', price: '$', website: 'https://www.cherrystreetpier.com' },
-        { name: 'Spruce Street Harbor Park', location: '301 South Columbus Blvd', cuisine: 'Bar & Live Music', price: '$$', website: 'https://www.delawareriverwaterfront.com/places/spruce-street-harbor-park' },
-        { name: "Morgan's Pier", location: '221 North Columbus Blvd', cuisine: 'Bar & Brunch', price: '$$', website: 'https://www.morganspier.com' },
-        { name: 'Liberty Point', location: '211 South Columbus Blvd', cuisine: 'American', price: '$$', website: 'https://www.libertypointhospitality.com' },
-        { name: 'Fringe Bar', location: '140 North Columbus Blvd', cuisine: 'Bar & Pizza (Weekends)', price: '$', website: 'https://fringearts.com/visit/fringe-bar' },
+        { name: 'Cherry Street Pier', location: '121 North Columbus Blvd', cuisine: 'Bar & Pop-Ups', price: '$', website: 'https://www.cherrystreetpier.com', desc: 'Open-air riverfront space with Ben Franklin Bridge views, a pop-up bar, artist galleries, art installations, and craft markets. Seating is first-come, first-served.' },
+        { name: 'Spruce Street Harbor Park', location: '301 South Columbus Blvd', cuisine: 'Bar & Live Music', price: '$$', website: 'https://www.delawareriverwaterfront.com/places/spruce-street-harbor-park', desc: 'The waterfront classic with the floating Lazy Hammock bar, reservable hammock lounges, a 16-ft video wall, and a full summer concert lineup.' },
+        { name: "Morgan's Pier", location: '221 North Columbus Blvd', cuisine: 'Bar & Brunch', price: '$$', website: 'https://www.morganspier.com', desc: 'Seasonal Delaware River hotspot with DJs, specialty cocktails, several outdoor bars, family-friendly weekend brunch, and monthly Yappy Hours.' },
+        { name: 'Liberty Point', location: '211 South Columbus Blvd', cuisine: 'American', price: '$$', website: 'https://www.libertypointhospitality.com', desc: 'Massive outdoor restaurant at the Independence Seaport Museum — three levels, five bars, panoramic waterfront views, and live entertainment.' },
+        { name: 'Fringe Bar', location: '140 North Columbus Blvd', cuisine: 'Bar & Pizza (Weekends)', price: '$', website: 'https://fringearts.com/visit/fringe-bar', desc: 'FringeArts’ outdoor beer garden — a calmer waterfront option with weekend Pumphouse Pizza, brunch, and Ben Franklin Bridge views.' },
       ],
     },
     {
       label: '🌸 Patios & Courtyards',
       places: [
-        { name: 'Southwark', location: '701 South 4th St, Queen Village', cuisine: 'American', price: '$$$', website: 'https://www.southwarkrestaurant.com', reservation: 'https://resy.com/cities/phi/southwark' },
-        { name: 'Caletta', location: '1401 East Susquehanna Ave, Fishtown', cuisine: 'Italian Cocktail Lounge', price: '$$$', website: 'https://calettaphilly.com' },
-        { name: 'Royal Boucherie', location: '52 South 2nd St, Old City', cuisine: 'French', price: '$$$', website: 'https://www.royalboucherie.com', reservation: 'https://resy.com/cities/phi/royal-boucherie' },
-        { name: 'El Chingon Fishtown', location: '1431 Frankford Ave, Fishtown', cuisine: 'Mexican', price: '$$', website: 'https://www.elchingonphilly.com', reservation: 'https://resy.com/cities/phi/el-chingon-fishtown' },
-        { name: "Wm. Mulherin's Sons", location: '1355 North Front St, Fishtown', cuisine: 'Italian & Wood-Fired Pizza', price: '$$$', website: 'https://www.wmmulherinssons.com', reservation: 'https://resy.com/cities/phi/wm-mulherin-s-sons' },
-        { name: 'Front Street Cafe', location: '1253 North Front St, Fishtown', cuisine: 'All-Day Cafe', price: '$$', website: 'https://www.frontstreetcafe.net' },
-        { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', reservation: 'https://resy.com/cities/phi/suraya' },
-        { name: 'Sor Ynéz', location: '1800 North American St, Kensington', cuisine: 'Mexican', price: '$$', website: 'https://www.sorynezmexicankitchen.com', reservation: 'https://www.exploretock.com/sorynez' },
-        { name: 'Le Virtù', location: '1927 East Passyunk Ave', cuisine: 'Italian (Abruzzo)', price: '$$$', website: 'https://www.levirtu.com', reservation: 'https://resy.com/cities/phi/le-virtu' },
-        { name: 'Osteria', location: '640 North Broad St', cuisine: 'Italian', price: '$$$', website: 'https://www.osteriaphilly.com', reservation: 'https://resy.com/cities/phi/osteria' },
-        { name: 'American Sardine Bar', location: '1800 Federal St, Point Breeze', cuisine: 'Bar & Small Plates', price: '$$', website: 'https://www.americansardinebar.com' },
-        { name: "Talula's Garden", location: '210 West Washington Square', cuisine: 'Farm-to-Table', price: '$$$', website: 'https://www.talulasgarden.com', reservation: 'https://resy.com/cities/phi/talulas-garden' },
-        { name: 'Parc', location: '227 South 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: 'https://www.parc-restaurant.com', reservation: 'https://www.opentable.com/parc-restaurant' },
-        { name: "Harper's Garden", location: '31 South 18th St, Rittenhouse', cuisine: 'Bar & Cocktails', price: '$$', website: 'https://www.harpersgardenphilly.com' },
-        { name: "Booker's Restaurant & Bar", location: '5021 Baltimore Ave, West Philly', cuisine: 'Southern American', price: '$$', website: 'https://www.bookersrestaurant.com', reservation: 'https://www.opentable.com/bookers-restaurant-and-bar' },
+        { name: 'Southwark', location: '701 South 4th St, Queen Village', cuisine: 'American', price: '$$$', website: 'https://www.southwarkrestaurant.com', reservation: 'https://resy.com/cities/phi/southwark', desc: 'A hidden-gem Queen Village courtyard adorned with flowers and herbs — many of which end up in the menu.' },
+        { name: 'Caletta', location: '1401 East Susquehanna Ave, Fishtown', cuisine: 'Italian Cocktail Lounge', price: '$$$', website: 'https://calettaphilly.com', desc: 'Poolside patio at Fishtown’s boutique hotel Anna & Bel. Go for aperitivo hour (Wed–Fri, 4–7pm) when every drink comes with a snack.' },
+        { name: 'Royal Boucherie', location: '52 South 2nd St, Old City', cuisine: 'French', price: '$$$', website: 'https://www.royalboucherie.com', reservation: 'https://resy.com/cities/phi/royal-boucherie', desc: 'A hidden upstairs terrace in Old City that doesn’t feel like Philadelphia — oysters and rosé that feel like a mini vacation.' },
+        { name: 'El Chingon Fishtown', location: '1431 Frankford Ave, Fishtown', cuisine: 'Mexican', price: '$$', website: 'https://www.elchingonphilly.com', reservation: 'https://resy.com/cities/phi/el-chingon-fishtown', desc: 'The casual, summery Fishtown offshoot of chef Carlos Aparicio’s award-winning spot, with an outdoor “Jardin de Agave” and its own bar.' },
+        { name: "Wm. Mulherin's Sons", location: '1355 North Front St, Fishtown', cuisine: 'Italian & Wood-Fired Pizza', price: '$$$', website: 'https://www.wmmulherinssons.com', reservation: 'https://resy.com/cities/phi/wm-mulherin-s-sons', desc: 'A dreamy outdoor dining spot with plants, twinkle lights, and picnic tables, serving spritzes and wood-fired pizzas.' },
+        { name: 'Front Street Cafe', location: '1253 North Front St, Fishtown', cuisine: 'All-Day Cafe', price: '$$', website: 'https://www.frontstreetcafe.net', desc: 'Fishtown’s all-day cafe with a tucked-away back garden and an outdoor bar — perfect for day-drinking.' },
+        { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', reservation: 'https://resy.com/cities/phi/suraya', desc: 'A beautiful 5,000-sq-ft Levantine courtyard framed by Persian ironwood trees, with its own bar so the cocktails keep flowing.' },
+        { name: 'Sor Ynéz', location: '1800 North American St, Kensington', cuisine: 'Mexican', price: '$$', website: 'https://www.sorynezmexicankitchen.com', reservation: 'https://www.exploretock.com/sorynez', desc: 'Laidback Kensington Mexican spot with a cute enclosed patio and a working garden that flavors the dishes. Bonus: lots of free parking.' },
+        { name: 'Le Virtù', location: '1927 East Passyunk Ave', cuisine: 'Italian (Abruzzo)', price: '$$$', website: 'https://www.levirtu.com', reservation: 'https://resy.com/cities/phi/le-virtu', desc: 'Elegant East Passyunk Abruzzese spot with an ample, partially covered patio, homemade pastas, an antipasti board, and an olive-oil martini.' },
+        { name: 'Osteria', location: '640 North Broad St', cuisine: 'Italian', price: '$$$', website: 'https://www.osteriaphilly.com', reservation: 'https://resy.com/cities/phi/osteria', desc: 'Beyond the glass-enclosed patio is a dreamy pergola — graze on antipasti, sip something light, and catch the great weekend happy hour.' },
+        { name: 'American Sardine Bar', location: '1800 Federal St, Point Breeze', cuisine: 'Bar & Small Plates', price: '$$', website: 'https://www.americansardinebar.com', desc: 'Point Breeze stalwart with a string-lit lot next door — lawn chairs, beer, tinned-fish samplers, and salt-and-pepper fries.' },
+        { name: "Talula's Garden", location: '210 West Washington Square', cuisine: 'Farm-to-Table', price: '$$$', website: 'https://www.talulasgarden.com', reservation: 'https://resy.com/cities/phi/talulas-garden', desc: 'Washington Square farm-to-table spot beloved for its cheese plate and extra-fresh everything. The rustically planted courtyard seats are coveted.' },
+        { name: 'Parc', location: '227 South 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: 'https://www.parc-restaurant.com', reservation: 'https://www.opentable.com/parc-restaurant', desc: 'The quintessential Rittenhouse Square sidewalk brasserie. Order a seafood tower and a spritz and get your people-watching on.' },
+        { name: "Harper's Garden", location: '31 South 18th St, Rittenhouse', cuisine: 'Bar & Cocktails', price: '$$', website: 'https://www.harpersgardenphilly.com', desc: 'Edison-bulb string lights and lush greenery make this open-air veranda a lovely spot for a spritz or frosé after work.' },
+        { name: "Booker's Restaurant & Bar", location: '5021 Baltimore Ave, West Philly', cuisine: 'Southern American', price: '$$', website: 'https://www.bookersrestaurant.com', reservation: 'https://www.opentable.com/bookers-restaurant-and-bar', desc: 'West Philly comfort, brunch, and happy hour — Southern favorites like fried chicken and waffles under a plant-filled Baltimore Ave pergola.' },
       ],
     },
   ];
@@ -1702,29 +1821,64 @@
     return map[p] || p;
   }
 
-  const placesPhotoCache = {};
+  // ── Geolocation & distance ──
+  let userLoc = null;          // { lat, lon } once granted
+  let proximityActive = false; // sort-by-distance toggle (shared across views)
 
-  async function fetchPlacesPhoto(query) {
-    if (placesPhotoCache[query] !== undefined) return placesPhotoCache[query];
+  function getUserLocation() {
+    if (userLoc) return Promise.resolve(userLoc);
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) { reject(new Error('no geolocation')); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => { userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude }; resolve(userLoc); },
+        err => reject(err),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      );
+    });
+  }
+
+  function haversineMiles(lat1, lon1, lat2, lon2) {
+    const R = 3958.8, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function fmtMiles(mi) {
+    if (mi < 0.1) return '<0.1 mi';
+    if (mi < 10) return mi.toFixed(1) + ' mi';
+    return Math.round(mi) + ' mi';
+  }
+
+  const placeInfoCache = {};
+
+  // Returns { photoUrl, lat, lon } for a text query (cached).
+  async function fetchPlaceInfo(query) {
+    if (placeInfoCache[query] !== undefined) return placeInfoCache[query];
     try {
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': PLACES_API_KEY,
-          'X-Goog-FieldMask': 'places.photos',
+          'X-Goog-FieldMask': 'places.photos,places.location',
         },
         body: JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' }),
       });
-      if (!res.ok) { placesPhotoCache[query] = null; return null; }
+      if (!res.ok) { placeInfoCache[query] = null; return null; }
       const data = await res.json();
-      const photo = data.places?.[0]?.photos?.[0];
-      if (!photo?.name) { placesPhotoCache[query] = null; return null; }
-      const url = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}`;
-      placesPhotoCache[query] = url;
-      return url;
+      const place = data.places?.[0];
+      if (!place) { placeInfoCache[query] = null; return null; }
+      const photo = place.photos?.[0];
+      const info = {
+        photoUrl: photo?.name ? `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}` : null,
+        lat: place.location?.latitude ?? null,
+        lon: place.location?.longitude ?? null,
+      };
+      placeInfoCache[query] = info;
+      return info;
     } catch {
-      placesPhotoCache[query] = null;
+      placeInfoCache[query] = null;
       return null;
     }
   }
@@ -1733,44 +1887,82 @@
     const scope = root || document;
     const tiles = scope.querySelectorAll('.resto-tile[data-place]');
     await Promise.all([...tiles].map(async tile => {
+      const info = await fetchPlaceInfo(tile.dataset.query || tile.dataset.place);
+      if (!info) return;
+      if (info.lat != null) {
+        tile.dataset.lat = info.lat;
+        tile.dataset.lon = info.lon;
+        updateTileDistance(tile);
+      }
       const placeholder = tile.querySelector('.resto-img-placeholder');
-      if (!placeholder) return; // already has an image
-      const url = await fetchPlacesPhoto(tile.dataset.query || tile.dataset.place);
-      if (!url) return;
-      const img = document.createElement('img');
-      img.className = 'resto-img';
-      img.alt = tile.dataset.place;
-      img.style.opacity = '0';
-      img.style.transition = 'opacity 0.4s ease';
-      img.onload = () => { img.style.opacity = '1'; };
-      img.src = url;
-      placeholder.replaceWith(img);
+      if (placeholder && info.photoUrl) {
+        const img = document.createElement('img');
+        img.className = 'resto-img';
+        img.alt = tile.dataset.place;
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.4s ease';
+        img.onload = () => { img.style.opacity = '1'; };
+        img.src = info.photoUrl;
+        placeholder.replaceWith(img);
+      }
     }));
   }
 
   function restoTileHTML(r) {
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    const fullLoc = r.name + ' ' + (r.location || '');
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
+    const mapEmbed = `https://maps.google.com/maps?q=${encodeURIComponent(fullLoc)}&z=15&output=embed`;
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
     const query = r.location ? `${r.name}, ${r.location}` : r.name;
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
-        ${imgEl}
-        <div class="resto-info">
-          <div class="resto-name">${escapeHtml(r.name)}</div>
-          <div class="resto-meta">
-            ${r.cuisine ? `<span class="resto-meta-item">🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
-            ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
-            ${r.price ? `<span class="resto-price" title="${priceLabel(r.price)}">${escapeHtml(r.price)}</span>` : ''}
+        <div class="resto-main">
+          ${imgEl}
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(r.name)}</div>
+            <div class="resto-meta">
+              ${r.cuisine ? `<span class="resto-meta-item">🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
+              ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
+              ${r.price ? `<span class="resto-price" title="${priceLabel(r.price)}">${escapeHtml(r.price)}</span>` : ''}
+            </div>
+            <div class="resto-dist"></div>
           </div>
-          <div class="resto-actions">
-            ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
-            ${r.reservation ? `<a class="resto-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
-            <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${r.desc ? `<div class="resto-desc">${escapeHtml(r.desc)}</div>` : ''}
+            <div class="resto-actions">
+              ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              ${r.reservation ? `<a class="resto-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Directions</a>
+            </div>
+            <iframe class="resto-map" data-src="${escapeAttr(mapEmbed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${escapeAttr(r.name)}"></iframe>
           </div>
         </div>
       </div>`;
+  }
+
+  function updateTileDistance(tile) {
+    const slot = tile.querySelector('.resto-dist');
+    if (!slot) return;
+    if (!userLoc || tile.dataset.lat == null) { slot.innerHTML = ''; return; }
+    const mi = haversineMiles(userLoc.lat, userLoc.lon, +tile.dataset.lat, +tile.dataset.lon);
+    slot.innerHTML = `<span class="distance-bubble">📍 ${fmtMiles(mi)} away</span>`;
+  }
+
+  // Toggle a restaurant tile open/closed (ignores clicks on links)
+  function onRestoMainClick(e) {
+    const main = e.target.closest('.resto-main');
+    if (!main || e.target.closest('a')) return;
+    const tile = main.closest('.resto-tile');
+    const wasOpen = tile.classList.contains('expanded');
+    if (!wasOpen) {
+      const iframe = tile.querySelector('.resto-map');
+      if (iframe && !iframe.src && iframe.dataset.src) iframe.src = iframe.dataset.src;
+    }
+    tile.classList.toggle('expanded');
   }
 
   // Categories shown when the hamburger expands. Add more here as new views are built.
@@ -1789,10 +1981,23 @@
   }
 
   // ── Places to Eat: sub-category tabs ──
-  const eatImagesLoaded = {};
+  let currentEatCat = null;
 
-  function renderEatCategory(catId) {
+  function placeQuery(r) { return r.location ? `${r.name}, ${r.location}` : r.name; }
+
+  async function ensurePlaceCoords(r) {
+    if (r._coords !== undefined) return;
+    const info = await fetchPlaceInfo(placeQuery(r));
+    r._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+  }
+
+  function placeDist(r) {
+    return (userLoc && r._coords) ? haversineMiles(userLoc.lat, userLoc.lon, r._coords.lat, r._coords.lon) : Infinity;
+  }
+
+  async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
+    currentEatCat = cat.id;
     document.querySelectorAll('#eatSubTabs .sub-tab').forEach(t =>
       t.classList.toggle('active', t.dataset.cat === cat.id));
 
@@ -1801,23 +2006,30 @@
     document.getElementById('eatSubtitle').innerHTML = cat.subtitle || '';
 
     const list = document.getElementById('eatList');
-    const hasPlaces = cat.sections.some(s => s.places.length);
-    if (!hasPlaces) {
+    const allPlaces = cat.sections.flatMap(s => s.places);
+    if (!allPlaces.length) {
       list.innerHTML = `<div class="eat-content eat-empty">
         <div class="eat-empty-icon">${cat.emoji}</div>
         <div class="eat-empty-text">Coming soon — no spots added here yet.</div>
       </div>`;
       return;
     }
-    list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
-      ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
-      ${section.places.map(restoTileHTML).join('')}
-    `).join('')}</div>`;
 
-    if (!eatImagesLoaded[cat.id]) {
-      eatImagesLoaded[cat.id] = true;
-      loadRestoImages(list);
+    if (proximityActive && userLoc) {
+      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const sorted = [...allPlaces].sort((a, b) => placeDist(a) - placeDist(b));
+      list.innerHTML = `<div class="eat-content">
+        <div class="eat-section-header">📍 Nearest first</div>
+        ${sorted.map(restoTileHTML).join('')}
+      </div>`;
+    } else {
+      list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
+        ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
+        ${section.places.map(restoTileHTML).join('')}
+      `).join('')}</div>`;
     }
+
+    loadRestoImages(list);
   }
 
   function setupEatTabs() {
@@ -1830,7 +2042,28 @@
     tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
       tab.addEventListener('click', () => renderEatCategory(tab.dataset.cat));
     });
+    // Click a tile to expand its description + map
+    document.getElementById('eatList').addEventListener('click', onRestoMainClick);
     renderEatCategory(PLACES_TO_EAT[0].id);
+  }
+
+  // Toggle proximity sort on; re-renders both windows and reflects all buttons.
+  async function toggleProximity(btn) {
+    if (!proximityActive) {
+      btn.classList.add('loading');
+      try { await getUserLocation(); }
+      catch { btn.classList.remove('loading'); alert('Couldn’t get your location. Please allow location access and try again.'); return; }
+      btn.classList.remove('loading');
+      proximityActive = true;
+    } else {
+      proximityActive = false;
+    }
+    document.querySelectorAll('.near-btn').forEach(b => {
+      b.classList.toggle('active', proximityActive);
+      b.textContent = proximityActive ? '📍 Sorted by distance' : '📍 Sort by distance';
+    });
+    if (currentEatCat) renderEatCategory(currentEatCat);
+    if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
 
   function setupNav() {
@@ -1866,6 +2099,11 @@
     // Back buttons → return to a view
     document.querySelectorAll('.back-btn').forEach(btn => {
       btn.addEventListener('click', () => showView(btn.dataset.view));
+    });
+
+    // Proximity ("Near me") toggle buttons on each window
+    document.querySelectorAll('.near-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleProximity(btn));
     });
 
     setupEatTabs();
