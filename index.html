@@ -733,93 +733,55 @@
     .hamburger-btn.open span:nth-child(2) { opacity: 0; }
     .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* ── Drawer overlay ── */
-    .drawer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      z-index: 200;
-      display: none;
+    /* ── Category nav (expands from hamburger) ── */
+    .cat-nav {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      max-height: 0;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      margin-bottom: 0;
+      pointer-events: none;
+      transition: max-height 0.3s ease, opacity 0.25s ease, margin-bottom 0.3s ease;
     }
-    .drawer-overlay.open { display: block; opacity: 1; }
+    .cat-nav::-webkit-scrollbar { display: none; }
+    .cat-nav.open {
+      max-height: 60px;
+      opacity: 1;
+      margin-bottom: 1.75rem;
+      pointer-events: auto;
+    }
 
-    .drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: min(360px, 90vw);
-      background: var(--surface);
-      z-index: 201;
-      transform: translateX(-100%);
-      transition: transform 0.3s cubic-bezier(0.32, 0, 0.15, 1);
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 4px 0 32px rgba(0,0,0,0.12);
-    }
-    .drawer.open { transform: translateX(0); }
-
-    .drawer-header {
-      display: flex;
+    .cat-btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 1.25rem 1.25rem 1rem;
-      border-bottom: 1px solid var(--divider);
-      position: sticky;
-      top: 0;
-      background: var(--surface);
-      z-index: 1;
-    }
-    .drawer-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
-    .drawer-close {
-      background: var(--bg);
-      border: none;
-      cursor: pointer;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      font-size: 1rem;
-    }
-    .drawer-close:hover { color: var(--text); }
-
-    .drawer-nav {
-      padding: 0.75rem 0.5rem;
-      border-bottom: 1px solid var(--divider);
-    }
-    .drawer-nav-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.7rem 0.85rem;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 0.96rem;
+      gap: 6px;
+      flex-shrink: 0;
+      font: inherit;
+      font-size: 0.85rem;
       font-weight: 600;
+      letter-spacing: -0.01em;
       color: var(--text);
-      transition: background 0.15s ease;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.5rem 0.95rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transform: scale(0.7);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease, background 0.15s ease, color 0.15s ease;
     }
-    .drawer-nav-item:hover { background: var(--bg); }
-    .drawer-nav-item.active { background: var(--accent-soft); color: var(--accent); }
-    .drawer-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+    .cat-nav.open .cat-btn { transform: scale(1); opacity: 1; }
+    .cat-nav.open .cat-btn:nth-child(1) { transition-delay: 0.04s; }
+    .cat-nav.open .cat-btn:nth-child(2) { transition-delay: 0.10s; }
+    .cat-nav.open .cat-btn:nth-child(3) { transition-delay: 0.16s; }
+    .cat-nav.open .cat-btn:nth-child(4) { transition-delay: 0.22s; }
+    .cat-nav.open .cat-btn:nth-child(5) { transition-delay: 0.28s; }
+    .cat-btn:hover { background: var(--accent-soft); }
+    .cat-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .cat-emoji { font-size: 1.05rem; line-height: 1; }
 
     /* ── Full-page views ── */
     .view { display: none; }
@@ -949,32 +911,15 @@
 
 <div class="bg" id="bg"></div>
 
-<div class="drawer-overlay" id="drawerOverlay"></div>
-<div class="drawer" id="drawer">
-  <div class="drawer-header">
-    <div class="drawer-title">Menu</div>
-    <button class="drawer-close" id="drawerClose" aria-label="Close menu">✕</button>
-  </div>
-  <nav class="drawer-nav">
-    <button class="drawer-nav-item" data-view="home" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-      Goings On
-    </button>
-    <button class="drawer-nav-item" data-view="places-to-eat" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-      Places to Eat
-    </button>
-  </nav>
-</div>
-
 <div class="container view active" id="view-home">
   <div class="brand-row">
-    <button class="hamburger-btn" type="button" aria-label="Open menu">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
       <span></span><span></span><span></span>
     </button>
     <div class="brand">Goings On</div>
     <button class="today-btn" id="todayBtn" type="button">Today</button>
   </div>
+  <div class="cat-nav"></div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
   </div>
@@ -982,12 +927,13 @@
 
 <div class="container view" id="view-places-to-eat">
   <div class="brand-row">
-    <button class="hamburger-btn" type="button" aria-label="Open menu">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
       <span></span><span></span><span></span>
     </button>
     <div class="brand">Places to Eat</div>
     <button class="back-btn" data-view="home" type="button">← Back</button>
   </div>
+  <div class="cat-nav"></div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
@@ -1742,14 +1688,20 @@
       </div>`;
   }
 
+  // Categories shown when the hamburger expands. Add more here as new views are built.
+  const CATEGORIES = [
+    { view: 'home',           emoji: '📅', label: 'Goings On' },
+    { view: 'places-to-eat',  emoji: '🍽️', label: 'Places to Eat' },
+  ];
+
   let restoImagesLoaded = false;
 
   function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById('view-' + viewId);
     (target || document.getElementById('view-home')).classList.add('active');
-    document.querySelectorAll('.drawer-nav-item').forEach(i =>
-      i.classList.toggle('active', i.dataset.view === viewId));
+    document.querySelectorAll('.cat-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.view === viewId));
     window.scrollTo(0, 0);
     if (viewId === 'places-to-eat' && !restoImagesLoaded) {
       restoImagesLoaded = true;
@@ -1758,23 +1710,34 @@
   }
 
   function setupNav() {
-    const overlay = document.getElementById('drawerOverlay');
-    const drawer  = document.getElementById('drawer');
-    const closeBtn = document.getElementById('drawerClose');
+    const closeNav = () => document.querySelectorAll('.cat-nav, .hamburger-btn')
+      .forEach(el => el.classList.remove('open'));
+    const toggleNav = () => {
+      const isOpen = document.querySelector('.cat-nav.open');
+      document.querySelectorAll('.cat-nav, .hamburger-btn')
+        .forEach(el => el.classList.toggle('open', !isOpen));
+    };
 
-    const openDrawer  = () => { drawer.classList.add('open'); overlay.classList.add('open'); document.querySelectorAll('.hamburger-btn').forEach(h => h.classList.add('open')); };
-    const closeDrawer = () => { drawer.classList.remove('open'); overlay.classList.remove('open'); document.querySelectorAll('.hamburger-btn').forEach(h => h.classList.remove('open')); };
+    // Populate each cat-nav with the category buttons
+    const btnHTML = CATEGORIES.map(c =>
+      `<button class="cat-btn" data-view="${c.view}" type="button" title="${escapeAttr(c.label)}">
+         <span class="cat-emoji">${c.emoji}</span>${escapeHtml(c.label)}
+       </button>`).join('');
+    document.querySelectorAll('.cat-nav').forEach(nav => { nav.innerHTML = btnHTML; });
+
+    // Mark the current view's button active
+    const current = document.querySelector('.view.active')?.id.replace('view-', '') || 'home';
+    document.querySelectorAll('.cat-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.view === current));
+
+    // Wire up category buttons
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => { showView(btn.dataset.view); closeNav(); });
+    });
 
     document.querySelectorAll('.hamburger-btn').forEach(h =>
-      h.addEventListener('click', () => drawer.classList.contains('open') ? closeDrawer() : openDrawer()));
-    closeBtn.addEventListener('click', closeDrawer);
-    overlay.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-
-    // Drawer nav → navigate to full-page view
-    drawer.querySelectorAll('.drawer-nav-item').forEach(item => {
-      item.addEventListener('click', () => { showView(item.dataset.view); closeDrawer(); });
-    });
+      h.addEventListener('click', toggleNav));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNav(); });
 
     // Back buttons → return to a view
     document.querySelectorAll('.back-btn').forEach(btn => {
