@@ -704,14 +704,267 @@
       .add-btn svg { width: 22px; height: 22px; }
       .bg { display: none !important; }
     }
+
+    /* ── Hamburger ── */
+    .hamburger-btn {
+      grid-column: 1;
+      justify-self: start;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      border-radius: 8px;
+      transition: color 0.15s ease;
+    }
+    .hamburger-btn:hover { color: var(--text); }
+    .hamburger-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+    .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── Drawer overlay ── */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .drawer-overlay.open { display: block; opacity: 1; }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(360px, 90vw);
+      background: var(--surface);
+      z-index: 201;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0, 0.15, 1);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 32px rgba(0,0,0,0.12);
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--divider);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+    .drawer-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .drawer-close {
+      background: var(--bg);
+      border: none;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+    .drawer-close:hover { color: var(--text); }
+
+    .drawer-nav {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--divider);
+    }
+    .drawer-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: var(--text);
+      transition: background 0.15s ease;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .drawer-nav-item:hover { background: var(--bg); }
+    .drawer-nav-item.active { background: var(--accent-soft); color: var(--accent); }
+    .drawer-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+
+    /* ── Drawer pages ── */
+    .drawer-page { display: none; flex: 1; }
+    .drawer-page.active { display: block; }
+
+    .drawer-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      padding: 1.1rem 1.25rem 0.4rem;
+    }
+
+    .drawer-subcategory {
+      padding: 0 0.75rem 1.25rem;
+    }
+    .drawer-subcategory-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.5rem 0.65rem;
+    }
+
+    /* ── Restaurant tile ── */
+    .resto-tile {
+      display: flex;
+      align-items: stretch;
+      background: var(--bg);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 0.65rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s ease;
+    }
+    .resto-tile:hover { transform: scale(1.01); }
+
+    .resto-img {
+      width: 110px;
+      min-height: 110px;
+      flex-shrink: 0;
+      background: #c8d9c4;
+      object-fit: cover;
+      display: block;
+    }
+    .resto-img-placeholder {
+      width: 110px;
+      min-height: 110px;
+      flex-shrink: 0;
+      background: #c8d9c4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      opacity: 0.5;
+    }
+
+    .resto-info {
+      flex: 1;
+      padding: 0.75rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+    .resto-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .resto-meta {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem 0.6rem;
+      margin-top: 0.1rem;
+    }
+    .resto-meta-item { display: flex; align-items: center; gap: 3px; }
+    .resto-price {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .resto-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
+    .resto-action {
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      border-radius: 999px;
+      padding: 3px 10px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s ease;
+    }
+    .resto-action:hover { background: #c4ddbf; }
   </style>
 </head>
 <body>
 
 <div class="bg" id="bg"></div>
 
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Menu</div>
+    <button class="drawer-close" id="drawerClose" aria-label="Close menu">✕</button>
+  </div>
+  <nav class="drawer-nav">
+    <button class="drawer-nav-item active" data-page="places-to-eat" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+      Places to Eat
+    </button>
+  </nav>
+  <div class="drawer-page active" id="page-places-to-eat">
+    <div class="drawer-section-title">Categories</div>
+    <div class="drawer-subcategory">
+      <div class="drawer-subcategory-label">🌿 Outdoor Dining</div>
+      <div id="outdoor-dining-list"></div>
+    </div>
+  </div>
+</div>
+
 <div class="container">
   <div class="brand-row">
+    <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
     <div class="brand">Goings On</div>
     <button class="today-btn" id="todayBtn" type="button">Today</button>
   </div>
@@ -1219,7 +1472,7 @@
       <div class="discover-row">
         <a class="our-philly-link" href="https://www.ourphilly.org/tonight" target="_blank" rel="noopener">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Not seeing anything? Discover more →
+          Nothing up your alley? Try Here →
         </a>
       </div>
     `;
@@ -1320,8 +1573,89 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   }
 
+  // ── Restaurant data ──────────────────────────────────────────────
+  // Add entries here. image: URL or '' for placeholder emoji.
+  const OUTDOOR_DINING = [
+    // Example — fill in or remove:
+    // {
+    //   name: 'Vernick Food & Drink',
+    //   image: '',
+    //   location: '2031 Walnut St, Philadelphia',
+    //   cuisine: 'American',
+    //   price: '$$$',
+    //   website: 'https://vernickphilly.com',
+    //   reservation: 'https://resy.com/cities/phi/vernick-food-drink',
+    // },
+  ];
+
+  function priceLabel(p) {
+    const map = { '$': 'Budget', '$$': 'Moderate', '$$$': 'Upscale', '$$$$': 'Fine Dining' };
+    return map[p] || p;
+  }
+
+  function restoTileHTML(r) {
+    const img = r.image
+      ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
+      : `<div class="resto-img-placeholder">🍽️</div>`;
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    return `
+      <div class="resto-tile">
+        ${img}
+        <div class="resto-info">
+          <div class="resto-name">${escapeHtml(r.name)}</div>
+          <div class="resto-meta">
+            ${r.cuisine ? `<span class="resto-meta-item">🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
+            ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
+            ${r.price ? `<span class="resto-price" title="${priceLabel(r.price)}">${escapeHtml(r.price)}</span>` : ''}
+          </div>
+          <div class="resto-actions">
+            ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+            ${r.reservation ? `<a class="resto-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+            <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function setupDrawer() {
+    const overlay = document.getElementById('drawerOverlay');
+    const drawer  = document.getElementById('drawer');
+    const hamburger = document.getElementById('hamburgerBtn');
+    const closeBtn  = document.getElementById('drawerClose');
+
+    const open  = () => { drawer.classList.add('open'); overlay.classList.add('open'); hamburger.classList.add('open'); };
+    const close = () => { drawer.classList.remove('open'); overlay.classList.remove('open'); hamburger.classList.remove('open'); };
+
+    hamburger.addEventListener('click', () => drawer.classList.contains('open') ? close() : open());
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+    // Nav tab switching
+    drawer.querySelectorAll('.drawer-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        drawer.querySelectorAll('.drawer-nav-item').forEach(i => i.classList.remove('active'));
+        drawer.querySelectorAll('.drawer-page').forEach(p => p.classList.remove('active'));
+        item.classList.add('active');
+        const page = document.getElementById('page-' + item.dataset.page);
+        if (page) page.classList.add('active');
+      });
+    });
+
+    // Render outdoor dining tiles
+    const list = document.getElementById('outdoor-dining-list');
+    if (list) {
+      if (OUTDOOR_DINING.length === 0) {
+        list.innerHTML = `<div style="padding:0.5rem;font-size:0.82rem;color:var(--text-tertiary);text-align:center;">No restaurants added yet.</div>`;
+      } else {
+        list.innerHTML = OUTDOOR_DINING.map(restoTileHTML).join('');
+      }
+    }
+  }
+
   setRandomPhillyBackground();
   setupAddModal();
+  setupDrawer();
   init();
 </script>
 
