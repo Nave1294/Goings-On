@@ -594,6 +594,7 @@
       margin-top: 0.3rem;
       line-height: 1.4;
     }
+    .loc-guess { color: var(--text-tertiary); font-size: 0.72rem; font-style: italic; }
 
     .empty {
       text-align: center;
@@ -1621,6 +1622,17 @@
 
     attachSwipe(panel, days, byDay, activeIdx);
     bindWeatherToggles(panel);
+
+    // Once location is known, resolve this day's event coordinates (looking up
+    // missing ones online), then re-render once to show distances / apply sort.
+    if (userLoc) {
+      const need = byDay[dayKey(activeDay)].filter(ev => ev._coords === undefined);
+      if (need.length) {
+        Promise.all(need.map(ensureEventCoords)).then(() => {
+          if (lastRender && lastRender.activeIdx === activeIdx) render(days, byDay, activeIdx);
+        });
+      }
+    }
   }
 
   function bindWeatherToggles(panel) {
@@ -1661,18 +1673,29 @@
     }, { passive: true });
   }
 
+  function eventLocationStr(ev) {
+    return ev.location || ev._foundLocation || '';
+  }
+
   function eventCoords(ev) {
     if (ev._coords) return ev._coords;            // looked up via Places
     if (!ev.location) return null;
     return geoCache[cleanLocation(ev.location).toLowerCase()] || null; // weather geocode fallback
   }
 
-  // Look up precise coordinates for an event location via the Places API.
+  // Look up coordinates (and, when missing, a location) for an event via the Places API.
+  // If the event has no location, search by its title to find the venue online.
   async function ensureEventCoords(ev) {
     if (ev._coords !== undefined) return;
-    if (!ev.location) { ev._coords = null; return; }
-    const info = await fetchPlaceInfo(ev.location);
-    ev._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+    const queryStr = ev.location || ev.summary;
+    if (!queryStr) { ev._coords = null; return; }
+    const info = await fetchPlaceInfo(queryStr);
+    if (info && info.lat != null) {
+      ev._coords = { lat: info.lat, lon: info.lon };
+      if (!ev.location && info.address) ev._foundLocation = info.address; // discovered online
+    } else {
+      ev._coords = null;
+    }
   }
 
   function eventDistance(ev) {
@@ -1692,10 +1715,13 @@
     const allDay = !ev.start.dateTime;
     const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
     const endLabel = (!allDay && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
-    const loc  = ev.location ? `<div class="event-meta">${escapeHtml(ev.location)}</div>` : '';
+    const locStr = eventLocationStr(ev);
+    const loc = ev.location
+      ? `<div class="event-meta">${escapeHtml(ev.location)}</div>`
+      : (ev._foundLocation ? `<div class="event-meta">🔎 ${escapeHtml(ev._foundLocation)} <span class="loc-guess">(found online)</span></div>` : '');
     const desc = ev.description ? `<div class="event-meta">${escapeHtml(stripTags(ev.description)).slice(0, 140)}</div>` : '';
-    const mapBtn = ev.location ? `
-      <a class="event-map" href="${escapeAttr(mapUrl(ev.location))}" target="_blank" rel="noopener">
+    const mapBtn = locStr ? `
+      <a class="event-map" href="${escapeAttr(mapUrl(locStr))}" target="_blank" rel="noopener">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
           <circle cx="12" cy="10" r="3"/>
@@ -1811,7 +1837,13 @@
   // Add restaurants to `sections` (each section = { label, places: [...] }).
   // Ordered most general → most filtered.
   const PLACES_TO_EAT = [
-    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [] },
+    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [
+      { label: '🏘️ Fishtown', places: [
+        { name: 'Fishtown Tavern', location: '1301 Frankford Ave, Fishtown', cuisine: 'Bar & American', price: '$$', website: 'https://www.fishtowntavern.com', desc: 'Easygoing Frankford Ave neighborhood bar with American pub fare, weekend brunch, and a laid-back local crowd.' },
+        { name: "Johnny Brenda's", location: '1201 Frankford Ave, Fishtown', cuisine: 'Gastropub & Music Venue', price: '$$', website: 'https://www.johnnybrendas.com', reservation: 'https://www.johnnybrendas.com', desc: 'Beloved Fishtown institution at Frankford & Girard — a gastropub with local beer and elevated bar food downstairs and a legendary live-music venue upstairs.' },
+        { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Neighborhood Fishtown pizza joint for a quick, no-fuss slice.' },
+      ]},
+    ] },
     { id: 'breakfast',    emoji: '🍳', label: 'Breakfast',          subtitle: 'Morning starts & brunch',          sections: [] },
     { id: 'lunch',        emoji: '🥪', label: 'Lunch',              subtitle: 'Midday bites',                      sections: [] },
     { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',              sections: [] },
@@ -1864,7 +1896,7 @@
 
   const placeInfoCache = {};
 
-  // Returns { photoUrl, lat, lon } for a text query (cached).
+  // Returns { photoUrl, lat, lon, address } for a text query (cached).
   async function fetchPlaceInfo(query) {
     if (placeInfoCache[query] !== undefined) return placeInfoCache[query];
     try {
@@ -1873,7 +1905,7 @@
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': PLACES_API_KEY,
-          'X-Goog-FieldMask': 'places.photos,places.location',
+          'X-Goog-FieldMask': 'places.photos,places.location,places.formattedAddress',
         },
         body: JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' }),
       });
@@ -1886,6 +1918,7 @@
         photoUrl: photo?.name ? `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}` : null,
         lat: place.location?.latitude ?? null,
         lon: place.location?.longitude ?? null,
+        address: place.formattedAddress || null,
       };
       placeInfoCache[query] = info;
       return info;
@@ -2076,18 +2109,17 @@
       btn.classList.add('loading');
       try { await getUserLocation(); }
       catch { btn.classList.remove('loading'); alert('Couldn’t get your location. Please allow location access and try again.'); return; }
-      // Resolve coordinates for every event up front so sorting is accurate.
-      if (lastRender) {
-        const all = new Set();
-        Object.values(lastRender.byDay).forEach(arr => arr.forEach(ev => all.add(ev)));
-        await Promise.all([...all].map(ensureEventCoords));
-      }
       btn.classList.remove('loading');
       proximityActive = true;
     } else {
       proximityActive = false;
     }
     document.querySelectorAll('.near-btn').forEach(b => b.classList.toggle('active', proximityActive));
+    refreshForLocation();
+  }
+
+  // Re-render whatever is on screen so distances/sorting reflect the latest location.
+  function refreshForLocation() {
     if (currentEatCat) renderEatCategory(currentEatCat);
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
@@ -2183,6 +2215,9 @@
   enableHorizontalWheelScroll();
   enableDragScroll();
   init();
+
+  // Ask for location on load; once granted, show distances everywhere.
+  getUserLocation().then(refreshForLocation).catch(() => {});
 </script>
 
 </body>
