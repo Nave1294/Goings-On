@@ -1923,7 +1923,6 @@
   function restoTileHTML(r) {
     const fullLoc = r.name + ' ' + (r.location || '');
     const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
-    const mapEmbed = `https://maps.google.com/maps?q=${encodeURIComponent(fullLoc)}&z=15&output=embed`;
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
@@ -1950,7 +1949,7 @@
               ${r.reservation ? `<a class="resto-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
               <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Directions</a>
             </div>
-            <iframe class="resto-map" data-src="${escapeAttr(mapEmbed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${escapeAttr(r.name)}"></iframe>
+            <iframe class="resto-map" data-dest="${escapeAttr(fullLoc)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${escapeAttr(r.name)}"></iframe>
           </div>
         </div>
       </div>`;
@@ -1972,7 +1971,14 @@
     const wasOpen = tile.classList.contains('expanded');
     if (!wasOpen) {
       const iframe = tile.querySelector('.resto-map');
-      if (iframe && !iframe.src && iframe.dataset.src) iframe.src = iframe.dataset.src;
+      if (iframe) {
+        const dest = encodeURIComponent(iframe.dataset.dest);
+        // With location: show a route (you → restaurant) so both pins appear. Otherwise a single pin.
+        const want = userLoc
+          ? `https://maps.google.com/maps?saddr=${userLoc.lat},${userLoc.lon}&daddr=${dest}&output=embed`
+          : `https://maps.google.com/maps?q=${dest}&z=15&output=embed`;
+        if (iframe.src !== want) iframe.src = want;
+      }
     }
     tile.classList.toggle('expanded');
   }
