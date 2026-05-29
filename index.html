@@ -1810,8 +1810,8 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   }
 
+  // EAT-PLACES-START — managed by audit-places.js, do not edit markers
   // ── Restaurant data ──────────────────────────────────────────────
-  // Each entry: image: URL or '' for placeholder emoji.
   const OUTDOOR_DINING_SECTIONS = [
     {
       label: '🏙️ Rooftop Bars',
@@ -1902,7 +1902,30 @@
         { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Neighborhood Fishtown pizza joint for a quick, no-fuss slice.' },
       ]},
     ] },
-    { id: 'breakfast',    emoji: '🍳', label: 'Breakfast',          subtitle: 'Morning starts & brunch',          sections: [] },
+    { id: 'breakfast', emoji: '🍳', label: 'Breakfast', subtitle: 'Morning starts & brunch', sections: [
+      { label: '🥚 Classic Diners', places: [
+        { name: "Sam's Morning Glory Diner", location: '735 S 10th St, Bella Vista', cuisine: 'American Diner', price: '$', website: 'https://www.morningglorydiner.com', desc: 'Cash-only South Philly icon since 1993 — frittatas, tofu scrambles, challah French toast, and a reliably good egg sandwich. Expect a line on weekends.' },
+        { name: "Sulimay's", location: '632 E Girard Ave, Fishtown', cuisine: 'American Diner', price: '$', desc: 'Old-school Fishtown diner that does the classics better than average. Known for whitefish scrapple, pancakes, corned beef hash, and scrapple-heavy Benedicts.' },
+        { name: 'Down Home Diner', location: '51 N 12th St, Reading Terminal Market', cuisine: 'American Diner', price: '$', website: 'https://www.downhomediner.net', desc: 'Inside Reading Terminal Market since 1987 — locally sourced comfort food, cheesesteak omelets, and buttermilk biscuits. Opens at 7am, perfect before a market run.' },
+      ]},
+      { label: '🥪 Sandwiches & Savory', places: [
+        { name: 'Middle Child', location: '248 S 11th St, Midtown Village', cuisine: 'Breakfast Sandwiches', price: '$', website: 'https://middlechildphilly.com', desc: 'The corned beef breakfast sandwich here won "Best Breakfast in America" on Good Morning America. Impossibly fluffy egg, crisp hash brown, and more flavor than it has any right to have.' },
+        { name: 'Middle Child Clubhouse', location: '1232 N Front St, Fishtown', cuisine: 'Breakfast & Lunch', price: '$$', website: 'https://middlechildphilly.com', desc: 'The bigger Fishtown sibling — same legendary sandwich plus what might be Philly\'s best single pancake (malted buttermilk, citrus, honey butter), a deli burrito, and blueberry-chai yogurt bowl.' },
+        { name: 'The Breakfast Den', location: '1500 South St', cuisine: 'American-Vietnamese', price: '$$', website: 'https://thebreakfastden.com', desc: 'Chef Huyen\'s South Street spot blends her Vietnamese immigrant upbringing with American comfort food — pho broth omelets, banh mi-inspired sandwiches, and fluffy ube pancakes.' },
+      ]},
+      { label: '🌍 International Morning', places: [
+        { name: 'Dizengoff', location: '1625 Sansom St, Center City', cuisine: 'Israeli', price: '$$', website: 'https://www.dizengoffhummus.com', reservation: 'https://resy.com/cities/phi/dizengoff', desc: 'Michael Solomonov\'s hummus counter — come for the shakshuka, chocolate pita French toast, flaky jachnun, and Israeli coffee. A Michelin Bib Gourmand pick.' },
+        { name: 'Tierra Colombiana', location: '4535 N 5th St, North Philadelphia', cuisine: 'Colombian & Latin', price: '$', website: 'https://tierracolombianarestaurant.com', desc: 'A North Philly institution open since 8am with a huge breakfast menu: arepas, gallo pinto, Cubanos, pancakes, and oatmeal. Colombian soul in every dish.' },
+        { name: 'Phở 75', location: '1122 Washington Ave, South Philadelphia', cuisine: 'Vietnamese', price: '$', website: 'https://phillypho.com', desc: 'Opens at 9am — pho is the Vietnamese breakfast, and Phở 75 does it right. No-frills, fast, and one of the best bowls in the city. The broth speaks for itself.' },
+      ]},
+      { label: '☕ Café & Brunch', places: [
+        { name: "Honey's Sit 'n Eat", location: '800 N 4th St, Northern Liberties', cuisine: 'Jewish-Southern', price: '$$', website: 'https://honeysphilly.com', desc: 'Jewish deli meets Southern American — matzo ball soup, latkes, challah French toast, and shrimp and grits on the same menu. A Northern Liberties classic.' },
+        { name: 'Green Eggs Cafe', location: '212 S 13th St, Center City', cuisine: 'New American Brunch', price: '$$', website: 'https://www.greeneggscafe.com', desc: 'Playful, creative brunch menu with multiple Philly locations. Long waits, worth it — think pumpkin pancakes, crab cake Benedicts, and the best fried chicken and waffles in town.' },
+        { name: "Sabrina's Cafe", location: '1804 Callowhill St, Art Museum', cuisine: 'New American Brunch', price: '$$', website: 'https://www.sabrinascafe.com', reservation: 'https://www.exploretock.com/sabrinascafe', desc: 'Philly brunch institution across several locations — overstuffed Benedicts, stuffed French toast, and a warm family-run vibe. Art Museum location is the original.' },
+        { name: 'Ants Pants Café', location: '2212 South St, Graduate Hospital', cuisine: 'Australian Café', price: '$$', website: 'https://antspantscafe.com', desc: 'Australian-style breakfast done right since 2004 — flat whites, smashed avo, and a rotating hash that\'s always excellent. Low-key, dog-friendly patio in good weather.' },
+        { name: 'Cafe Lift', location: '1124 Spring Garden St, Callowhill', cuisine: 'New American Brunch', price: '$$', website: 'https://www.cafelift.com', desc: 'All-day brunch in an airy industrial space. Olivia\'s Big Pancake (massive malted buttermilk with honey butter) is the move, alongside solid Eggs Benedict and a good boozy brunch cocktail.' },
+      ]},
+    ]},
     { id: 'lunch',        emoji: '🥪', label: 'Lunch',              subtitle: 'Midday bites',                      sections: [] },
     { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',              sections: [] },
     {
@@ -1917,7 +1940,9 @@
     { id: 'cheap-eats',   emoji: '💵', label: 'Cheap Eats',         subtitle: 'Big flavor, small tab',             sections: [] },
     { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',             sections: [] },
   ];
+  // EAT-PLACES-END
 
+  // BOOK-PLACES-START — managed by audit-places.js, do not edit markers
   // ── Bookstore data ──────────────────────────────────────────────
   const BOOKSTORES = [
     {
@@ -1982,6 +2007,7 @@
       ],
     },
   ];
+  // BOOK-PLACES-END
 
   function priceLabel(p) {
     const map = { '$': 'Budget', '$$': 'Moderate', '$$$': 'Upscale', '$$$$': 'Fine Dining' };

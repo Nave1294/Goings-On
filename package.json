@@ -3,7 +3,8 @@
   "private": true,
   "description": "GitHub Actions scripts for Goings On",
   "scripts": {
-    "update-trendy": "node scripts/update-trendy.js"
+    "update-trendy": "node scripts/update-trendy.js",
+    "audit-places": "node scripts/audit-places.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0"
