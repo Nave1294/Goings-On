@@ -803,19 +803,19 @@
       gap: 0.4rem;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      scroll-snap-type: x proximity;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent-soft) transparent;
-      padding: 0.1rem 0.25rem 0.9rem;
+      scrollbar-width: none;
+      cursor: grab;
+      padding: 0.1rem 0.25rem 1rem;
       margin: 0 -0.25rem 0.5rem;
       /* fade the trailing edge so it's clear there's more to scroll */
-      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
-      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
     }
-    .sub-tabs::-webkit-scrollbar { height: 5px; }
-    .sub-tabs::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 999px; }
-    .sub-tabs::-webkit-scrollbar-track { background: transparent; }
-    .sub-tab { scroll-snap-align: start; }
+    .sub-tabs::-webkit-scrollbar { display: none; }
+    .tabs.dragging, .sub-tabs.dragging, .cat-nav.dragging { cursor: grabbing; scroll-behavior: auto; }
+    .tabs.dragging .tab,
+    .sub-tabs.dragging .sub-tab,
+    .cat-nav.dragging .cat-btn { pointer-events: none; }
     .sub-tab {
       display: inline-flex;
       align-items: center;
@@ -1798,7 +1798,12 @@
 
   // Sub-categories shown as tabs inside the Places to Eat window.
   // Add restaurants to `sections` (each section = { label, places: [...] }).
+  // Ordered most general → most filtered.
   const PLACES_TO_EAT = [
+    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [] },
+    { id: 'breakfast',    emoji: '🍳', label: 'Breakfast',          subtitle: 'Morning starts & brunch',          sections: [] },
+    { id: 'lunch',        emoji: '🥪', label: 'Lunch',              subtitle: 'Midday bites',                      sections: [] },
+    { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',              sections: [] },
     {
       id: 'outdoor-dining',
       emoji: '🌿',
@@ -1806,12 +1811,8 @@
       subtitle: 'Rooftops, gardens, waterfronts &amp; patios',
       sections: OUTDOOR_DINING_SECTIONS,
     },
-    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [] },
-    { id: 'breakfast',    emoji: '🍳', label: 'Breakfast',          subtitle: 'Morning starts & brunch',          sections: [] },
-    { id: 'lunch',        emoji: '🥪', label: 'Lunch',              subtitle: 'Midday bites',                      sections: [] },
-    { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',              sections: [] },
-    { id: 'unique',       emoji: '✨', label: 'Unique',             subtitle: 'Only-in-Philly experiences',        sections: [] },
     { id: 'date-night',   emoji: '🌙', label: 'Date Night',         subtitle: 'Romantic & memorable',              sections: [] },
+    { id: 'unique',       emoji: '✨', label: 'Unique',             subtitle: 'Only-in-Philly experiences',        sections: [] },
     { id: 'cheap-eats',   emoji: '💵', label: 'Cheap Eats',         subtitle: 'Big flavor, small tab',             sections: [] },
     { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',             sections: [] },
   ];
@@ -2044,7 +2045,9 @@
     });
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
-    renderEatCategory(PLACES_TO_EAT[0].id);
+    // Open on the first category that actually has spots
+    const firstPopulated = PLACES_TO_EAT.find(c => c.sections.some(s => s.places.length)) || PLACES_TO_EAT[0];
+    renderEatCategory(firstPopulated.id);
   }
 
   // Toggle proximity sort on; re-renders both windows and reflects all buttons.
@@ -2120,10 +2123,42 @@
     }, { passive: false });
   }
 
+  // Click-and-drag to scroll tab rows (mouse only; touch keeps native scrolling)
+  function enableDragScroll() {
+    let drag = null;
+    document.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav');
+      if (!row || row.scrollWidth <= row.clientWidth) return;
+      drag = { row, startX: e.clientX, startScroll: row.scrollLeft, moved: false };
+    });
+    document.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.startX;
+      if (!drag.moved && Math.abs(dx) > 4) { drag.moved = true; drag.row.classList.add('dragging'); }
+      if (drag.moved) { drag.row.scrollLeft = drag.startScroll - dx; e.preventDefault(); }
+    });
+    const end = () => {
+      if (!drag) return;
+      const row = drag.row;
+      if (drag.moved) {
+        // swallow the click that fires right after a drag so it doesn't switch tabs
+        const swallow = ev => { ev.stopPropagation(); ev.preventDefault(); };
+        row.addEventListener('click', swallow, { capture: true, once: true });
+        setTimeout(() => row.removeEventListener('click', swallow, true), 60);
+      }
+      row.classList.remove('dragging');
+      drag = null;
+    };
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
+  }
+
   setRandomPhillyBackground();
   setupAddModal();
   setupNav();
   enableHorizontalWheelScroll();
+  enableDragScroll();
   init();
 </script>
 
