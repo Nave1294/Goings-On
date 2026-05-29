@@ -1033,29 +1033,28 @@
     .proximity-bar {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 1.25rem;
+      margin: -0.25rem 0 0.6rem;
     }
     .near-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       font: inherit;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: -0.005em;
-      color: var(--accent);
-      background: var(--surface);
-      border: 1px solid var(--divider);
+      color: var(--text-secondary);
+      background: none;
+      border: none;
       border-radius: 999px;
-      padding: 0.45rem 0.9rem;
+      padding: 0.2rem 0.5rem;
       cursor: pointer;
-      box-shadow: var(--shadow);
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease;
     }
-    .near-btn:hover { background: var(--accent-soft); }
-    .near-btn:active { transform: scale(0.96); }
-    .near-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .near-btn.loading { opacity: 0.6; pointer-events: none; }
+    .near-btn:hover { color: var(--accent); background: var(--accent-soft); }
+    .near-btn:active { transform: scale(0.95); }
+    .near-btn.active { color: var(--accent); background: var(--accent-soft); }
+    .near-btn.loading { opacity: 0.5; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -1072,7 +1071,7 @@
   </div>
   <div class="cat-nav"></div>
   <div class="proximity-bar">
-    <button class="near-btn" data-scope="events" type="button">📍 Sort by distance</button>
+    <button class="near-btn" data-scope="events" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
@@ -1090,7 +1089,7 @@
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="proximity-bar">
-    <button class="near-btn" data-scope="places" type="button">📍 Sort by distance</button>
+    <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div class="day-panel">
     <div class="day-heading">
@@ -1591,7 +1590,10 @@
     const activeDay = days[activeIdx];
     let evs = byDay[dayKey(activeDay)];
     if (proximityActive && userLoc) {
-      evs = [...evs].sort((a, b) => eventDistance(a) - eventDistance(b));
+      evs = [...evs].sort((a, b) => {
+        const da = eventDistance(a), db = eventDistance(b);
+        return da === db ? 0 : da - db; // events without a location stay at the bottom, in order
+      });
     }
     const eyebrow = relativeLabel(activeIdx);
 
@@ -1660,8 +1662,17 @@
   }
 
   function eventCoords(ev) {
+    if (ev._coords) return ev._coords;            // looked up via Places
     if (!ev.location) return null;
-    return geoCache[cleanLocation(ev.location).toLowerCase()] || null;
+    return geoCache[cleanLocation(ev.location).toLowerCase()] || null; // weather geocode fallback
+  }
+
+  // Look up precise coordinates for an event location via the Places API.
+  async function ensureEventCoords(ev) {
+    if (ev._coords !== undefined) return;
+    if (!ev.location) { ev._coords = null; return; }
+    const info = await fetchPlaceInfo(ev.location);
+    ev._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
   }
 
   function eventDistance(ev) {
@@ -2018,7 +2029,10 @@
 
     if (proximityActive && userLoc) {
       await Promise.all(allPlaces.map(ensurePlaceCoords));
-      const sorted = [...allPlaces].sort((a, b) => placeDist(a) - placeDist(b));
+      const sorted = [...allPlaces].sort((a, b) => {
+        const da = placeDist(a), db = placeDist(b);
+        return da === db ? 0 : da - db;
+      });
       list.innerHTML = `<div class="eat-content">
         <div class="eat-section-header">📍 Nearest first</div>
         ${sorted.map(restoTileHTML).join('')}
@@ -2056,15 +2070,18 @@
       btn.classList.add('loading');
       try { await getUserLocation(); }
       catch { btn.classList.remove('loading'); alert('Couldn’t get your location. Please allow location access and try again.'); return; }
+      // Resolve coordinates for every event up front so sorting is accurate.
+      if (lastRender) {
+        const all = new Set();
+        Object.values(lastRender.byDay).forEach(arr => arr.forEach(ev => all.add(ev)));
+        await Promise.all([...all].map(ensureEventCoords));
+      }
       btn.classList.remove('loading');
       proximityActive = true;
     } else {
       proximityActive = false;
     }
-    document.querySelectorAll('.near-btn').forEach(b => {
-      b.classList.toggle('active', proximityActive);
-      b.textContent = proximityActive ? '📍 Sorted by distance' : '📍 Sort by distance';
-    });
+    document.querySelectorAll('.near-btn').forEach(b => b.classList.toggle('active', proximityActive));
     if (currentEatCat) renderEatCategory(currentEatCat);
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
