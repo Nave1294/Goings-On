@@ -1,0 +1,11 @@
+{
+  "name": "goings-on",
+  "private": true,
+  "description": "GitHub Actions scripts for Goings On",
+  "scripts": {
+    "update-trendy": "node scripts/update-trendy.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
+  }
+}

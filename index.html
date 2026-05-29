@@ -987,6 +987,8 @@
       transition: background 0.15s ease;
     }
     .resto-action:hover { background: #c4ddbf; }
+    .resto-action--eater { color: #b83232; background: rgba(184,50,50,0.08); }
+    .resto-action--eater:hover { background: rgba(184,50,50,0.16); }
 
     /* ── Restaurant expand panel ── */
     .resto-expand {
@@ -1875,10 +1877,24 @@
     },
   ];
 
+  // TRENDY-START — auto-updated by GitHub Action every Monday, do not edit manually
+  const TRENDY_UPDATED = '';
+  const TRENDY_PLACES  = [];
+  // TRENDY-END
+
   // Sub-categories shown as tabs inside the Places to Eat window.
   // Add restaurants to `sections` (each section = { label, places: [...] }).
   // Ordered most general → most filtered.
   const PLACES_TO_EAT = [
+    {
+      id: 'trending',
+      emoji: '🔥',
+      label: 'Trending',
+      subtitle: TRENDY_UPDATED
+        ? `What Eater Philly is writing about &middot; <span style="opacity:.6">Updated ${TRENDY_UPDATED}</span>`
+        : 'What Eater Philly is writing about',
+      sections: TRENDY_PLACES.length ? [{ label: '', places: TRENDY_PLACES }] : [],
+    },
     { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [
       { label: '🏘️ Fishtown', places: [
         { name: 'Fishtown Tavern', location: '1301 Frankford Ave, Fishtown', cuisine: 'Bar & American', price: '$$', website: 'https://www.fishtowntavern.com', desc: 'Easygoing Frankford Ave neighborhood bar with American pub fare, weekend brunch, and a laid-back local crowd.' },
@@ -2086,6 +2102,7 @@
           <div class="resto-expand-inner">
             ${r.desc ? `<div class="resto-desc">${escapeHtml(r.desc)}</div>` : ''}
             <div class="resto-actions">
+              ${r.articleUrl ? `<a class="resto-action resto-action--eater" href="${escapeAttr(r.articleUrl)}" target="_blank" rel="noopener">📰 Eater write-up</a>` : ''}
               ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
               ${r.reservation ? `<a class="resto-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
               <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
