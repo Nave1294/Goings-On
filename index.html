@@ -1871,9 +1871,21 @@
     setupEatTabs();
   }
 
+  // Translate vertical mouse-wheel into horizontal scroll over tab rows
+  function enableHorizontalWheelScroll() {
+    document.addEventListener('wheel', e => {
+      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav');
+      if (!row || row.scrollWidth <= row.clientWidth) return;
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // already a horizontal gesture
+      e.preventDefault();
+      row.scrollLeft += e.deltaY;
+    }, { passive: false });
+  }
+
   setRandomPhillyBackground();
   setupAddModal();
   setupNav();
+  enableHorizontalWheelScroll();
   init();
 </script>
 
