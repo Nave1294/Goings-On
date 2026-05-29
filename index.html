@@ -821,38 +821,39 @@
     .drawer-nav-item.active { background: var(--accent-soft); color: var(--accent); }
     .drawer-nav-item svg { flex-shrink: 0; opacity: 0.7; }
 
-    /* ── Drawer pages ── */
-    .drawer-page { display: none; flex: 1; }
-    .drawer-page.active { display: block; }
+    /* ── Full-page views ── */
+    .view { display: none; }
+    .view.active { display: block; }
 
-    .drawer-section-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--text-tertiary);
-      padding: 1.1rem 1.25rem 0.4rem;
+    .back-btn {
+      grid-column: 3;
+      justify-self: end;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 999px;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
+    .back-btn:hover { transform: translateY(-1px); background: #c4ddbf; }
+    .back-btn:active { transform: scale(0.96); }
 
-    .drawer-subcategory {
-      padding: 0 0.75rem 1.25rem;
-    }
-    .drawer-subsection-header {
-      font-size: 0.7rem;
+    .eat-section-header {
+      font-size: 0.78rem;
       font-weight: 700;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--accent);
-      padding: 0.9rem 0.5rem 0.45rem;
-      margin-top: 0.25rem;
+      padding: 1.4rem 0.25rem 0.6rem;
+      border-bottom: 1px solid var(--divider);
+      margin-bottom: 0.85rem;
     }
-    .drawer-subcategory-label {
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--text-secondary);
-      padding: 0.5rem 0.5rem 0.65rem;
-    }
+    .eat-section-header:first-child { padding-top: 0.25rem; }
 
     /* ── Restaurant tile ── */
     .resto-tile {
@@ -955,23 +956,20 @@
     <button class="drawer-close" id="drawerClose" aria-label="Close menu">✕</button>
   </div>
   <nav class="drawer-nav">
-    <button class="drawer-nav-item active" data-page="places-to-eat" type="button">
+    <button class="drawer-nav-item" data-view="home" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Goings On
+    </button>
+    <button class="drawer-nav-item" data-view="places-to-eat" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
       Places to Eat
     </button>
   </nav>
-  <div class="drawer-page active" id="page-places-to-eat">
-    <div class="drawer-section-title">Categories</div>
-    <div class="drawer-subcategory">
-      <div class="drawer-subcategory-label">🌿 Outdoor Dining</div>
-      <div id="outdoor-dining-list"></div>
-    </div>
-  </div>
 </div>
 
-<div class="container">
+<div class="container view active" id="view-home">
   <div class="brand-row">
-    <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Open menu">
+    <button class="hamburger-btn" type="button" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
     <div class="brand">Goings On</div>
@@ -979,6 +977,26 @@
   </div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<div class="container view" id="view-places-to-eat">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Places to Eat</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow">Curated Picks</div>
+        <div class="day-title">Outdoor Dining</div>
+        <div class="day-subtitle">Rooftops, gardens, waterfronts &amp; patios</div>
+      </div>
+    </div>
+    <div id="outdoor-dining-list"></div>
   </div>
 </div>
 
@@ -1678,36 +1696,44 @@
       </div>`;
   }
 
-  function setupDrawer() {
+  function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById('view-' + viewId);
+    (target || document.getElementById('view-home')).classList.add('active');
+    document.querySelectorAll('.drawer-nav-item').forEach(i =>
+      i.classList.toggle('active', i.dataset.view === viewId));
+    window.scrollTo(0, 0);
+  }
+
+  function setupNav() {
     const overlay = document.getElementById('drawerOverlay');
     const drawer  = document.getElementById('drawer');
-    const hamburger = document.getElementById('hamburgerBtn');
-    const closeBtn  = document.getElementById('drawerClose');
+    const closeBtn = document.getElementById('drawerClose');
 
-    const open  = () => { drawer.classList.add('open'); overlay.classList.add('open'); hamburger.classList.add('open'); };
-    const close = () => { drawer.classList.remove('open'); overlay.classList.remove('open'); hamburger.classList.remove('open'); };
+    const openDrawer  = () => { drawer.classList.add('open'); overlay.classList.add('open'); document.querySelectorAll('.hamburger-btn').forEach(h => h.classList.add('open')); };
+    const closeDrawer = () => { drawer.classList.remove('open'); overlay.classList.remove('open'); document.querySelectorAll('.hamburger-btn').forEach(h => h.classList.remove('open')); };
 
-    hamburger.addEventListener('click', () => drawer.classList.contains('open') ? close() : open());
-    closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', close);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    document.querySelectorAll('.hamburger-btn').forEach(h =>
+      h.addEventListener('click', () => drawer.classList.contains('open') ? closeDrawer() : openDrawer()));
+    closeBtn.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
-    // Nav tab switching
+    // Drawer nav → navigate to full-page view
     drawer.querySelectorAll('.drawer-nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        drawer.querySelectorAll('.drawer-nav-item').forEach(i => i.classList.remove('active'));
-        drawer.querySelectorAll('.drawer-page').forEach(p => p.classList.remove('active'));
-        item.classList.add('active');
-        const page = document.getElementById('page-' + item.dataset.page);
-        if (page) page.classList.add('active');
-      });
+      item.addEventListener('click', () => { showView(item.dataset.view); closeDrawer(); });
+    });
+
+    // Back buttons → return to a view
+    document.querySelectorAll('.back-btn').forEach(btn => {
+      btn.addEventListener('click', () => showView(btn.dataset.view));
     });
 
     // Render outdoor dining tiles by section
     const list = document.getElementById('outdoor-dining-list');
     if (list) {
       list.innerHTML = OUTDOOR_DINING_SECTIONS.map(section => `
-        <div class="drawer-subsection-header">${escapeHtml(section.label)}</div>
+        <div class="eat-section-header">${escapeHtml(section.label)}</div>
         ${section.places.map(restoTileHTML).join('')}
       `).join('');
     }
@@ -1715,7 +1741,7 @@
 
   setRandomPhillyBackground();
   setupAddModal();
-  setupDrawer();
+  setupNav();
   init();
 </script>
 
