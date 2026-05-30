@@ -1188,15 +1188,6 @@
   const API_KEY        = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
   const PLACES_API_KEY = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
 
-  // ── Google Sheet that powers the hamburger windows ──────────────
-  // Paste your Sheet ID between the quotes. It's the long string in the
-  // sheet's URL: docs.google.com/spreadsheets/d/THIS_PART/edit
-  // The sheet must be shared "Anyone with the link → Viewer".
-  // Leave blank to fall back to the built-in lists below.
-  const SHEET_ID = '1l-JgdD-qbl_L8VGJnDpFMtfU5yQzCmhResqPlXHsgRI';
-  // Worksheet (tab) names inside that spreadsheet, mapped to each window.
-  const SHEET_TABS = { eat: 'Places to Eat', books: 'Bookstores' };
-
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1939,6 +1930,11 @@
     { id: 'unique',       emoji: '✨', label: 'Unique',             subtitle: 'Only-in-Philly experiences',        sections: [] },
     { id: 'cheap-eats',   emoji: '💵', label: 'Cheap Eats',         subtitle: 'Big flavor, small tab',             sections: [] },
     { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',             sections: [] },
+    { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', sections: [
+      { label: '🍦 Ice Cream', places: [
+        { name: "Cuzzy's Ice Cream", location: '618 S 5th St, Queen Village', cuisine: 'Ice Cream', price: '$', website: 'https://www.cuzzysicecream.com', desc: "Philly Mag Best of Philly winner for ice cream — small-batch rotating flavors like spumoni and cotton candy grape sorbet, with house-made toppings. A Queen Village gem." },
+      ]},
+    ]},
   ];
   // EAT-PLACES-END
 
@@ -2332,72 +2328,6 @@
     renderBookCategory(BOOKSTORES[0].id);
   }
 
-  // ── Google Sheet loader ─────────────────────────────────────────
-  // Reads a worksheet via Google's visualization endpoint (no API key
-  // needed; sheet just has to be shared "anyone with the link can view").
-  // Returns an array of row objects keyed by the header-row labels.
-  async function fetchSheetTab(tabName) {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
-      `?tqx=out:json&headers=1&sheet=${encodeURIComponent(tabName)}`;
-    const text = await (await fetch(url)).text();
-    const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
-    const cols = (json.table.cols || []).map(c => String(c.label || '').trim().toLowerCase());
-    return (json.table.rows || []).map(r => {
-      const obj = {};
-      (r.c || []).forEach((cell, i) => {
-        if (cols[i]) obj[cols[i]] = cell && cell.v != null ? String(cell.v).trim() : '';
-      });
-      return obj;
-    }).filter(row => (row.name || '').length); // skip blank rows
-  }
-
-  // Group a category's rows into { label, places } sections by the Section column.
-  function groupSections(rows, mapRow) {
-    const map = new Map();
-    for (const row of rows) {
-      const sec = row.section || '';
-      if (!map.has(sec)) map.set(sec, []);
-      map.get(sec).push(mapRow(row));
-    }
-    return [...map.entries()].map(([label, places]) => ({ label, places }));
-  }
-
-  // Distribute rows across a window's predefined sub-categories. A row's
-  // "Category" cell is matched against each tab's label or id.
-  function applySheetRows(rows, cats, mapRow) {
-    for (const cat of cats) {
-      const want = [cat.label.toLowerCase(), cat.id.toLowerCase()];
-      const catRows = rows.filter(r => want.includes((r.category || '').toLowerCase()));
-      cat.sections = catRows.length ? groupSections(catRows, mapRow) : [];
-    }
-  }
-
-  const mapEatRow = r => ({
-    name: r.name, location: r.location, cuisine: r.cuisine, price: r.price,
-    season: r.season, website: r.website, reservation: r.reserve, desc: r.description,
-  });
-  const mapBookRow = r => ({
-    name: r.name, location: r.location, specialty: r.specialty,
-    season: r.season, website: r.website, desc: r.description,
-  });
-
-  // Pull both windows from the sheet, then re-render whatever's on screen.
-  async function loadSheetData() {
-    if (!SHEET_ID) return; // not configured — keep built-in fallback lists
-    try {
-      const [eatRows, bookRows] = await Promise.all([
-        fetchSheetTab(SHEET_TABS.eat),
-        fetchSheetTab(SHEET_TABS.books),
-      ]);
-      if (eatRows.length)  applySheetRows(eatRows,  PLACES_TO_EAT, mapEatRow);
-      if (bookRows.length) applySheetRows(bookRows, BOOKSTORES,    mapBookRow);
-      if (currentEatCat)  renderEatCategory(currentEatCat);
-      if (currentBookCat) renderBookCategory(currentBookCat);
-    } catch (err) {
-      console.warn('Could not load Google Sheet; using built-in lists.', err);
-    }
-  }
-
   // Toggle proximity sort on; re-renders both windows and reflects all buttons.
   async function toggleProximity(btn) {
     if (!proximityActive) {
@@ -2512,7 +2442,6 @@
   enableHorizontalWheelScroll();
   enableDragScroll();
   init();
-  loadSheetData();
 
   // Ask for location on load; once granted, show distances everywhere.
   getUserLocation().then(refreshForLocation).catch(() => {});
