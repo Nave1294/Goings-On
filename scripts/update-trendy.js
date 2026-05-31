@@ -104,58 +104,67 @@ function fmtDate(input) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Fetch the full article page and reduce it to readable plain text.
+async function fetchArticleText(url) {
+  try {
+    const page = await get(url);
+    const txt = page
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&#?[a-z0-9]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return txt.slice(0, 9000);
+  } catch (e) {
+    console.warn(`  couldn't fetch article body (${e.message}) — falling back to RSS blurb`);
+    return '';
+  }
+}
+
 // ─── Claude extraction ───────────────────────────────────────────────────────
 
-// Returns, for each input article, the list of Philly restaurants it mentions.
-async function extractArticleRestaurants(items, client) {
-  if (!items.length) return [];
-
-  const numbered = items.map((item, i) =>
-    `${i + 1}. TITLE: ${item.title}
-   URL: ${item.link}
-   BLURB: ${stripHtml(item.desc)}`
-  ).join('\n\n');
+// Given an article's title and text, returns the Philly restaurants it covers,
+// each with a description summarizing what the article said about that place.
+async function extractRestaurantsFromText(title, source, client) {
+  if (!source) return [];
 
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
+    max_tokens: 2048,
     messages: [{
       role: 'user',
-      content: `You are parsing Eater Philadelphia articles to build a "Trending" list of restaurants worth visiting.
+      content: `Below is an Eater Philadelphia article. Build a "Trending" list of restaurants worth visiting from it.
 
-For each article below, list EVERY specific Philadelphia-area restaurant, bar, cafe, or food spot it mentions positively (new openings, reviews, roundups / "best of" lists, must-try features, etc.). Roundups that name many places are great — include all of them.
+List EVERY specific Philadelphia-area restaurant, bar, cafe, or food spot the article covers positively (new openings, reviews, roundups / "best of" lists, must-try features, etc.). Roundups that name many places are great — include all of them.
 
-For each restaurant include what you can infer from the title and blurb. If a detail isn't given, use an empty string.
+For each one, write a "desc" that is a 1–2 sentence summary of what THIS article specifically said about that place (the dish they praised, why it made the list, what's notable about it). Base it on the article text, not generic knowledge.
 
 EXCLUDE:
 - Places mentioned only because they are closing or have closed
 - Spots outside the greater Philadelphia area
 - Generic references that aren't a named establishment
 
-Return ONLY a valid JSON array (no markdown, no commentary). One object per article that mentions at least one restaurant:
+Return ONLY a valid JSON array (no markdown, no commentary):
 [
-  {
-    "i": 1,                         // the article number above
-    "restaurants": [
-      { "name": "Restaurant Name", "location": "Neighborhood or address, else \"\"", "cuisine": "Cuisine if known, else \"\"", "desc": "One short sentence on why it's notable" }
-    ]
-  }
+  { "name": "Restaurant Name", "location": "Neighborhood or address, else \"\"", "cuisine": "Cuisine if known, else \"\"", "desc": "1–2 sentences on what the article said about this place" }
 ]
+If no qualifying restaurant, return [].
 
-If an article names no qualifying restaurant, omit it. If none qualify at all, return [].
+ARTICLE TITLE: ${title}
 
-Articles:
-${numbered}`,
+ARTICLE TEXT:
+${source}`,
     }],
   });
 
   const text = msg.content[0].text.trim();
   const match = text.match(/\[[\s\S]*\]/);
-  if (!match) { console.warn('Claude returned no JSON array'); return []; }
+  if (!match) { console.warn('  Claude returned no JSON array'); return []; }
   try {
     return JSON.parse(match[0]);
   } catch (e) {
-    console.warn('JSON parse failed:', e.message, '\nRaw:', text.slice(0, 300));
+    console.warn('  JSON parse failed:', e.message, '\n  Raw:', text.slice(0, 200));
     return [];
   }
 }
@@ -200,17 +209,10 @@ async function main() {
     ageDays(it.pubDate) <= MAX_AGE_DAYS && !knownUrls.has(it.link));
   console.log(`${candidates.length} new article(s) to process`);
 
-  const extracted = candidates.length
-    ? await extractArticleRestaurants(candidates, client)
-    : [];
+  const SCHEMA = 2; // bump to re-summarize all existing sections once
 
-  // Build a new section per article that yielded restaurants.
-  const newSections = [];
-  for (const entry of extracted) {
-    const item = candidates[entry.i - 1];
-    if (!item || !Array.isArray(entry.restaurants) || !entry.restaurants.length) continue;
-    const date = isoDate(item.pubDate);
-    const places = entry.restaurants
+  function toPlaces(restaurants, articleUrl, dateInput) {
+    return (Array.isArray(restaurants) ? restaurants : [])
       .filter(r => r && r.name)
       .map(r => ({
         name:     r.name,
@@ -218,16 +220,45 @@ async function main() {
         cuisine:  r.cuisine  || '',
         desc:     r.desc     || '',
         website:  '',
-        articleUrl: item.link,
-        season:   `📰 Eater · ${fmtDate(item.pubDate)}`,
+        articleUrl,
+        season:   `📰 Eater · ${fmtDate(dateInput)}`,
       }));
-    if (!places.length) continue;
+  }
+
+  // One-time backfill: re-summarize any existing section built on an older
+  // schema, using the full article so descriptions describe each place. If the
+  // article can't be fetched we leave it unmarked so it retries on a later run.
+  for (const sec of existing) {
+    if (sec.v === SCHEMA || !sec.articleUrl) { sec.v = SCHEMA; continue; }
+    console.log(`  Refreshing: ${sec.label}`);
+    const body = await fetchArticleText(sec.articleUrl);
+    if (!body) { console.log('    (article unavailable — keeping existing, will retry)'); continue; }
+    const restaurants = await extractRestaurantsFromText(sec.label, body, client);
+    const places = toPlaces(restaurants, sec.articleUrl, sec.date);
+    if (places.length) sec.places = places;
+    sec.v = SCHEMA;
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  // Build a new section per article that yielded restaurants. Each article is
+  // fetched and summarized individually so descriptions reflect its content.
+  const newSections = [];
+  for (const item of candidates) {
+    console.log(`  Reading: ${item.title}`);
+    const body   = await fetchArticleText(item.link);
+    const source = body || stripHtml(item.desc); // fall back to RSS blurb
+    const restaurants = await extractRestaurantsFromText(item.title, source, client);
+    const places = toPlaces(restaurants, item.link, item.pubDate);
+    if (!places.length) { console.log('    (no qualifying restaurants)'); continue; }
+    console.log(`    + ${places.length} restaurant(s)`);
     newSections.push({
       label: `📰 ${item.title}${fmtDate(item.pubDate) ? ` · ${fmtDate(item.pubDate)}` : ''}`,
       articleUrl: item.link,
-      date,
+      date: isoDate(item.pubDate),
+      v: SCHEMA,
       places,
     });
+    await new Promise(r => setTimeout(r, 200)); // be gentle on the API
   }
   console.log(`Added ${newSections.length} new section(s)`);
 
