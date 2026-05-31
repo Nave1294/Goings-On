@@ -20,8 +20,8 @@ const INDEX_PATH = path.join(__dirname, '..', 'index.html');
 
 // Eater Philly feeds to try in order
 const RSS_URLS = [
-  'https://philadelphia.eater.com/rss/index.xml',
-  'https://www.eater.com/rss/philadelphia',
+  'https://philly.eater.com/rss/index.xml',
+  'https://philly.eater.com/rss/front-page/index.xml',
 ];
 
 // How far back to look for articles
