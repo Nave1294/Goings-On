@@ -1869,8 +1869,8 @@
   ];
 
   // TRENDY-START — auto-updated by GitHub Action every Monday, do not edit manually
-  const TRENDY_UPDATED = '';
-  const TRENDY_PLACES  = [];
+  const TRENDY_UPDATED  = '';
+  const TRENDY_SECTIONS = [];
   // TRENDY-END
 
   // Sub-categories shown as tabs inside the Places to Eat window.
@@ -1884,7 +1884,7 @@
       subtitle: TRENDY_UPDATED
         ? `What Eater Philly is writing about &middot; <span style="opacity:.6">Updated ${TRENDY_UPDATED}</span>`
         : 'What Eater Philly is writing about',
-      sections: TRENDY_PLACES.length ? [{ label: '', places: TRENDY_PLACES }] : [],
+      sections: TRENDY_SECTIONS,
     },
     { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [
       { label: '🏘️ Fishtown', places: [
