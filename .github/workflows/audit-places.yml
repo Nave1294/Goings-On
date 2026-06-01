@@ -38,29 +38,25 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Build commit message from the audit summary
+          git add index.html
+
+          # Build commit subject + body from the audit summary
           if [ -f .audit-summary.json ]; then
             DATE=$(node -e "console.log(require('./.audit-summary.json').date)")
             REMOVED=$(node -e "const s=require('./.audit-summary.json'); console.log(s.removed.length ? s.removed.join(', ') : 'none')")
             UPDATED=$(node -e "const s=require('./.audit-summary.json'); console.log(s.updated.length ? s.updated.join(', ') : 'none')")
             NOT_FOUND=$(node -e "const s=require('./.audit-summary.json'); console.log(s.notFound.length ? s.notFound.join(', ') : 'none')")
-            MSG="chore: quarterly places audit ${DATE}
-
-Removed (closed): ${REMOVED}
-Updated (changed): ${UPDATED}
-Not found: ${NOT_FOUND}
-
-[skip ci]"
+            SUBJECT="chore: quarterly places audit ${DATE} [skip ci]"
+            BODY="Removed (closed): ${REMOVED} | Updated (changed): ${UPDATED} | Not found: ${NOT_FOUND}"
           else
-            MSG="chore: quarterly places audit [skip ci]"
+            SUBJECT="chore: quarterly places audit [skip ci]"
+            BODY=""
           fi
-
-          # Stage index.html and remove the temp summary file
-          git add index.html
-          git rm --cached .audit-summary.json 2>/dev/null || true
           rm -f .audit-summary.json
 
-          git diff --staged --quiet \
-            && echo "No changes — all places still current" \
-            || git commit -m "$MSG"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes — all places still current"
+          else
+            git commit -m "$SUBJECT" -m "$BODY"
+            git push
+          fi
