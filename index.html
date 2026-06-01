@@ -3360,8 +3360,13 @@
   function setupToTop() {
     const btn = document.getElementById('toTopBtn');
     if (!btn) return;
-    const onScroll = () => btn.classList.toggle('show', window.scrollY > 300);
+    const THRESHOLD = 120;
+    const onScroll = () => {
+      const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      btn.classList.toggle('show', y > THRESHOLD);
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, { passive: true });
     btn.addEventListener('click', () =>
       window.scrollTo({ top: 0, behavior: 'smooth' }));
     onScroll();
