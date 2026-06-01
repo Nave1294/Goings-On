@@ -3090,8 +3090,13 @@
     }
 
     if (proximityActive && userLoc) {
-      await Promise.all(allPlaces.map(ensurePlaceCoords));
-      const sorted = [...allPlaces].sort((a, b) => {
+      const seen = new Set();
+      const unique = allPlaces.filter(p => {
+        const k = (p.name + '|' + p.location).toLowerCase();
+        return seen.has(k) ? false : (seen.add(k), true);
+      });
+      await Promise.all(unique.map(ensurePlaceCoords));
+      const sorted = [...unique].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
       });
@@ -3150,8 +3155,13 @@
     }
 
     if (proximityActive && userLoc) {
-      await Promise.all(allPlaces.map(ensurePlaceCoords));
-      const sorted = [...allPlaces].sort((a, b) => {
+      const seen = new Set();
+      const unique = allPlaces.filter(p => {
+        const k = (p.name + '|' + p.location).toLowerCase();
+        return seen.has(k) ? false : (seen.add(k), true);
+      });
+      await Promise.all(unique.map(ensurePlaceCoords));
+      const sorted = [...unique].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
       });
