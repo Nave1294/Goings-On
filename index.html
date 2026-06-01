@@ -32,15 +32,13 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: 'kern', 'liga';
-      /* clip (not hidden) prevents horizontal scroll WITHOUT creating a
-         scroll container that would break position: sticky on iOS Safari */
-      overflow-x: clip;
+      overflow-x: hidden;
     }
 
     body {
       background: transparent;
       min-height: 100vh;
-      padding: 0 1.25rem 4rem;
+      padding: 2rem 1.25rem 4rem;
       display: flex;
       justify-content: center;
     }
@@ -363,7 +361,6 @@
 
     .day-panel {
       animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      padding-top: 1.25rem;
     }
 
     @keyframes fadeIn {
@@ -1069,24 +1066,6 @@
     .near-btn:active { transform: scale(0.95); }
     .near-btn.active { color: var(--accent); background: var(--accent-soft); }
     .near-btn.loading { opacity: 0.5; pointer-events: none; }
-
-    /* ── Sticky page header ── */
-    .sticky-header {
-      position: -webkit-sticky; /* iOS Safari needs the prefixed value */
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      /* Extend edge-to-edge past the body side padding */
-      margin: 0 -1.25rem;
-      padding: 1.5rem 1.25rem 0;
-      background: rgba(251, 247, 235, 0.94);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .sticky-header .brand-row { margin-bottom: 0.5rem; }
-    .sticky-header .tabs      { margin-bottom: 0.25rem; }
-    .sticky-header .sub-tabs  { padding-bottom: 0.5rem; margin-bottom: 0; }
-    .sticky-header .proximity-bar { margin-top: 0; margin-bottom: 0.25rem; }
   </style>
 </head>
 <body>
@@ -1094,19 +1073,16 @@
 <div class="bg" id="bg"></div>
 
 <div class="container view active" id="view-home">
-  <div class="sticky-header">
-    <div class="brand-row">
-      <button class="hamburger-btn" type="button" aria-label="Open categories">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="brand">Goings On</div>
-      <button class="today-btn" id="todayBtn" type="button">Today</button>
-    </div>
-    <div class="cat-nav"></div>
-    <div id="tabsSlot"></div>
-    <div class="proximity-bar">
-      <button class="near-btn" data-scope="events" type="button" title="Sort by distance from you">📍 Near me</button>
-    </div>
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Goings On</div>
+    <button class="today-btn" id="todayBtn" type="button">Today</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="events" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div id="app">
     <div class="loading"><div class="spinner"></div></div>
@@ -1114,19 +1090,17 @@
 </div>
 
 <div class="container view" id="view-places-to-eat">
-  <div class="sticky-header">
-    <div class="brand-row">
-      <button class="hamburger-btn" type="button" aria-label="Open categories">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="brand">Places to Eat</div>
-      <button class="back-btn" data-view="home" type="button">← Back</button>
-    </div>
-    <div class="cat-nav"></div>
-    <div class="sub-tabs" id="eatSubTabs"></div>
-    <div class="proximity-bar">
-      <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
-    </div>
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Places to Eat</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="eatSubTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div class="day-panel">
     <div class="day-heading">
@@ -1141,19 +1115,17 @@
 </div>
 
 <div class="container view" id="view-bookstores">
-  <div class="sticky-header">
-    <div class="brand-row">
-      <button class="hamburger-btn" type="button" aria-label="Open categories">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="brand">Bookstores</div>
-      <button class="back-btn" data-view="home" type="button">← Back</button>
-    </div>
-    <div class="cat-nav"></div>
-    <div class="sub-tabs" id="bookSubTabs"></div>
-    <div class="proximity-bar">
-      <button class="near-btn" data-scope="books" type="button" title="Sort by distance from you">📍 Near me</button>
-    </div>
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Bookstores</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="bookSubTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="books" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div class="day-panel">
     <div class="day-heading">
@@ -1646,9 +1618,7 @@
       tabs.appendChild(btn);
     });
 
-    const tabsSlot = document.getElementById('tabsSlot');
-    if (tabsSlot) { tabsSlot.innerHTML = ''; tabsSlot.appendChild(tabs); }
-    else { app.appendChild(tabs); }
+    app.appendChild(tabs);
 
     const panel = document.createElement('div');
     panel.className = 'day-panel';
@@ -3111,6 +3081,18 @@
     return (userLoc && r._coords) ? haversineMiles(userLoc.lat, userLoc.lon, r._coords.lat, r._coords.lon) : Infinity;
   }
 
+  // Remove repeated spots by normalized name, keeping the first occurrence.
+  // (Callers sort by distance first, so the nearest copy is the one kept.)
+  function dedupeByName(places) {
+    const seen = new Set();
+    return places.filter(p => {
+      const k = (p.name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
     currentEatCat = cat.id;
@@ -3132,19 +3114,16 @@
     }
 
     if (proximityActive && userLoc) {
-      const seen = new Set();
-      const unique = allPlaces.filter(p => {
-        const k = (p.name + '|' + p.location).toLowerCase();
-        return seen.has(k) ? false : (seen.add(k), true);
-      });
-      await Promise.all(unique.map(ensurePlaceCoords));
-      const sorted = [...unique].sort((a, b) => {
+      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const sorted = [...allPlaces].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
       });
+      // Drop repeats by normalized name; sorted first means we keep the nearest.
+      const unique = dedupeByName(sorted);
       list.innerHTML = `<div class="eat-content">
         <div class="eat-section-header">📍 Nearest first</div>
-        ${sorted.map(restoTileHTML).join('')}
+        ${unique.map(restoTileHTML).join('')}
       </div>`;
     } else {
       list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
@@ -3197,19 +3176,16 @@
     }
 
     if (proximityActive && userLoc) {
-      const seen = new Set();
-      const unique = allPlaces.filter(p => {
-        const k = (p.name + '|' + p.location).toLowerCase();
-        return seen.has(k) ? false : (seen.add(k), true);
-      });
-      await Promise.all(unique.map(ensurePlaceCoords));
-      const sorted = [...unique].sort((a, b) => {
+      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const sorted = [...allPlaces].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
       });
+      // Drop repeats by normalized name; sorted first means we keep the nearest.
+      const unique = dedupeByName(sorted);
       list.innerHTML = `<div class="eat-content">
         <div class="eat-section-header">📍 Nearest first</div>
-        ${sorted.map(bookTileHTML).join('')}
+        ${unique.map(bookTileHTML).join('')}
       </div>`;
     } else {
       list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
