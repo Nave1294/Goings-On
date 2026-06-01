@@ -32,7 +32,9 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: 'kern', 'liga';
-      overflow-x: hidden;
+      /* clip (not hidden) prevents horizontal scroll WITHOUT creating a
+         scroll container that would break position: sticky on iOS Safari */
+      overflow-x: clip;
     }
 
     body {
@@ -1070,6 +1072,7 @@
 
     /* ── Sticky page header ── */
     .sticky-header {
+      position: -webkit-sticky; /* iOS Safari needs the prefixed value */
       position: sticky;
       top: 0;
       z-index: 40;
