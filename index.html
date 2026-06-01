@@ -123,6 +123,35 @@
       box-shadow: 0 12px 28px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.08);
     }
 
+    .to-top-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--accent);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.15s ease;
+    }
+    .to-top-btn.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .to-top-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .to-top-btn:active { transform: scale(0.94); }
+    .to-top-btn svg { width: 22px; height: 22px; stroke: var(--accent); stroke-width: 2.5; fill: none; }
+
     .explore-btn svg { width: 28px; height: 28px; stroke: var(--accent); stroke-width: 2; }
 
     .explore-tooltip {
@@ -694,6 +723,7 @@
       .event-time-block { min-width: 58px; }
       .explore-btn { bottom: 1rem; left: 1rem; width: 52px; height: 52px; }
       .explore-btn svg { width: 22px; height: 22px; }
+      .to-top-btn { bottom: 1rem; right: 1rem; width: 44px; height: 44px; }
       .explore-tooltip { width: 200px; font-size: 0.74rem; }
       .add-btn {
         bottom: 1rem;
@@ -1148,6 +1178,13 @@
   </svg>
   <span class="explore-tooltip">Explore the major Philly project developments to look forward to →</span>
 </a>
+
+<button class="to-top-btn" id="toTopBtn" type="button" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5"/>
+    <path d="M5 12l7-7 7 7"/>
+  </svg>
+</button>
 
 <button class="add-btn" id="addBtn" aria-label="Suggest something to add">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3319,9 +3356,21 @@
     document.addEventListener('pointercancel', end);
   }
 
+  // Back-to-top button: appears once you've scrolled past the header.
+  function setupToTop() {
+    const btn = document.getElementById('toTopBtn');
+    if (!btn) return;
+    const onScroll = () => btn.classList.toggle('show', window.scrollY > 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    btn.addEventListener('click', () =>
+      window.scrollTo({ top: 0, behavior: 'smooth' }));
+    onScroll();
+  }
+
   setRandomPhillyBackground();
   setupAddModal();
   setupNav();
+  setupToTop();
   enableHorizontalWheelScroll();
   enableDragScroll();
   init();
