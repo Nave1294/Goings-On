@@ -45,9 +45,10 @@ jobs:
             DATE=$(node -e "console.log(require('./.audit-summary.json').date)")
             REMOVED=$(node -e "const s=require('./.audit-summary.json'); console.log(s.removed.length ? s.removed.join(', ') : 'none')")
             UPDATED=$(node -e "const s=require('./.audit-summary.json'); console.log(s.updated.length ? s.updated.join(', ') : 'none')")
+            LOCATED=$(node -e "const s=require('./.audit-summary.json'); console.log((s.located||[]).length ? s.located.join(', ') : 'none')")
             NOT_FOUND=$(node -e "const s=require('./.audit-summary.json'); console.log(s.notFound.length ? s.notFound.join(', ') : 'none')")
             SUBJECT="chore: quarterly places audit ${DATE} [skip ci]"
-            BODY="Removed (closed): ${REMOVED} | Updated (changed): ${UPDATED} | Not found: ${NOT_FOUND}"
+            BODY="Removed (closed): ${REMOVED} | Updated (changed): ${UPDATED} | Located (filled): ${LOCATED} | Not found: ${NOT_FOUND}"
           else
             SUBJECT="chore: quarterly places audit [skip ci]"
             BODY=""

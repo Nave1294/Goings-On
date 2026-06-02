@@ -11,6 +11,13 @@
  *      are updated via Claude
  *   4. Places not found at all are flagged in the commit message but kept
  *
+ * Standing rule — missing locations:
+ *   Any place with a missing or generic location (empty or just
+ *   "Philadelphia") gets its real street address + neighborhood looked up.
+ *   Google Places supplies the authoritative address and Claude resolves
+ *   the neighborhood with a self-reported confidence; the location is only
+ *   filled in when that confidence is over 80%. Otherwise it's left as-is.
+ *
  * Run manually:  node scripts/audit-places.js
  * Secrets:  PLACES_API_KEY, ANTHROPIC_API_KEY
  */
@@ -113,6 +120,64 @@ async function lookupPlace(name, location) {
   }
 }
 
+// ─── Missing-location backfill ───────────────────────────────────────────────
+
+// Locations we treat as "missing" and worth backfilling.
+const GENERIC_LOCATIONS = new Set(['', 'philadelphia', 'philly', 'phila', 'pa']);
+function needsLocationBackfill(loc) {
+  return GENERIC_LOCATIONS.has((loc || '').trim().toLowerCase());
+}
+
+// Word-level name match, so we never attach the wrong address to a place.
+// Every token of the shorter name must appear as a whole word in the longer
+// one (e.g. "Char" must NOT match "Charlie was a sinner").
+function nameMatches(a, b) {
+  const toks = s => (s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const A = toks(a), B = toks(b);
+  if (!A.length || !B.length) return false;
+  const [short, long] = A.length <= B.length ? [A, B] : [B, A];
+  const words = new Set(long);
+  return short.every(t => words.has(t));
+}
+
+// Ask Claude to fill in "<street address>, <Neighborhood>" from the verified
+// Google address, and to self-report confidence. Caller applies only if >0.8.
+async function getBackfilledLocation(client, original, apiData) {
+  const prompt = `You are filling in a missing location for a Philadelphia restaurant in a JavaScript object literal.
+
+CURRENT LINE (one-line JS object literal; the location is missing or generic):
+${original.raw.trim()}
+
+GOOGLE PLACES API SAYS (authoritative):
+- Name: ${apiData.name}
+- Address: ${apiData.address}
+- Status: ${apiData.status}
+
+Task: Produce a "location" string formatted as "<street address>, <Neighborhood>", using a real Philadelphia neighborhood (e.g. Rittenhouse, Fishtown, Bella Vista, East Passyunk, Queen Village, Old City, Northern Liberties, Center City, University City, Chinatown, Fairmount, Graduate Hospital, South Philadelphia, West Philadelphia, Germantown). Base it ONLY on the Google address above plus your own knowledge — do not invent anything.
+
+Return ONLY minified JSON, no markdown:
+{"line":"<the full updated single-line JS object literal, identical to the current line except the location field>","confidence":<number 0..1 that this is the correct restaurant AND the right neighborhood>}
+
+Rules:
+- Change ONLY the location field. Keep every other field, the field order, and the quoting style identical.
+- If the Google name does not clearly match this restaurant, or you are unsure of the neighborhood, return a low confidence.`;
+
+  const msg = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 700,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = msg.content[0].text.trim()
+    .replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  try {
+    const obj = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    return { line: (obj.line || '').trim(), confidence: Number(obj.confidence) || 0 };
+  } catch {
+    return { line: '', confidence: 0 };
+  }
+}
+
 // ─── Parse places from a marked block ───────────────────────────────────────
 
 // Returns array of { lineIndex, raw, parsed } from lines inside a marker block.
@@ -189,6 +254,8 @@ async function main() {
   const log = {
     removed:  [],
     updated:  [],
+    located:  [],
+    unlocated: [],
     notFound: [],
     unchanged: 0,
   };
@@ -220,6 +287,28 @@ async function main() {
           1,
         );
         html = lines.join('\n');
+        continue;
+      }
+
+      // RULE: backfill a missing/generic location, but only when we're
+      // over 80% confident (verified name match + Claude's confidence).
+      if (needsLocationBackfill(place.location)) {
+        if (apiData.address && nameMatches(place.name, apiData.name)) {
+          const { line, confidence } = await getBackfilledLocation(client, place, apiData);
+          if (confidence > 0.8 && line && line !== place.raw.trim()) {
+            const indent = place.raw.match(/^(\s*)/)[1];
+            html = html.replace(place.raw, indent + line);
+            log.located.push(place.name);
+            console.log(`located (confidence ${confidence.toFixed(2)})`);
+          } else {
+            log.unlocated.push(place.name);
+            console.log(`location uncertain (confidence ${confidence.toFixed(2)}) — kept as-is`);
+          }
+        } else {
+          log.unlocated.push(place.name);
+          console.log('no confident match — location kept as-is');
+        }
+        await new Promise(r => setTimeout(r, 200));
         continue;
       }
 
@@ -260,6 +349,8 @@ async function main() {
   console.log(`\n══ Audit complete (${today}) ══`);
   console.log(`  Removed (closed):   ${log.removed.length}  — ${log.removed.join(', ') || 'none'}`);
   console.log(`  Updated (changed):  ${log.updated.length}  — ${log.updated.join(', ') || 'none'}`);
+  console.log(`  Located (filled):   ${log.located.length}  — ${log.located.join(', ') || 'none'}`);
+  console.log(`  Still unlocated:    ${log.unlocated.length} — ${log.unlocated.join(', ') || 'none'}`);
   console.log(`  Not found:          ${log.notFound.length} — ${log.notFound.join(', ') || 'none'}`);
   console.log(`  Unchanged:          ${log.unchanged}`);
 
@@ -268,6 +359,8 @@ async function main() {
     date: today,
     removed:  log.removed,
     updated:  log.updated,
+    located:  log.located,
+    unlocated: log.unlocated,
     notFound: log.notFound,
     unchanged: log.unchanged,
   };
