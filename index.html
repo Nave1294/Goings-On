@@ -2918,7 +2918,27 @@
       .map(gi => ({ label: CUISINE_GROUPS[gi].label, places: buckets.get(gi) }));
   }
 
-  // Tab definitions. `sections` = curated list; `tag` = auto-filled from the master list.
+  // Build sections for the "All" tab: every spot we know (master list +
+  // outdoor dining), deduped by name and clustered by cuisine. Trending is
+  // intentionally left out — it's a curated, time-sensitive feed of its own.
+  function sectionsForAll() {
+    const all = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)];
+    const seen = new Set();
+    const buckets = new Map();
+    for (const r of all) {
+      const key = (r.name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const gi = cuisineGroupIndex(r.cuisine);
+      if (!buckets.has(gi)) buckets.set(gi, []);
+      buckets.get(gi).push(r);
+    }
+    return [...buckets.keys()].sort((a, b) => a - b)
+      .map(gi => ({ label: CUISINE_GROUPS[gi].label, places: buckets.get(gi) }));
+  }
+
+  // Tab definitions. `sections` = curated list; `tag` = auto-filled from the
+  // master list; `all` = every spot but Trending.
   const EAT_TABS = [
     { id: 'trending', emoji: '🔥', label: 'Trending', subtitle: TRENDY_UPDATED ? `What Eater Philly is writing about &middot; <span style="opacity:.6">Updated ${TRENDY_UPDATED}</span>` : 'What Eater Philly is writing about', sections: TRENDY_SECTIONS },
     { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', tag: 'neighborhood' },
@@ -2927,15 +2947,14 @@
     { id: 'dinner', emoji: '🍷', label: 'Dinner', subtitle: 'Where to end the day', tag: 'dinner' },
     { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', tag: 'dessert' },
     { id: 'outdoor-dining', emoji: '🌿', label: 'Outdoor Dining', subtitle: 'Rooftops, gardens, waterfronts &amp; patios', sections: OUTDOOR_DINING_SECTIONS },
-    { id: 'date-night', emoji: '🌙', label: 'Date Night', subtitle: 'Romantic & memorable', tag: 'date-night' },
     { id: 'unique', emoji: '✨', label: 'Unique', subtitle: 'Only-in-Philly experiences', tag: 'unique' },
     { id: 'cheap-eats', emoji: '💵', label: 'Cheap Eats', subtitle: 'Big flavor, small tab', tag: 'cheap-eats' },
-    { id: 'byob', emoji: '🍾', label: 'BYOB', subtitle: 'Bring your own bottle', tag: 'byob' },
+    { id: 'all', emoji: '🍽️', label: 'All Restaurants', subtitle: 'Everything in one place — filter to taste', all: true },
   ];
 
   const PLACES_TO_EAT = EAT_TABS.map(t => ({
     id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle,
-    sections: t.sections || sectionsForTag(t.tag),
+    sections: t.sections || (t.all ? sectionsForAll() : sectionsForTag(t.tag)),
   }));
 
   // EAT-PLACES-END
