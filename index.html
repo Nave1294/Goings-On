@@ -2741,225 +2741,176 @@
   // Sub-categories shown as tabs inside the Places to Eat window.
   // Add restaurants to `sections` (each section = { label, places: [...] }).
   // Ordered most general → most filtered.
-  const PLACES_TO_EAT = [
-    {
-      id: 'trending',
-      emoji: '🔥',
-      label: 'Trending',
-      subtitle: TRENDY_UPDATED
-        ? `What Eater Philly is writing about &middot; <span style="opacity:.6">Updated ${TRENDY_UPDATED}</span>`
-        : 'What Eater Philly is writing about',
-      sections: TRENDY_SECTIONS,
-    },
-    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', sections: [
-      { label: '🏘️ Fishtown', places: [
-        { name: 'Fishtown Tavern', location: '1301 Frankford Ave, Fishtown', cuisine: 'Bar & American', price: '$$', website: 'https://www.fishtowntavern.com', desc: 'Easygoing Frankford Ave neighborhood bar with American pub fare, weekend brunch, and a laid-back local crowd.' },
-        { name: "Johnny Brenda's", location: '1201 Frankford Ave, Fishtown', cuisine: 'Gastropub & Music Venue', price: '$$', website: 'https://www.johnnybrendas.com', reservation: 'https://www.johnnybrendas.com', desc: 'Beloved Fishtown institution at Frankford & Girard — a gastropub with local beer and elevated bar food downstairs and a legendary live-music venue upstairs.' },
-        { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Neighborhood Fishtown pizza joint for a quick, no-fuss slice.' },
-      ]},
-    ] },
-    { id: 'breakfast', emoji: '🍳', label: 'Breakfast', subtitle: 'Morning starts & brunch', sections: [
-      { label: '🥚 Classic Diners', places: [
-        { name: "Sam's Morning Glory Diner", location: '735 S 10th St, Bella Vista', cuisine: 'American Diner', price: '$', website: 'https://www.morningglorydiner.com', desc: 'Cash-only South Philly icon since 1993 — frittatas, tofu scrambles, challah French toast, and a reliably good egg sandwich. Expect a line on weekends.' },
-        { name: "Sulimay's", location: '632 E Girard Ave, Fishtown', cuisine: 'American Diner', price: '$', desc: 'Old-school Fishtown diner that does the classics better than average. Known for whitefish scrapple, pancakes, corned beef hash, and scrapple-heavy Benedicts.' },
-        { name: 'Down Home Diner', location: '51 N 12th St, Reading Terminal Market', cuisine: 'American Diner', price: '$', website: 'https://www.downhomediner.net', desc: 'Inside Reading Terminal Market since 1987 — locally sourced comfort food, cheesesteak omelets, and buttermilk biscuits. Opens at 7am, perfect before a market run.' },
-      ]},
-      { label: '🥪 Sandwiches & Savory', places: [
-        { name: 'Middle Child', location: '248 S 11th St, Midtown Village', cuisine: 'Breakfast Sandwiches', price: '$', website: 'https://middlechildphilly.com', desc: 'The corned beef breakfast sandwich here won "Best Breakfast in America" on Good Morning America. Impossibly fluffy egg, crisp hash brown, and more flavor than it has any right to have.' },
-        { name: 'Middle Child Clubhouse', location: '1232 N Front St, Fishtown', cuisine: 'Breakfast & Lunch', price: '$$', website: 'https://middlechildphilly.com', desc: 'The bigger Fishtown sibling — same legendary sandwich plus what might be Philly\'s best single pancake (malted buttermilk, citrus, honey butter), a deli burrito, and blueberry-chai yogurt bowl.' },
-        { name: 'The Breakfast Den', location: '1500 South St', cuisine: 'American-Vietnamese', price: '$$', website: 'https://thebreakfastden.com', desc: 'Chef Huyen\'s South Street spot blends her Vietnamese immigrant upbringing with American comfort food — pho broth omelets, banh mi-inspired sandwiches, and fluffy ube pancakes.' },
-      ]},
-      { label: '🌍 International Morning', places: [
-        { name: 'Dizengoff', location: '1625 Sansom St, Center City', cuisine: 'Israeli', price: '$$', website: 'https://www.dizengoffhummus.com', reservation: 'https://resy.com/cities/phi/dizengoff', desc: 'Michael Solomonov\'s hummus counter — come for the shakshuka, chocolate pita French toast, flaky jachnun, and Israeli coffee. A Michelin Bib Gourmand pick.' },
-        { name: 'Tierra Colombiana', location: '4535 N 5th St, North Philadelphia', cuisine: 'Colombian & Latin', price: '$', website: 'https://tierracolombianarestaurant.com', desc: 'A North Philly institution open since 8am with a huge breakfast menu: arepas, gallo pinto, Cubanos, pancakes, and oatmeal. Colombian soul in every dish.' },
-        { name: 'Phở 75', location: '1122 Washington Ave, South Philadelphia', cuisine: 'Vietnamese', price: '$', website: 'https://phillypho.com', desc: 'Opens at 9am — pho is the Vietnamese breakfast, and Phở 75 does it right. No-frills, fast, and one of the best bowls in the city. The broth speaks for itself.' },
-      ]},
-      { label: '☕ Café & Brunch', places: [
-        { name: "Honey's Sit 'n Eat", location: '800 N 4th St, Northern Liberties', cuisine: 'Jewish-Southern', price: '$$', website: 'https://honeysphilly.com', desc: 'Jewish deli meets Southern American — matzo ball soup, latkes, challah French toast, and shrimp and grits on the same menu. A Northern Liberties classic.' },
-        { name: 'Green Eggs Cafe', location: '212 S 13th St, Center City', cuisine: 'New American Brunch', price: '$$', website: 'https://www.greeneggscafe.com', desc: 'Playful, creative brunch menu with multiple Philly locations. Long waits, worth it — think pumpkin pancakes, crab cake Benedicts, and the best fried chicken and waffles in town.' },
-        { name: "Sabrina's Cafe", location: '1804 Callowhill St, Art Museum', cuisine: 'New American Brunch', price: '$$', website: 'https://www.sabrinascafe.com', reservation: 'https://www.exploretock.com/sabrinascafe', desc: 'Philly brunch institution across several locations — overstuffed Benedicts, stuffed French toast, and a warm family-run vibe. Art Museum location is the original.' },
-        { name: 'Ants Pants Café', location: '2212 South St, Graduate Hospital', cuisine: 'Australian Café', price: '$$', website: 'https://antspantscafe.com', desc: 'Australian-style breakfast done right since 2004 — flat whites, smashed avo, and a rotating hash that\'s always excellent. Low-key, dog-friendly patio in good weather.' },
-        { name: 'Cafe Lift', location: '1124 Spring Garden St, Callowhill', cuisine: 'New American Brunch', price: '$$', website: 'https://www.cafelift.com', desc: 'All-day brunch in an airy industrial space. Olivia\'s Big Pancake (massive malted buttermilk with honey butter) is the move, alongside solid Eggs Benedict and a good boozy brunch cocktail.' },
-      ]},
-    ]},
-    { id: 'lunch', emoji: '🥪', label: 'Lunch', subtitle: 'Midday bites', sections: [
-      { label: '🏃 Quick & Casual', places: [
-        { name: 'Dig', location: '1616 Chestnut St, Rittenhouse · 140 S 36th St, University City', cuisine: 'Salads & Bowls', price: '$', website: 'https://www.diginn.com', desc: 'Go-to for really delicious salads made to order. They bring in a lot of regional produce so the options feel seasonal, and the Chestnut Street space is nice enough that you actually enjoy eating there.' },
-        { name: 'Goldie', location: 'Multiple locations', cuisine: 'Israeli Fast Casual', price: '$', website: 'https://www.goldiefalafel.com', desc: "Michael Solomonov's falafel-and-tahini fast-casual counter — the vegan tahini shakes make blah Mondays and Tuesdays feel more special." },
-        { name: 'Hip City Veg', location: 'Multiple locations', cuisine: 'Vegan Fast Casual', price: '$', website: 'https://hipcityveg.com', desc: 'Your neighborhood fast-casual, fast-food restaurant. But vegan.' },
-        { name: 'Suya Suya West African Grill', location: '400 Fairmount Ave #2808, Northern Liberties', cuisine: 'West African', price: '$', website: '', desc: 'Build-your-own lunch bowls with a West African twist and much nicer ingredients than a typical chain. Meat is marinated in Nigerian yaji, served over jollof rice, topped with plantains or cornbread.' },
-        { name: 'El Merkury', location: '2104 Chestnut St, Rittenhouse · 51 N 12th St, Center City', cuisine: 'Central American', price: '$', website: '', desc: 'Get a pupusa, a tostada, and two sides for less than $15 — a great way to break out of the salad grind for about the price of Sweetgreen.' },
-        { name: "Crunchik'n", location: '212 S 11th St, Center City · 1428 Cecil B. Moore Ave, North Philly', cuisine: 'Korean Fried Chicken', price: '$', website: '', desc: 'Specializes in Korean fried chicken, plus rice bowls, crunch dogs, dumplings, bulgogi, and japchae. (But you should still order the chicken.)' },
-        { name: 'Reap Mini Mart', location: '1325 Frankford Ave, Fishtown', cuisine: 'Plant-Based', price: '$', website: '', desc: "Plant-based glow bowls — basically not-boring salads — that will keep you well-fed. Great for those who can't be bothered with meal prep." },
-      ]},
-      { label: '🥪 Sandwiches & Handheld', places: [
-        { name: 'Liberty Kitchen', location: '1400 N Front St, Fishtown · 3675 Market St, University City', cuisine: 'Hoagies', price: '$', website: '', desc: "A hulking hoagie stuffed with hot capicola, roasted eggplant and fresh mozzarella. Maybe it's Friday and productivity isn't so important." },
-        { name: 'Stargazy', location: '1838 East Passyunk Ave, East Passyunk', cuisine: 'British Pies', price: '$', website: '', desc: 'Sam Jacobson makes British-style meat pies out of this small East Passyunk storefront. Get a savory pie with mash and parsley liquor, or grab a sausage roll for your walk back.' },
-        { name: 'Middle Child', location: '248 S 11th St, Washington Square West · 1232 N Front St, Fishtown', cuisine: 'Sandwiches', price: '$$', website: 'https://middlechildphilly.com', desc: "You know it. You love it. That's all there is to say." },
-        { name: 'Gilda', location: '300 East Girard Ave, Fishtown', cuisine: 'Portuguese Café', price: '$', website: '', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work your way through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich." },
-        { name: 'Paffuto', location: '1009 S 8th St, Bella Vista', cuisine: 'Italian Café', price: '$', website: '', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti (cheese and tomato sauce) and maritozzi (cream-and-jam-filled brioche).' },
-        { name: "Schlesinger's", location: '1521 Locust St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.' },
-        { name: 'Huda', location: '32 S 18th St, Center City', cuisine: 'Sandwiches', price: '$', website: '', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.' },
-      ]},
-      { label: '🌍 Global Flavors', places: [
-        { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum every day of the week. Count us in.' },
-        { name: 'El Chingon', location: '1524 S 10th St, East Passyunk', cuisine: 'Mexican', price: '$', website: '', desc: "Lunch is more brunch at Carlos Aparicio's sunny Mexican sandwich spot — eggs with mole poblano sauce and corn tortillas, red or green chilaquiles, and tacos." },
-        { name: 'Mawn', location: '764 S 9th St, Bella Vista', cuisine: 'Cambodian', price: '$$', website: '', desc: "Phila Lorn's no-rules Cambodian noodle house is open for lunch — a good thing, since it's always booked at dinner. No reservations at lunchtime, so just show up." },
-        { name: 'The Breakfast Den', location: '1500 South St, Graduate Hospital', cuisine: 'American-Vietnamese', price: '$', website: '', desc: 'American-Vietnamese mash-up comfort foods: chao ga (chicken rice porridge) or a breakfast bowl with home fries and Vietnamese pulled pork. A cozy place to meet a friend.' },
-        { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: "A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. One of the best work-from-cafe setups in the city." },
-        { name: 'Alif Brew and Mini Mart', location: '4501 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian', price: '$', website: '', desc: 'Order a platter or an injera wrap, then take it outside for a quick lunch in the sun before returning to work.' },
-        { name: 'Dizengoff', location: '1625 Sansom St, Rittenhouse', cuisine: 'Israeli', price: '$', website: 'https://www.dizengoffhummus.com', desc: "Upgrade from sad grocery-store hummus: ethereal hummus topped with meat or seasonal vegetables, plus rounds of fresh pita. The spot just got a glow up and a bar." },
-      ]},
-      { label: '🍽️ Sit-Down Worth It', places: [
-        { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "Now fully open in its new spot, an even bigger lunch staple than before. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong." },
-        { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth your while. Lunch salads here are definitively better than ones you'd make at home." },
-        { name: 'DaMo Pasta Lab', location: '105 S 12th St, Washington Square West', cuisine: 'Italian', price: '$$', website: '', desc: 'All pastas cooked to order — the experience of a sit-down Italian restaurant without the time commitment. Orders come in whole and half sizes so you can try multiple dishes.' },
-        { name: 'Paprica', location: '811 Sansom St, Washington Square West', cuisine: 'Mediterranean', price: '$$$', website: '', desc: 'Take a real sit-down lunch: share a spread of lamb chops, octopus salad, grilled halloumi and falafel with whoever was smart enough to play hooky with you.' },
-      ]},
-      { label: '✨ Special Occasion', places: [
-        { name: 'Vernick Fish', location: '1 N 19th St, Center City', cuisine: 'Seafood', price: '$$$', website: '', desc: "For an elegant lunch, Vernick Fish is tops. The mid-day menu goes a bit more casual — fried shrimp po' boy and yellowfin tuna rice bowl — but the classics are available too. Go ahead and get a glass of Sancerre." },
-        { name: 'Parc', location: '227 S 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: '', desc: 'Parc basically never closes, making it a great option for lunch. All walks of life come here — enjoy the people watching on Rittenhouse Square.' },
-        { name: 'SkyHigh', location: '1 N 19th St, 60th floor, Center City', cuisine: 'American', price: '$$$', website: '', desc: 'The sexy, stunning 60th-floor lounge at the Comcast Technology Center is perfect for a special occasion lunch, paired with sunlit views of the whole city.' },
-      ]},
-    ]},
-    { id: 'dinner',       emoji: '🍷', label: 'Dinner',             subtitle: 'Where to end the day',
-      sections: [
-      { label: "⭐ Philly's Finest", places: [
-        { name: 'Kalaya', location: '4 S 19th St, Rittenhouse', cuisine: 'Thai', price: '$$$', website: '', desc: "One of the finest Thai restaurants in the country. Chef Nok Suntaranon's fiery, complex Southern Thai cooking is unlike anything else in the city — the gaeng kua and catfish laab are essential." },
-        { name: 'Honeysuckle', location: 'Northern Liberties', cuisine: 'New American', price: '$$$', website: '', desc: "Chef Kate Jacoby's vegetable-forward New American earns its celebration — elegant tasting menus built around produce-driven creativity and impeccable technique." },
-        { name: 'Mawn', location: '2201 Fairmount Ave, Fairmount', cuisine: 'Haitian/Caribbean', price: '$$', website: '', desc: "Chef Cybille St. Aude-Tate's intimate Haitian and Caribbean restaurant is a love letter to the diaspora. BYOB, deeply personal, and not to be missed." },
-        { name: 'Ambra', location: 'Rittenhouse', cuisine: 'Italian', price: '$$$', website: '', desc: "One of Philly's most refined Italian restaurants — precise handmade pasta, exceptional ingredients, and a beautiful room that earns every dollar." },
-        { name: 'Friday Saturday Sunday', location: '261 S 21st St, Rittenhouse', cuisine: 'New American', price: '$$$', website: '', desc: "Chef Chad Williams's sophisticated New American spans three floors of a gorgeous Rittenhouse townhouse. One of the most consistent and inventive kitchens in the city." },
-        { name: 'Emmett', location: 'Fishtown', cuisine: 'New American', price: '$$', website: '', desc: "Warm and unpretentious, Emmett is a natural-wine-friendly neighborhood restaurant with big-flavored, carefully sourced food and a devoted following." },
-        { name: 'Illata', location: 'East Passyunk', cuisine: 'Italian BYOB', price: '$$$', website: '', desc: "A beloved East Passyunk BYOB — exceptional handmade pasta, a focused seasonal menu, and an intimate room that fills up fast. Bring a great bottle." },
-        { name: 'Vetri Cucina', location: '1312 Spruce St, Washington Square West', cuisine: 'Italian', price: '$$$$', website: '', desc: "Marc Vetri's legendary flagship remains one of America's great Italian restaurants — tasting menus only, extraordinary housemade pasta, and a wine list to match." },
-        { name: 'Royal Sushi & Izakaya', location: 'Bella Vista', cuisine: 'Japanese', price: '$$$', website: '', desc: "Creative sushi and izakaya dishes in a sleek Bella Vista setting — the omakase and small plates are consistently outstanding." },
-        { name: 'Zahav', location: '237 St James Pl, Old City', cuisine: 'Israeli', price: '$$$', website: '', desc: "Michael Solomonov's landmark Old City restaurant defined modern Israeli cuisine in America — the hummus, salatim, and wood-fired meats are iconic." },
-      ]},
-      { label: '🌏 Asian & Global', places: [
-        { name: 'Ogawa', location: 'Philadelphia', cuisine: 'Japanese Omakase', price: '$$$$', website: '', desc: "An intimate omakase experience with pristine Japanese seafood — meticulous knife work and a meditative pace make this one of Philly's most refined Japanese meals." },
-        { name: 'Sang Kee', location: '238 N 9th St, Chinatown', cuisine: 'Cantonese', price: '$', website: '', desc: "A Chinatown institution since 1980 — the roast duck, congee, and wonton noodle soup are as good as it gets. A Philly essential for generations." },
-        { name: 'White Yak', location: 'Philadelphia', cuisine: 'Tibetan/Himalayan', price: '$$', website: '', desc: "One of very few Tibetan restaurants in Philly — warming momos, thukpa noodle soup, and home-style cooking from the roof of the world." },
-        { name: 'Tabachoy', location: 'Philadelphia', cuisine: 'Filipino BYOB', price: '$$', website: '', desc: "A joyful BYOB celebration of Filipino flavors — adobo, kare-kare, and pork lechon done with care and creativity. Bring something bubbly." },
-        { name: "Baby's Kusina", location: 'Philadelphia', cuisine: 'Filipino', price: '$$', website: '', desc: "Warm, home-style Filipino cooking with generous portions — the kind of place where every dish tastes like someone's mother made it with love." },
-        { name: 'Cafe Nhan', location: 'Philadelphia', cuisine: 'Vietnamese', price: '$', website: '', desc: "A beloved Vietnamese gem with exceptional pho, banh mi, and bun dishes. Simple, honest cooking that keeps regulars coming back reliably." },
-        { name: 'Rice & Sambal', location: 'Philadelphia', cuisine: 'Malaysian BYOB', price: '$$', website: '', desc: "Authentic Malaysian flavors in an intimate BYOB setting — laksa, nasi lemak, and rendang that transport you straight to Kuala Lumpur. Bring a Riesling." },
-        { name: 'Megobari', location: 'Philadelphia', cuisine: 'Georgian', price: '$$', website: '', desc: "Khinkali dumplings, molten khachapuri, and natural Georgian wines — Megobari brings the warmth of Tbilisi to Philly in spectacular fashion." },
-      ]},
-      { label: '🌮 Latin, Mexican & Middle Eastern', places: [
-        { name: 'Amá', location: 'East Passyunk', cuisine: 'Mexican', price: '$$', website: '', desc: "Sophisticated, chef-driven Mexican on East Passyunk — creative moles, excellent cocktails, and a menu that goes far beyond the expected." },
-        { name: 'La Jefa', location: 'Philadelphia', cuisine: 'Mexican', price: '$$', website: '', desc: "Bold, regional Mexican cooking with a female-led kitchen — the kind of place that respects its culinary tradition while pushing it confidently forward." },
-        { name: 'El Chingon', location: 'Philadelphia', cuisine: 'Mexican', price: '$$', website: '', desc: "Lively and delicious — excellent tacos, inventive mezcal cocktails, and a kitchen that clearly loves what it does." },
-        { name: 'La Baja', location: 'Philadelphia', cuisine: 'Baja Mexican', price: '$$', website: '', desc: "Baja California comes to Philly — seafood tacos, aguachile, and ceviches that taste like a trip down the peninsula." },
-        { name: 'Bolo', location: 'Philadelphia', cuisine: 'Venezuelan', price: '$$', website: '', desc: "Arepas and Venezuelan comfort food with big, bright flavors. One of Philly's rare Venezuelan restaurants and one of its very best." },
-        { name: 'Laser Wolf', location: 'Philadelphia', cuisine: 'Israeli', price: '$$$', website: '', desc: "Charcoal-grilled meats and vegetables, lavish mezze spreads, and stunning views — this rooftop Israeli is one of Philly's most exciting and fun experiences." },
-        { name: 'Alif Brew', location: 'Philadelphia', cuisine: 'Somali/East African', price: '$$', website: '', desc: "A rare and special restaurant serving East African and Somali cuisine — suqaar, canjeero, and stews with fragrant spices rarely found anywhere in Philadelphia." },
-      ]},
-      { label: '🐟 Seafood', places: [
-        { name: 'Vernick Fish', location: '1 N 19th St, Center City', cuisine: 'Seafood', price: '$$$', website: '', desc: "Greg Vernick's elegant seafood restaurant features pristine ingredients and refined preparations — the oysters, crudo, and whole roasted fish are all exceptional." },
-        { name: 'Little Water', location: 'Philadelphia', cuisine: 'Seafood', price: '$$$', website: '', desc: "A tight, well-curated seafood menu with creative preparations — one of Philly's best destinations for fish and shellfish done right." },
-        { name: 'Little Fish', location: '600 Catharine St, Queen Village', cuisine: 'Seafood BYOB', price: '$$$', website: '', desc: "Tiny, beloved Queen Village BYOB with an exceptional seafood menu that changes nightly. Reserve well in advance and bring your absolute best bottle." },
-        { name: 'River Twice', location: 'Pennsport', cuisine: 'New American', price: '$$$', website: '', desc: "Inventive farm-to-table cooking with an emphasis on local seafood and seasonal produce — one of Philly's most thoughtful and exciting kitchens." },
-      ]},
-      { label: '🍝 Italian & French', places: [
-        { name: "Dante & Luigi's", location: '762 S 10th St, Bella Vista', cuisine: 'Italian-American', price: '$$', website: '', desc: "One of Philadelphia's oldest restaurants, open since 1899 — classic Italian-American red sauce in a historic dining room. A true Philly institution." },
-        { name: 'Le Virtù', location: '1927 E Passyunk Ave, East Passyunk', cuisine: 'Italian (Abruzzese)', price: '$$$', website: '', desc: "The only Abruzzo-focused restaurant in Philly — arrosticini, chitarra pasta, excellent wine list. A passionate, singular place on East Passyunk." },
-        { name: 'Zeppoli', location: 'Collingswood, NJ', cuisine: 'Italian', price: '$$$', website: '', desc: "Just across the bridge — Chef Chris Painter's acclaimed Sicilian-inspired restaurant is worth every mile. One of the best Italian tables in the region." },
-        { name: 'Southwark', location: '701 S 4th St, Queen Village', cuisine: 'American', price: '$$', website: '', desc: "A cozy Queen Village staple with a strong cocktail program and excellent American cooking. The bar is one of the best in the neighborhood." },
-        { name: 'My Loup', location: 'Philadelphia', cuisine: 'French', price: '$$$', website: '', desc: "An intimate French bistro with classic preparations and an excellent wine list — steak frites, duck confit, and a room that makes you feel like you're in Paris." },
-        { name: 'Forsythia', location: '233 Chestnut St, Old City', cuisine: 'French', price: '$$$', website: '', desc: "Modern French cooking in Old City, with excellent charcuterie, refined mains, and a thoughtful menu that honors tradition without being beholden to it." },
-        { name: 'June BYOB', location: 'Philadelphia', cuisine: 'American BYOB', price: '$$', website: '', desc: "A seasonal American BYOB with a focused menu and thoughtful cooking. The kind of intimate place that earns devoted regulars and keeps them for years." },
-        { name: 'Provenance', location: 'Philadelphia', cuisine: 'New American', price: '$$$', website: '', desc: "Farm-to-table New American with strong local sourcing and creative preparations — an elegant, produce-driven kitchen doing serious work." },
-      ]},
-      { label: '🥩 New American & Steakhouse', places: [
-        { name: 'Her Place', location: 'Center City', cuisine: 'New American (Supper Club)', price: '$$$$', website: '', desc: "A theatrical, intimate supper club experience — multicourse menus, exceptional service, and a level of hospitality that makes a night here truly memorable." },
-        { name: 'Fork', location: '306 Market St, Old City', cuisine: 'New American', price: '$$$', website: '', desc: "An Old City institution since 1997 — elevated New American cuisine in an elegant setting, with a focus on local farms and seasonal ingredients." },
-        { name: 'Lark', location: 'East Passyunk', cuisine: 'New American', price: '$$$', website: '', desc: "A thoughtful, rotating seasonal menu with inventive preparations — Lark has become one of Passyunk's most exciting and talked-about restaurants." },
-        { name: 'Gass & Main', location: 'Germantown', cuisine: 'American', price: '$$', website: '', desc: "A neighborhood gem in Germantown with locally sourced ingredients and a warm, unpretentious atmosphere. One of the best reasons to head north." },
-        { name: 'Roxanne', location: 'Philadelphia', cuisine: 'New American', price: '$$', website: '', desc: "Creative, chef-driven New American with a focus on seasonal produce and a lively, welcoming atmosphere." },
-        { name: 'Barclay Prime', location: '237 S 18th St, Rittenhouse', cuisine: 'Steakhouse', price: '$$$$', website: '', desc: "Philadelphia's premier steakhouse — prime cuts in a handsome club setting, famous for its opulent $120 cheesesteak. A classic Rittenhouse splurge." },
-        { name: "Little Walter's", location: 'Philadelphia', cuisine: 'American', price: '$$', website: '', desc: "A neighborhood American with a strong drinks program and inventive bar food — the kind of place that quickly becomes your regular spot." },
-      ]},
-      { label: '🏘️ Neighborhood Gems', places: [
-        { name: 'Meetinghouse', location: 'Mt. Airy', cuisine: 'American', price: '$$', website: '', desc: "A community-focused restaurant in Mt. Airy that embodies Philadelphia's neighborhood spirit — good food, good people, good vibes." },
-        { name: 'Royal Tavern', location: '937 E Passyunk Ave, East Passyunk', cuisine: 'American Bar', price: '$', website: '', desc: "A beloved East Passyunk neighborhood bar with surprisingly excellent food — vegetarian-friendly, genuinely welcoming, and a local institution." },
-        { name: 'Char', location: 'Philadelphia', cuisine: 'Korean BBQ', price: '$$', website: '', desc: "Korean BBQ with tabletop grills and excellent banchan — a festive communal experience that makes for a great group dinner." },
-        { name: 'Mish Mish', location: 'Philadelphia', cuisine: 'Israeli', price: '$$', website: '', desc: "Casual Israeli street food done right — hummus, shakshuka, and shawarma with the same seriousness as Philly's grander Israeli restaurants." },
-        { name: 'Bastia', location: 'Philadelphia', cuisine: 'Corsican', price: '$$$', website: '', desc: "Philly's only Corsican restaurant — hearty island charcuterie, brocciu cheese dishes, and wines from the French island. Utterly unique in the city." },
-        { name: 'Pietramala', location: 'Philadelphia', cuisine: 'Italian', price: '$$$', website: '', desc: "Modern Italian with exceptional handmade pasta and refined preparations — a newer addition to Philly's dining scene that's already earned its reputation." },
-      ]},
-    ]},
-    { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', sections: [
-      { label: '🍦 Ice Cream', places: [
-        { name: "Cuzzy's Ice Cream", location: '618 S 5th St, Queen Village', cuisine: 'Ice Cream', price: '$', website: 'https://www.cuzzysicecream.com', desc: "Philly Mag Best of Philly winner for ice cream — small-batch rotating flavors like spumoni and cotton candy grape sorbet, with house-made toppings. A Queen Village gem." },
-      ]},
-    ]},
-    {
-      id: 'outdoor-dining',
-      emoji: '🌿',
-      label: 'Outdoor Dining',
-      subtitle: 'Rooftops, gardens, waterfronts &amp; patios',
-      sections: OUTDOOR_DINING_SECTIONS,
-    },
-    { id: 'date-night',   emoji: '🌙', label: 'Date Night',         subtitle: 'Romantic & memorable',
-      sections: [
-      { label: '🌟 Special Occasion', places: [
-        { name: 'Vetri Cucina', location: '1312 Spruce St, Washington Square West', cuisine: 'Italian', price: '$$$$', website: '', desc: "Marc Vetri's legendary tasting menu is Philly's grandest dinner — extraordinary pasta, exceptional wines, impeccable service. Save it for a milestone." },
-        { name: 'Zahav', location: '237 St James Pl, Old City', cuisine: 'Israeli', price: '$$$', website: '', desc: "The most iconic reservation in Philadelphia — Michael Solomonov's Israeli tasting menu is unforgettable. A night out that becomes a lasting memory." },
-        { name: 'Kalaya', location: '4 S 19th St, Rittenhouse', cuisine: 'Thai', price: '$$$', website: '', desc: "Philly's most acclaimed restaurant is also one of the most exciting date nights in the city — bold, fiery Thai in a beautiful room. Memorable every time." },
-        { name: 'Ogawa', location: 'Philadelphia', cuisine: 'Japanese Omakase', price: '$$$$', website: '', desc: "An intimate omakase counter is one of the most romantic ways to dine — watching each course arrive, trusting the chef, sharing every bite together." },
-        { name: 'Friday Saturday Sunday', location: '261 S 21st St, Rittenhouse', cuisine: 'New American', price: '$$$', website: '', desc: "A stunning Rittenhouse townhouse with sophisticated New American cooking — the kind of restaurant that impresses on every level, every time." },
-        { name: 'Ambra', location: 'Rittenhouse', cuisine: 'Italian', price: '$$$', website: '', desc: "One of Philly's most elegant Italian restaurants — refined pastas, exceptional ingredients, and a beautiful room that sets the mood perfectly." },
-        { name: 'Her Place', location: 'Center City', cuisine: 'New American (Supper Club)', price: '$$$$', website: '', desc: "An intimate supper club with theatrical multicourse menus — Her Place is one of Philadelphia's most special and memorable dining experiences." },
-        { name: 'Barclay Prime', location: '237 S 18th St, Rittenhouse', cuisine: 'Steakhouse', price: '$$$$', website: '', desc: "Philly's premier steakhouse in the heart of Rittenhouse — nothing says celebration like a perfectly aged prime steak in a glamorous setting." },
-        { name: 'Royal Sushi & Izakaya', location: 'Bella Vista', cuisine: 'Japanese', price: '$$$', website: '', desc: "Creative omakase and izakaya dishes in a sleek setting — sharing beautifully crafted bites across the table makes for a wonderful, memorable evening." },
-        { name: 'Laser Wolf', location: 'Philadelphia', cuisine: 'Israeli', price: '$$$', website: '', desc: "A rooftop Israeli with stunning views — mezze spreads, charcoal-grilled meats, and the kind of lively atmosphere that makes for an unforgettable date." },
-      ]},
-      { label: '🕯️ Intimate & Romantic', places: [
-        { name: 'Honeysuckle', location: 'Northern Liberties', cuisine: 'New American', price: '$$$', website: '', desc: "Kate Jacoby's vegetable-forward tasting menu is elegant, inventive, and deeply considered — a quiet, intimate experience perfect for a special evening." },
-        { name: 'Illata', location: 'East Passyunk', cuisine: 'Italian BYOB', price: '$$$', website: '', desc: "A cozy East Passyunk BYOB with handmade pasta and a tight seasonal menu — the kind of intimate room where a great dinner naturally becomes a great night." },
-        { name: 'Le Virtù', location: '1927 E Passyunk Ave, East Passyunk', cuisine: 'Italian (Abruzzese)', price: '$$$', website: '', desc: "Romantic and intimate — the Abruzzo-inspired menu, excellent wine list, and warm service make Le Virtù one of Passyunk's most beloved date destinations." },
-        { name: 'My Loup', location: 'Philadelphia', cuisine: 'French', price: '$$$', website: '', desc: "A proper French bistro with candlelit charm — steak frites, duck confit, and a wine list made for lingering. The classic date night." },
-        { name: 'Forsythia', location: '233 Chestnut St, Old City', cuisine: 'French', price: '$$$', website: '', desc: "Refined French cooking in a beautiful Old City space — the kind of dinner you dress up for and remember for a long time afterward." },
-        { name: 'Bastia', location: 'Philadelphia', cuisine: 'Corsican', price: '$$$', website: '', desc: "Philly's only Corsican restaurant is intimate and singular — a distinctive, memorable meal that provides plenty to talk about over excellent wine." },
-        { name: 'Little Fish', location: '600 Catharine St, Queen Village', cuisine: 'Seafood BYOB', price: '$$$', website: '', desc: "Tiny, precious, and perfect — bring an excellent bottle of white and let the nightly-changing seafood menu surprise and delight you both." },
-        { name: 'Emmett', location: 'Fishtown', cuisine: 'New American', price: '$$', website: '', desc: "Warm, natural-wine-friendly, and intimate — Emmett is the rare neighborhood restaurant that feels genuinely special every time without ever trying too hard." },
-        { name: 'Pietramala', location: 'Philadelphia', cuisine: 'Italian', price: '$$$', website: '', desc: "Modern Italian with exceptional handmade pasta in an intimate setting — a lovely choice for a romantic dinner with someone worth impressing." },
-        { name: 'June BYOB', location: 'Philadelphia', cuisine: 'American BYOB', price: '$$', website: '', desc: "A seasonal American BYOB with a focused menu and thoughtful cooking — bring a good bottle and enjoy an unhurried, intimate dinner together." },
-      ]},
-    ]},
-    { id: 'unique',       emoji: '✨', label: 'Unique',             subtitle: 'Only-in-Philly experiences',
-      sections: [
-      { label: '✨ Only in Philadelphia', places: [
-        { name: 'Kalaya', location: '4 S 19th St, Rittenhouse', cuisine: 'Thai', price: '$$$', website: '', desc: "One of the finest Thai restaurants in the country — Chef Nok's Southern Thai cooking is a singular, irreplaceable experience you won't find anywhere else in Philly." },
-        { name: 'Bastia', location: 'Philadelphia', cuisine: 'Corsican', price: '$$$', website: '', desc: "Philly's only Corsican restaurant — an island cuisine almost impossible to find in America. Charcuterie, brocciu, and wines from a French island you may have never tried." },
-        { name: 'Ogawa', location: 'Philadelphia', cuisine: 'Japanese Omakase', price: '$$$$', website: '', desc: "One of the most refined omakase experiences outside New York or Los Angeles — pristine Japanese seafood prepared with meditative attention to detail." },
-        { name: 'Mawn', location: '2201 Fairmount Ave, Fairmount', cuisine: 'Haitian/Caribbean', price: '$$', website: '', desc: "Haitian and Caribbean cuisine at this level is rare anywhere in the country — Chef Cybille St. Aude-Tate's cooking is deeply personal and impossible to replicate." },
-        { name: 'Megobari', location: 'Philadelphia', cuisine: 'Georgian', price: '$$', website: '', desc: "Georgian food — khinkali, khachapuri, natural wine from the Caucasus — is still rare in most American cities. Philadelphia is lucky to have Megobari doing it so well." },
-        { name: 'White Yak', location: 'Philadelphia', cuisine: 'Tibetan/Himalayan', price: '$$', website: '', desc: "Tibetan restaurants are vanishingly rare in the US — White Yak's warming momos and thukpa are a culinary journey very few American cities can offer." },
-        { name: 'Alif Brew', location: 'Philadelphia', cuisine: 'Somali/East African', price: '$$', website: '', desc: "East African and Somali cooking is an extraordinary culinary tradition rarely celebrated in American restaurants. Alif Brew is a precious rarity worth every visit." },
-        { name: 'La Jefa', location: 'Philadelphia', cuisine: 'Mexican', price: '$$', website: '', desc: "Regional Mexican cooking that goes far beyond the familiar — a female-led kitchen honoring traditions rarely seen outside Mexico itself." },
-        { name: "Baby's Kusina", location: 'Philadelphia', cuisine: 'Filipino', price: '$$', website: '', desc: "Filipino cuisine continues to earn its long-overdue recognition, and Philly has some of the best — Baby's Kusina delivers home-style cooking with genuine warmth." },
-        { name: 'Bolo', location: 'Philadelphia', cuisine: 'Venezuelan', price: '$$', website: '', desc: "Venezuelan cuisine is underrepresented in American cities, making Bolo's arepas and comida criolla all the more precious and worth celebrating." },
-        { name: "Dante & Luigi's", location: '762 S 10th St, Bella Vista', cuisine: 'Italian-American', price: '$$', website: '', desc: "Open since 1899 — one of the oldest continuously operating restaurants in Philadelphia. The history in these walls is part of what you're tasting." },
-        { name: 'Her Place', location: 'Center City', cuisine: 'New American (Supper Club)', price: '$$$$', website: '', desc: "A theatrical, multicourse supper club experience that's rare in any city — the intimacy and ambition of Her Place make for a night unlike any other in Philadelphia." },
-        { name: 'Amá', location: 'East Passyunk', cuisine: 'Mexican', price: '$$', website: '', desc: "Sophisticated Mexican cooking that transcends expectations — the kind of deeply researched, thoughtfully prepared mole-and-mezcal experience Philly should be proud to have." },
-        { name: 'Char', location: 'Philadelphia', cuisine: 'Korean BBQ', price: '$$', website: '', desc: "Korean BBQ is an experience as much as a meal — the tabletop grills, the banchan ritual, the communal joy. Char delivers it all with skill." },
-      ]},
-    ]},
-    { id: 'cheap-eats',   emoji: '💵', label: 'Cheap Eats',         subtitle: 'Big flavor, small tab',             sections: [] },
-    { id: 'byob',         emoji: '🍾', label: 'BYOB',               subtitle: 'Bring your own bottle',
-      sections: [
-      { label: '🍾 Bring Your Own Bottle', places: [
-        { name: 'Mawn', location: '2201 Fairmount Ave, Fairmount', cuisine: 'Haitian/Caribbean', price: '$$', website: '', desc: "Chef Cybille St. Aude-Tate's deeply personal Haitian and Caribbean BYOB — bring a natural wine or crisp white to pair with the vibrant island flavors." },
-        { name: 'Illata', location: 'East Passyunk', cuisine: 'Italian', price: '$$$', website: '', desc: "One of Philly's most beloved BYOBs — exceptional handmade pasta and a focused seasonal menu. Bring something Italian and plan for a long, wonderful evening." },
-        { name: 'Little Fish', location: '600 Catharine St, Queen Village', cuisine: 'Seafood', price: '$$$', website: '', desc: "Tiny and exceptional — this legendary Queen Village BYOB serves pristine seafood with a nightly-changing menu. Bring a great Burgundy or Chablis." },
-        { name: 'Tabachoy', location: 'Philadelphia', cuisine: 'Filipino', price: '$$', website: '', desc: "A joyful BYOB celebrating Filipino cuisine — the adobo and kare-kare beg for a cold lager or something funky and orange." },
-        { name: 'Rice & Sambal', location: 'Philadelphia', cuisine: 'Malaysian', price: '$$', website: '', desc: "Authentic Malaysian flavors in an intimate BYOB setting — laksa and rendang pair beautifully with a crisp Riesling or a light-bodied red." },
-        { name: 'June BYOB', location: 'Philadelphia', cuisine: 'American', price: '$$', website: '', desc: "A focused seasonal American BYOB where the food earns your best bottle — bring whatever's special in your cellar and let the kitchen do the rest." },
-      ]},
-    ]},
+  // ── Master restaurant list ──────────────────────────────────────
+  // Every spot lives here exactly once. The `tags` array decides which
+  // tabs it shows up in, and a place can carry several tags. The tabs
+  // below auto-fill from these tags and auto-group by cuisine.
+  // (Trending and Outdoor Dining are curated separately, above.)
+  const RESTAURANTS = [
+    // ── Diners, cafés & brunch ──
+    { name: "Sam's Morning Glory Diner", location: '735 S 10th St, Bella Vista', cuisine: 'American Diner', price: '$', website: 'https://www.morningglorydiner.com', desc: 'Cash-only South Philly icon since 1993 — frittatas, tofu scrambles, challah French toast, and a reliably good egg sandwich. Expect a line on weekends.', tags: ['breakfast'] },
+    { name: "Sulimay's", location: '632 E Girard Ave, Fishtown', cuisine: 'American Diner', price: '$', website: '', desc: 'Old-school Fishtown diner that does the classics better than average. Known for whitefish scrapple, pancakes, corned beef hash, and scrapple-heavy Benedicts.', tags: ['breakfast'] },
+    { name: 'Down Home Diner', location: '51 N 12th St, Reading Terminal Market', cuisine: 'American Diner', price: '$', website: 'https://www.downhomediner.net', desc: 'Inside Reading Terminal Market since 1987 — locally sourced comfort food, cheesesteak omelets, and buttermilk biscuits. Opens at 7am, perfect before a market run.', tags: ['breakfast'] },
+    { name: 'Middle Child', location: '248 S 11th St, Midtown Village', cuisine: 'Breakfast Sandwiches', price: '$', website: 'https://middlechildphilly.com', desc: 'The corned beef breakfast sandwich here won "Best Breakfast in America" on Good Morning America. Impossibly fluffy egg, crisp hash brown, and more flavor than it has any right to have.', tags: ['breakfast', 'lunch', 'cheap-eats'] },
+    { name: 'Middle Child Clubhouse', location: '1232 N Front St, Fishtown', cuisine: 'Breakfast & Lunch', price: '$$', website: 'https://middlechildphilly.com', desc: "The bigger Fishtown sibling — same legendary sandwich plus what might be Philly's best single pancake (malted buttermilk, citrus, honey butter), a deli burrito, and blueberry-chai yogurt bowl.", tags: ['breakfast', 'lunch'] },
+    { name: 'The Breakfast Den', location: '1500 South St, Graduate Hospital', cuisine: 'American-Vietnamese', price: '$$', website: 'https://thebreakfastden.com', desc: "Chef Huyen's spot blends her Vietnamese upbringing with American comfort food — pho broth omelets, banh mi-inspired sandwiches, and fluffy ube pancakes.", tags: ['breakfast', 'lunch', 'cheap-eats'] },
+    { name: 'Dizengoff', location: '1625 Sansom St, Center City', cuisine: 'Israeli', price: '$$', website: 'https://www.dizengoffhummus.com', reservation: 'https://resy.com/cities/phi/dizengoff', desc: "Michael Solomonov's hummus counter — shakshuka, chocolate pita French toast, flaky jachnun, and Israeli coffee at breakfast; ethereal seasonal hummus and fresh pita at lunch. A Michelin Bib Gourmand pick.", tags: ['breakfast', 'lunch'] },
+    { name: 'Tierra Colombiana', location: '4535 N 5th St, North Philadelphia', cuisine: 'Colombian & Latin', price: '$', website: 'https://tierracolombianarestaurant.com', desc: 'A North Philly institution open since 8am with a huge menu: arepas, gallo pinto, Cubanos, pancakes, and oatmeal. Colombian soul in every dish.', tags: ['breakfast', 'lunch', 'cheap-eats'] },
+    { name: 'Phở 75', location: '1122 Washington Ave, South Philadelphia', cuisine: 'Vietnamese', price: '$', website: 'https://phillypho.com', desc: 'Pho is the Vietnamese breakfast, and Phở 75 does it right. No-frills, fast, and one of the best bowls in the city. The broth speaks for itself.', tags: ['breakfast', 'lunch', 'cheap-eats'] },
+    { name: "Honey's Sit 'n Eat", location: '800 N 4th St, Northern Liberties', cuisine: 'Jewish-Southern', price: '$$', website: 'https://honeysphilly.com', desc: 'Jewish deli meets Southern American — matzo ball soup, latkes, challah French toast, and shrimp and grits on the same menu. A Northern Liberties classic.', tags: ['breakfast'] },
+    { name: 'Green Eggs Cafe', location: '212 S 13th St, Center City', cuisine: 'New American Brunch', price: '$$', website: 'https://www.greeneggscafe.com', desc: 'Playful, creative brunch with multiple Philly locations. Long waits, worth it — pumpkin pancakes, crab cake Benedicts, and the best fried chicken and waffles in town.', tags: ['breakfast'] },
+    { name: "Sabrina's Cafe", location: '1804 Callowhill St, Art Museum', cuisine: 'New American Brunch', price: '$$', website: 'https://www.sabrinascafe.com', reservation: 'https://www.exploretock.com/sabrinascafe', desc: 'Philly brunch institution across several locations — overstuffed Benedicts, stuffed French toast, and a warm family-run vibe. The Art Museum location is the original.', tags: ['breakfast'] },
+    { name: 'Ants Pants Café', location: '2212 South St, Graduate Hospital', cuisine: 'Australian Café', price: '$$', website: 'https://antspantscafe.com', desc: 'Australian-style breakfast done right since 2004 — flat whites, smashed avo, and a rotating hash that is always excellent. Low-key, dog-friendly patio in good weather.', tags: ['breakfast'] },
+    { name: 'Cafe Lift', location: '1124 Spring Garden St, Callowhill', cuisine: 'New American Brunch', price: '$$', website: 'https://www.cafelift.com', desc: "All-day brunch in an airy industrial space. Olivia's Big Pancake (massive malted buttermilk with honey butter) is the move, alongside solid Eggs Benedict and a good boozy brunch cocktail.", tags: ['breakfast'] },
+
+    // ── Quick, casual & fast-casual lunch ──
+    { name: 'Dig', location: '1616 Chestnut St, Rittenhouse · 140 S 36th St, University City', cuisine: 'Salads & Bowls', price: '$', website: 'https://www.diginn.com', desc: 'Go-to for really delicious salads made to order. They bring in a lot of regional produce so the options feel seasonal, and the space is nice enough that you actually enjoy eating there.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'Goldie', location: 'Multiple locations', cuisine: 'Israeli Fast Casual', price: '$', website: 'https://www.goldiefalafel.com', desc: "Michael Solomonov's falafel-and-tahini fast-casual counter — the vegan tahini shakes make blah Mondays and Tuesdays feel more special.", tags: ['lunch', 'cheap-eats'] },
+    { name: 'Hip City Veg', location: 'Multiple locations', cuisine: 'Vegan Fast Casual', price: '$', website: 'https://hipcityveg.com', desc: 'Your neighborhood fast-casual, fast-food restaurant. But vegan.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'Suya Suya West African Grill', location: '400 Fairmount Ave #2808, Northern Liberties', cuisine: 'West African', price: '$', website: '', desc: 'Build-your-own bowls with a West African twist and much nicer ingredients than a typical chain. Meat is marinated in Nigerian yaji, served over jollof rice, topped with plantains or cornbread.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'El Merkury', location: '2104 Chestnut St, Rittenhouse · 51 N 12th St, Center City', cuisine: 'Central American', price: '$', website: '', desc: 'Get a pupusa, a tostada, and two sides for less than $15 — a great way to break out of the salad grind for about the price of Sweetgreen.', tags: ['lunch', 'cheap-eats'] },
+    { name: "Crunchik'n", location: '212 S 11th St, Center City · 1428 Cecil B. Moore Ave, North Philly', cuisine: 'Korean Fried Chicken', price: '$', website: '', desc: 'Specializes in Korean fried chicken, plus rice bowls, crunch dogs, dumplings, bulgogi, and japchae. (But you should still order the chicken.)', tags: ['lunch', 'cheap-eats'] },
+    { name: 'Reap Mini Mart', location: '1325 Frankford Ave, Fishtown', cuisine: 'Plant-Based', price: '$', website: '', desc: "Plant-based glow bowls — basically not-boring salads — that will keep you well-fed. Great for those who can't be bothered with meal prep.", tags: ['lunch', 'cheap-eats'] },
+    { name: 'Liberty Kitchen', location: '1400 N Front St, Fishtown · 3675 Market St, University City', cuisine: 'Hoagies', price: '$', website: '', desc: "A hulking hoagie stuffed with hot capicola, roasted eggplant and fresh mozzarella. Maybe it's Friday and productivity isn't so important.", tags: ['lunch', 'cheap-eats'] },
+    { name: 'Stargazy', location: '1838 East Passyunk Ave, East Passyunk', cuisine: 'British Pies', price: '$', website: '', desc: 'Sam Jacobson makes British-style meat pies out of this small East Passyunk storefront. Get a savory pie with mash and parsley liquor, or grab a sausage roll for your walk back.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'Gilda', location: '300 East Girard Ave, Fishtown', cuisine: 'Portuguese Café', price: '$', website: '', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich.", tags: ['lunch', 'cheap-eats'] },
+    { name: 'Paffuto', location: '1009 S 8th St, Bella Vista', cuisine: 'Italian Café', price: '$', website: '', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['lunch', 'cheap-eats'] },
+    { name: "Schlesinger's", location: '1521 Locust St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.', tags: ['lunch'] },
+    { name: 'Huda', location: '32 S 18th St, Center City', cuisine: 'Sandwiches', price: '$', website: '', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum every day of the week. Count us in.', tags: ['lunch', 'dinner'] },
+    { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: 'A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. One of the best work-from-cafe setups in the city.', tags: ['lunch', 'cheap-eats'] },
+    { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "An even bigger staple than before in its new spot. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong.", tags: ['lunch', 'dinner'] },
+    { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth it. Lunch salads here are definitively better than ones you'd make at home.", tags: ['lunch'] },
+    { name: 'DaMo Pasta Lab', location: '105 S 12th St, Washington Square West', cuisine: 'Italian', price: '$$', website: '', desc: 'All pastas cooked to order — the experience of a sit-down Italian restaurant without the time commitment. Orders come in whole and half sizes so you can try multiple dishes.', tags: ['lunch', 'dinner'] },
+    { name: 'Paprica', location: '811 Sansom St, Washington Square West', cuisine: 'Mediterranean', price: '$$$', website: '', desc: 'Take a real sit-down meal: share a spread of lamb chops, octopus salad, grilled halloumi and falafel with whoever was smart enough to play hooky with you.', tags: ['lunch', 'dinner'] },
+    { name: 'Parc', location: '227 S 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: '', desc: 'Parc basically never closes. All walks of life come here — enjoy the people watching on Rittenhouse Square over steak frites and a carafe of wine.', tags: ['lunch', 'dinner', 'date-night'] },
+    { name: 'SkyHigh', location: '1 N 19th St, 60th floor, Center City', cuisine: 'American', price: '$$$', website: '', desc: 'The sexy, stunning 60th-floor lounge at the Comcast Technology Center, paired with sunlit views of the whole city. Perfect for a special occasion.', tags: ['lunch', 'date-night'] },
+
+    // ── Neighborhood spots ──
+    { name: 'Fishtown Tavern', location: '1301 Frankford Ave, Fishtown', cuisine: 'Bar & American', price: '$$', website: 'https://www.fishtowntavern.com', desc: 'Easygoing Frankford Ave neighborhood bar with American pub fare, weekend brunch, and a laid-back local crowd.', tags: ['neighborhood'] },
+    { name: "Johnny Brenda's", location: '1201 Frankford Ave, Fishtown', cuisine: 'Gastropub & Music Venue', price: '$$', website: 'https://www.johnnybrendas.com', reservation: 'https://www.johnnybrendas.com', desc: 'Beloved Fishtown institution at Frankford & Girard — a gastropub with local beer and elevated bar food downstairs and a legendary live-music venue upstairs.', tags: ['neighborhood'] },
+    { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Neighborhood Fishtown pizza joint for a quick, no-fuss slice.', tags: ['neighborhood', 'cheap-eats'] },
+
+    // ── Dessert ──
+    { name: "Cuzzy's Ice Cream", location: '618 S 5th St, Queen Village', cuisine: 'Ice Cream', price: '$', website: 'https://www.cuzzysicecream.com', desc: 'Philly Mag Best of Philly winner for ice cream — small-batch rotating flavors like spumoni and cotton candy grape sorbet, with house-made toppings. A Queen Village gem.', tags: ['dessert'] },
+
+    // ── Philly Mag's 50 Best (dinner + the vibes each fits) ──
+    { name: 'Kalaya', location: '4 S 19th St, Rittenhouse', cuisine: 'Thai', price: '$$$', website: '', desc: "One of the finest Thai restaurants in the country. Chef Nok Suntaranon's fiery, complex Southern Thai cooking is unlike anything else in the city — the gaeng kua and catfish laab are essential.", tags: ['dinner', 'date-night', 'unique'] },
+    { name: 'Honeysuckle', location: 'Northern Liberties', cuisine: 'New American', price: '$$$', website: '', desc: "Chef Kate Jacoby's vegetable-forward New American earns its celebration — elegant tasting menus built around produce-driven creativity and impeccable technique.", tags: ['dinner', 'date-night'] },
+    { name: 'Mawn', location: '764 S 9th St, Bella Vista', cuisine: 'Cambodian', price: '$$', website: '', desc: "Phila Lorn's no-rules Cambodian noodle house is one of Philadelphia's most celebrated restaurants — bold, soulful bowls and a singular point of view. Booked solid at dinner; walk in at lunch.", tags: ['dinner', 'lunch', 'unique'] },
+    { name: 'Ambra', location: 'Rittenhouse', cuisine: 'Italian', price: '$$$', website: '', desc: "One of Philly's most refined Italian restaurants — precise handmade pasta, exceptional ingredients, and a beautiful room that earns every dollar.", tags: ['dinner', 'date-night'] },
+    { name: 'Friday Saturday Sunday', location: '261 S 21st St, Rittenhouse', cuisine: 'New American', price: '$$$', website: '', desc: "Chef Chad Williams's sophisticated New American spans three floors of a gorgeous Rittenhouse townhouse. One of the most consistent and inventive kitchens in the city.", tags: ['dinner', 'date-night'] },
+    { name: 'Emmett', location: 'Fishtown', cuisine: 'New American', price: '$$', website: '', desc: "Warm and unpretentious, Emmett is a natural-wine-friendly neighborhood restaurant with big-flavored, carefully sourced food and a devoted following.", tags: ['dinner', 'date-night'] },
+    { name: 'Illata', location: 'East Passyunk', cuisine: 'Italian', price: '$$$', website: '', desc: "A beloved East Passyunk BYOB — exceptional handmade pasta, a focused seasonal menu, and an intimate room that fills up fast. Bring a great bottle.", tags: ['dinner', 'date-night', 'byob'] },
+    { name: 'Vetri Cucina', location: '1312 Spruce St, Washington Square West', cuisine: 'Italian', price: '$$$$', website: '', desc: "Marc Vetri's legendary flagship remains one of America's great Italian restaurants — tasting menus only, extraordinary housemade pasta, and a wine list to match.", tags: ['dinner', 'date-night'] },
+    { name: 'Royal Sushi & Izakaya', location: 'Bella Vista', cuisine: 'Japanese', price: '$$$', website: '', desc: "Creative sushi and izakaya dishes in a sleek Bella Vista setting — the omakase and small plates are consistently outstanding.", tags: ['dinner', 'date-night'] },
+    { name: 'Zahav', location: '237 St James Pl, Old City', cuisine: 'Israeli', price: '$$$', website: '', desc: "Michael Solomonov's landmark Old City restaurant defined modern Israeli cuisine in America — the hummus, salatim, and wood-fired meats are iconic.", tags: ['dinner', 'date-night'] },
+    { name: 'Ogawa', location: 'Philadelphia', cuisine: 'Japanese Omakase', price: '$$$$', website: '', desc: "An intimate omakase experience with pristine Japanese seafood — meticulous knife work and a meditative pace make this one of Philly's most refined Japanese meals.", tags: ['dinner', 'date-night', 'unique'] },
+    { name: 'Sang Kee', location: '238 N 9th St, Chinatown', cuisine: 'Cantonese', price: '$', website: '', desc: "A Chinatown institution since 1980 — the roast duck, congee, and wonton noodle soup are as good as it gets. A Philly essential for generations.", tags: ['dinner', 'lunch', 'cheap-eats'] },
+    { name: 'White Yak', location: 'Philadelphia', cuisine: 'Tibetan/Himalayan', price: '$$', website: '', desc: "One of very few Tibetan restaurants in Philly — warming momos, thukpa noodle soup, and home-style cooking from the roof of the world.", tags: ['dinner', 'unique'] },
+    { name: 'Tabachoy', location: 'Philadelphia', cuisine: 'Filipino', price: '$$', website: '', desc: "A joyful BYOB celebration of Filipino flavors — adobo, kare-kare, and pork lechon done with care and creativity. Bring something bubbly.", tags: ['dinner', 'byob', 'unique'] },
+    { name: "Baby's Kusina", location: 'Philadelphia', cuisine: 'Filipino', price: '$$', website: '', desc: "Warm, home-style Filipino cooking with generous portions — the kind of place where every dish tastes like someone's mother made it with love.", tags: ['dinner', 'unique'] },
+    { name: 'Cafe Nhan', location: 'Philadelphia', cuisine: 'Vietnamese', price: '$', website: '', desc: "A beloved Vietnamese gem with exceptional pho, banh mi, and bun dishes. Simple, honest cooking that keeps regulars coming back reliably.", tags: ['dinner', 'lunch', 'cheap-eats'] },
+    { name: 'Rice & Sambal', location: 'Philadelphia', cuisine: 'Malaysian', price: '$$', website: '', desc: "Authentic Malaysian flavors in an intimate BYOB setting — laksa, nasi lemak, and rendang that transport you straight to Kuala Lumpur. Bring a Riesling.", tags: ['dinner', 'byob'] },
+    { name: 'Megobari', location: 'Philadelphia', cuisine: 'Georgian', price: '$$', website: '', desc: "Khinkali dumplings, molten khachapuri, and natural Georgian wines — Megobari brings the warmth of Tbilisi to Philly in spectacular fashion.", tags: ['dinner', 'unique'] },
+    { name: 'Amá', location: 'East Passyunk', cuisine: 'Mexican', price: '$$', website: '', desc: "Sophisticated, chef-driven Mexican on East Passyunk — creative moles, excellent cocktails, and a menu that goes far beyond the expected.", tags: ['dinner', 'unique'] },
+    { name: 'La Jefa', location: 'Philadelphia', cuisine: 'Mexican', price: '$$', website: '', desc: "Bold, regional Mexican cooking with a female-led kitchen — the kind of place that respects its culinary tradition while pushing it confidently forward.", tags: ['dinner', 'unique'] },
+    { name: 'El Chingon', location: '1524 S 10th St, East Passyunk', cuisine: 'Mexican', price: '$$', website: '', desc: "Carlos Aparicio's sunny Mexican spot — lively and delicious, from mole-poblano eggs and chilaquiles at lunch to excellent tacos and inventive mezcal cocktails at dinner.", tags: ['dinner', 'lunch', 'cheap-eats'] },
+    { name: 'La Baja', location: 'Philadelphia', cuisine: 'Baja Mexican', price: '$$', website: '', desc: "Baja California comes to Philly — seafood tacos, aguachile, and ceviches that taste like a trip down the peninsula.", tags: ['dinner', 'unique'] },
+    { name: 'Bolo', location: 'Philadelphia', cuisine: 'Venezuelan', price: '$$', website: '', desc: "Arepas and Venezuelan comfort food with big, bright flavors. One of Philly's rare Venezuelan restaurants and one of its very best.", tags: ['dinner', 'unique'] },
+    { name: 'Laser Wolf', location: 'Philadelphia', cuisine: 'Israeli', price: '$$$', website: '', desc: "Charcoal-grilled meats and vegetables, lavish mezze spreads, and stunning views — this rooftop Israeli is one of Philly's most exciting and fun experiences.", tags: ['dinner', 'date-night'] },
+    { name: 'Alif Brew', location: '4501 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian & East African', price: '$', website: '', desc: "A rare and special spot for Ethiopian and East African cooking — injera platters and wraps, fragrant stews, and warm hospitality. Grab a platter for lunch or settle in for dinner.", tags: ['dinner', 'lunch', 'unique', 'cheap-eats'] },
+    { name: 'Vernick Fish', location: '1 N 19th St, Center City', cuisine: 'Seafood', price: '$$$', website: '', desc: "Greg Vernick's elegant seafood restaurant — pristine oysters, crudo, and whole roasted fish. The mid-day menu goes more casual; dinner is a refined Center City treat.", tags: ['dinner', 'lunch', 'date-night'] },
+    { name: 'Little Water', location: 'Philadelphia', cuisine: 'Seafood', price: '$$$', website: '', desc: "A tight, well-curated seafood menu with creative preparations — one of Philly's best destinations for fish and shellfish done right.", tags: ['dinner'] },
+    { name: 'Little Fish', location: '600 Catharine St, Queen Village', cuisine: 'Seafood', price: '$$$', website: '', desc: "Tiny, beloved Queen Village BYOB with an exceptional seafood menu that changes nightly. Reserve well in advance and bring your absolute best bottle.", tags: ['dinner', 'date-night', 'byob'] },
+    { name: 'River Twice', location: 'Pennsport', cuisine: 'New American', price: '$$$', website: '', desc: "Inventive farm-to-table cooking with an emphasis on local seafood and seasonal produce — one of Philly's most thoughtful and exciting kitchens.", tags: ['dinner'] },
+    { name: "Dante & Luigi's", location: '762 S 10th St, Bella Vista', cuisine: 'Italian-American', price: '$$', website: '', desc: "One of Philadelphia's oldest restaurants, open since 1899 — classic Italian-American red sauce in a historic dining room. A true Philly institution.", tags: ['dinner', 'unique'] },
+    { name: 'Le Virtù', location: '1927 E Passyunk Ave, East Passyunk', cuisine: 'Italian', price: '$$$', website: '', desc: "The only Abruzzo-focused restaurant in Philly — arrosticini, chitarra pasta, excellent wine list. A passionate, singular place on East Passyunk.", tags: ['dinner', 'date-night'] },
+    { name: 'Zeppoli', location: 'Collingswood, NJ', cuisine: 'Italian', price: '$$$', website: '', desc: "Just across the bridge — Chef Chris Painter's acclaimed Sicilian-inspired restaurant is worth every mile. One of the best Italian tables in the region.", tags: ['dinner'] },
+    { name: 'Southwark', location: '701 S 4th St, Queen Village', cuisine: 'American', price: '$$', website: '', desc: "A cozy Queen Village staple with a strong cocktail program and excellent American cooking. The bar is one of the best in the neighborhood.", tags: ['dinner'] },
+    { name: 'My Loup', location: 'Philadelphia', cuisine: 'French', price: '$$$', website: '', desc: "An intimate French bistro with classic preparations and an excellent wine list — steak frites, duck confit, and a room that makes you feel like you're in Paris.", tags: ['dinner', 'date-night'] },
+    { name: 'Forsythia', location: '233 Chestnut St, Old City', cuisine: 'French', price: '$$$', website: '', desc: "Modern French cooking in Old City, with excellent charcuterie, refined mains, and a thoughtful menu that honors tradition without being beholden to it.", tags: ['dinner', 'date-night'] },
+    { name: 'June BYOB', location: 'Philadelphia', cuisine: 'American', price: '$$', website: '', desc: "A seasonal American BYOB with a focused menu and thoughtful cooking. The kind of intimate place that earns devoted regulars and keeps them for years.", tags: ['dinner', 'date-night', 'byob'] },
+    { name: 'Provenance', location: 'Philadelphia', cuisine: 'New American', price: '$$$', website: '', desc: "Farm-to-table New American with strong local sourcing and creative preparations — an elegant, produce-driven kitchen doing serious work.", tags: ['dinner'] },
+    { name: 'Her Place', location: 'Center City', cuisine: 'New American (Supper Club)', price: '$$$$', website: '', desc: "A theatrical, intimate supper club experience — multicourse menus, exceptional service, and a level of hospitality that makes a night here truly memorable.", tags: ['dinner', 'date-night', 'unique'] },
+    { name: 'Fork', location: '306 Market St, Old City', cuisine: 'New American', price: '$$$', website: '', desc: "An Old City institution since 1997 — elevated New American cuisine in an elegant setting, with a focus on local farms and seasonal ingredients.", tags: ['dinner'] },
+    { name: 'Lark', location: 'East Passyunk', cuisine: 'New American', price: '$$$', website: '', desc: "A thoughtful, rotating seasonal menu with inventive preparations — Lark has become one of Passyunk's most exciting and talked-about restaurants.", tags: ['dinner'] },
+    { name: 'Gass & Main', location: 'Germantown', cuisine: 'American', price: '$$', website: '', desc: "A neighborhood gem in Germantown with locally sourced ingredients and a warm, unpretentious atmosphere. One of the best reasons to head north.", tags: ['dinner', 'neighborhood'] },
+    { name: 'Roxanne', location: 'Philadelphia', cuisine: 'New American', price: '$$', website: '', desc: "Creative, chef-driven New American with a focus on seasonal produce and a lively, welcoming atmosphere.", tags: ['dinner'] },
+    { name: 'Barclay Prime', location: '237 S 18th St, Rittenhouse', cuisine: 'Steakhouse', price: '$$$$', website: '', desc: "Philadelphia's premier steakhouse — prime cuts in a handsome club setting, famous for its opulent $120 cheesesteak. A classic Rittenhouse splurge.", tags: ['dinner', 'date-night'] },
+    { name: "Little Walter's", location: 'Philadelphia', cuisine: 'American', price: '$$', website: '', desc: "A neighborhood American with a strong drinks program and inventive bar food — the kind of place that quickly becomes your regular spot.", tags: ['dinner'] },
+    { name: 'Meetinghouse', location: 'Mt. Airy', cuisine: 'American', price: '$$', website: '', desc: "A community-focused restaurant in Mt. Airy that embodies Philadelphia's neighborhood spirit — good food, good people, good vibes.", tags: ['dinner', 'neighborhood'] },
+    { name: 'Royal Tavern', location: '937 E Passyunk Ave, East Passyunk', cuisine: 'American Bar', price: '$', website: '', desc: "A beloved East Passyunk neighborhood bar with surprisingly excellent food — vegetarian-friendly, genuinely welcoming, and a local institution.", tags: ['dinner', 'neighborhood', 'cheap-eats'] },
+    { name: 'Char', location: 'Philadelphia', cuisine: 'Korean BBQ', price: '$$', website: '', desc: "Korean BBQ with tabletop grills and excellent banchan — a festive communal experience that makes for a great group dinner.", tags: ['dinner', 'unique'] },
+    { name: 'Mish Mish', location: 'Philadelphia', cuisine: 'Israeli', price: '$$', website: '', desc: "Casual Israeli street food done right — hummus, shakshuka, and shawarma with the same seriousness as Philly's grander Israeli restaurants.", tags: ['dinner', 'neighborhood'] },
+    { name: 'Bastia', location: 'Philadelphia', cuisine: 'Corsican', price: '$$$', website: '', desc: "Philly's only Corsican restaurant — hearty island charcuterie, brocciu cheese dishes, and wines from the French island. Utterly unique in the city.", tags: ['dinner', 'date-night', 'unique'] },
+    { name: 'Pietramala', location: 'Philadelphia', cuisine: 'Italian', price: '$$$', website: '', desc: "Modern Italian with exceptional handmade pasta and refined preparations — a newer addition to Philly's dining scene that's already earned its reputation.", tags: ['dinner', 'date-night'] },
   ];
+
+  // Cuisine buckets used to auto-group a tab's restaurants (checked in order).
+  const CUISINE_GROUPS = [
+    { label: '🍣 Japanese & Sushi',           test: /japanese|sushi|izakaya|omakase/i },
+    { label: '🥢 Chinese & Dim Sum',          test: /chinese|cantonese|dim sum/i },
+    { label: '🍜 Southeast Asian',            test: /thai|vietnamese|cambodian|filipino|malaysian|lao/i },
+    { label: '🍢 Korean',                     test: /korean/i },
+    { label: '🏔️ Himalayan & Tibetan',       test: /tibetan|himalayan|nepal/i },
+    { label: '🧆 Israeli & Middle Eastern',   test: /israeli|middle eastern|mediterranean|falafel|hummus/i },
+    { label: '🌮 Mexican & Latin American',   test: /mexican|baja|latin|colombian|venezuelan|argentin|central american|peruvian/i },
+    { label: '🌍 African',                    test: /african|ethiopian|somali/i },
+    { label: '🥟 Georgian & Eastern European',test: /georgian|polish|ukrainian|russian/i },
+    { label: '🍝 Italian',                    test: /italian/i },
+    { label: '🥐 French & Corsican',          test: /french|corsican/i },
+    { label: '🐟 Seafood',                    test: /seafood/i },
+    { label: '🥩 Steakhouse',                 test: /steak/i },
+    { label: '🍕 Pizza',                      test: /pizza/i },
+    { label: '🥗 Healthy & Fast-Casual',      test: /salad|bowl|vegan|plant|fast casual|healthy/i },
+    { label: '🥪 Sandwiches, Delis & Cafés',  test: /sandwich|hoagie|deli|pies|jewish|portuguese|caf[eé]/i },
+    { label: '🍳 Diners & Brunch',            test: /diner|brunch|breakfast/i },
+    { label: '🍦 Sweets',                     test: /ice cream|dessert|bakery/i },
+    { label: '🍔 American & New American',     test: /american|gastropub|\bbar\b|bbq/i },
+    { label: '🍴 More Great Spots',           test: /.*/ },
+  ];
+
+  function cuisineGroupIndex(cuisine) {
+    const c = cuisine || '';
+    for (let i = 0; i < CUISINE_GROUPS.length; i++) if (CUISINE_GROUPS[i].test.test(c)) return i;
+    return CUISINE_GROUPS.length - 1;
+  }
+
+  // Build {label, places}[] for a tab: filter the master list by tag, then
+  // cluster the matches into cuisine sub-sections (in CUISINE_GROUPS order).
+  function sectionsForTag(tag) {
+    const buckets = new Map();
+    for (const r of RESTAURANTS) {
+      if (!(r.tags || []).includes(tag)) continue;
+      const gi = cuisineGroupIndex(r.cuisine);
+      if (!buckets.has(gi)) buckets.set(gi, []);
+      buckets.get(gi).push(r);
+    }
+    return [...buckets.keys()].sort((a, b) => a - b)
+      .map(gi => ({ label: CUISINE_GROUPS[gi].label, places: buckets.get(gi) }));
+  }
+
+  // Tab definitions. `sections` = curated list; `tag` = auto-filled from the master list.
+  const EAT_TABS = [
+    { id: 'trending', emoji: '🔥', label: 'Trending', subtitle: TRENDY_UPDATED ? `What Eater Philly is writing about &middot; <span style="opacity:.6">Updated ${TRENDY_UPDATED}</span>` : 'What Eater Philly is writing about', sections: TRENDY_SECTIONS },
+    { id: 'neighborhood', emoji: '🏘️', label: 'Neighborhood Spots', subtitle: 'Local favorites worth the trip', tag: 'neighborhood' },
+    { id: 'breakfast', emoji: '🍳', label: 'Breakfast', subtitle: 'Morning starts & brunch', tag: 'breakfast' },
+    { id: 'lunch', emoji: '🥪', label: 'Lunch', subtitle: 'Midday bites', tag: 'lunch' },
+    { id: 'dinner', emoji: '🍷', label: 'Dinner', subtitle: 'Where to end the day', tag: 'dinner' },
+    { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', tag: 'dessert' },
+    { id: 'outdoor-dining', emoji: '🌿', label: 'Outdoor Dining', subtitle: 'Rooftops, gardens, waterfronts &amp; patios', sections: OUTDOOR_DINING_SECTIONS },
+    { id: 'date-night', emoji: '🌙', label: 'Date Night', subtitle: 'Romantic & memorable', tag: 'date-night' },
+    { id: 'unique', emoji: '✨', label: 'Unique', subtitle: 'Only-in-Philly experiences', tag: 'unique' },
+    { id: 'cheap-eats', emoji: '💵', label: 'Cheap Eats', subtitle: 'Big flavor, small tab', tag: 'cheap-eats' },
+    { id: 'byob', emoji: '🍾', label: 'BYOB', subtitle: 'Bring your own bottle', tag: 'byob' },
+  ];
+
+  const PLACES_TO_EAT = EAT_TABS.map(t => ({
+    id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle,
+    sections: t.sections || sectionsForTag(t.tag),
+  }));
+
   // EAT-PLACES-END
 
   // BOOK-PLACES-START — managed by audit-places.js, do not edit markers
