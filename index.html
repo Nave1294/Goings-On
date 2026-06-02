@@ -1096,26 +1096,30 @@
     .near-btn:active { transform: scale(0.95); }
     .near-btn.active { color: var(--accent); background: var(--accent-soft); }
     .near-btn.loading { opacity: 0.5; pointer-events: none; }
-    /* Inline filter toolbar (price chips left, Near me right) */
+    /* Inline filter toolbar (neighborhood dropdown left, Near me right) */
     .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; gap: 0.5rem; }
-    .price-filter { display: inline-flex; gap: 4px; }
-    .price-chip {
+    .nbhd-select {
       font: inherit;
       font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-weight: 600;
+      letter-spacing: -0.005em;
       color: var(--text-secondary);
-      background: none;
+      background-color: var(--surface);
       border: 1px solid var(--divider);
       border-radius: 999px;
-      padding: 0.2rem 0.5rem;
-      min-width: 1.9rem;
+      padding: 0.25rem 1.5rem 0.25rem 0.7rem;
+      max-width: 62%;
       cursor: pointer;
-      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%236b7560' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.5rem center;
+      background-size: 0.7rem;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
     }
-    .price-chip:hover { color: var(--accent); border-color: var(--accent); }
-    .price-chip:active { transform: scale(0.94); }
-    .price-chip.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+    .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
+    .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
   </style>
 </head>
 <body>
@@ -1150,12 +1154,9 @@
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="proximity-bar eat-toolbar">
-    <div class="price-filter" id="eatPriceFilter" role="group" aria-label="Filter by price">
-      <button class="price-chip" data-price="$" type="button" title="Inexpensive">$</button>
-      <button class="price-chip" data-price="$$" type="button" title="Moderate">$$</button>
-      <button class="price-chip" data-price="$$$" type="button" title="Pricey">$$$</button>
-      <button class="price-chip" data-price="$$$$" type="button" title="Splurge">$$$$</button>
-    </div>
+    <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
+      <option value="">📍 All neighborhoods</option>
+    </select>
     <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div class="day-panel">
@@ -3227,18 +3228,38 @@
     });
   }
 
-  // ── Price filter ──
-  // Selected price levels ('$'..'$$$$'); empty = show everything.
-  const priceFilter = new Set();
+  // ── Neighborhood filter ──
+  // Canonical Philly neighborhoods we recognize in location strings.
+  // Longer/more-specific names are matched as substrings of the location.
+  const PHILLY_NEIGHBORHOODS = [
+    'Northern Liberties', 'East Passyunk', 'Queen Village', 'Bella Vista',
+    'Washington Square West', 'Midtown Village', 'Rittenhouse', 'Fishtown',
+    'Old City', 'Center City', 'University City', 'Chinatown', 'Fairmount',
+    'Graduate Hospital', 'Callowhill', 'Art Museum', 'Pennsport',
+    'South Philadelphia', 'North Philadelphia', 'West Philadelphia',
+    'Germantown', 'Mt. Airy', 'Reading Terminal Market', 'Collingswood',
+  ];
+  // Casual aliases that appear in the data → canonical neighborhood name.
+  const NEIGHBORHOOD_ALIASES = {
+    'South Philly': 'South Philadelphia',
+    'North Philly': 'North Philadelphia',
+    'West Philly': 'West Philadelphia',
+  };
 
-  // Keep a place if no filter is active, it has no price (curated/article
-  // items like Trending), or its price is one of the selected levels.
-  function matchesPriceFilter(p) {
-    if (!priceFilter.size) return true;
-    if (!p.price) return true;
-    return priceFilter.has(p.price);
+  let neighborhoodFilter = '';
+
+  // Every canonical neighborhood referenced by a place's location string.
+  function placeNeighborhoods(loc) {
+    const s = loc || '';
+    const found = new Set();
+    for (const n of PHILLY_NEIGHBORHOODS) if (s.includes(n)) found.add(n);
+    for (const [alias, canon] of Object.entries(NEIGHBORHOOD_ALIASES)) if (s.includes(alias)) found.add(canon);
+    return [...found];
   }
-  function applyPriceFilter(places) { return places.filter(matchesPriceFilter); }
+  function matchesNeighborhood(p) {
+    return !neighborhoodFilter || placeNeighborhoods(p.location).includes(neighborhoodFilter);
+  }
+  function applyNeighborhoodFilter(places) { return places.filter(matchesNeighborhood); }
 
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
@@ -3260,17 +3281,17 @@
       return;
     }
 
-    // Nothing survives the active price filter → friendly nudge instead of a blank list.
-    if (priceFilter.size && !allPlaces.some(matchesPriceFilter)) {
+    // Nothing survives the active neighborhood filter → friendly nudge instead of a blank list.
+    if (neighborhoodFilter && !allPlaces.some(matchesNeighborhood)) {
       list.innerHTML = `<div class="eat-content eat-empty">
-        <div class="eat-empty-icon">💸</div>
-        <div class="eat-empty-text">No ${[...priceFilter].join(' / ')} spots in ${escapeHtml(cat.label)}. Try another price or tab.</div>
+        <div class="eat-empty-icon">📍</div>
+        <div class="eat-empty-text">No ${escapeHtml(neighborhoodFilter)} spots in ${escapeHtml(cat.label)}. Try another neighborhood or tab.</div>
       </div>`;
       return;
     }
 
     if (proximityActive && userLoc) {
-      const filtered = applyPriceFilter(allPlaces);
+      const filtered = applyNeighborhoodFilter(allPlaces);
       await Promise.all(filtered.map(ensurePlaceCoords));
       const sorted = [...filtered].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
@@ -3284,7 +3305,7 @@
       </div>`;
     } else {
       const groups = cat.sections
-        .map(s => ({ label: s.label, places: applyPriceFilter(s.places) }))
+        .map(s => ({ label: s.label, places: applyNeighborhoodFilter(s.places) }))
         .filter(s => s.places.length);
       list.innerHTML = `<div class="eat-content">${groups.map(section => `
         ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
@@ -3305,16 +3326,24 @@
     tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
       tab.addEventListener('click', () => renderEatCategory(tab.dataset.cat));
     });
-    // Price filter chips — toggle a level on/off and re-render the current tab
-    const priceEl = document.getElementById('eatPriceFilter');
-    if (priceEl) {
-      priceEl.querySelectorAll('.price-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          const p = chip.dataset.price;
-          if (priceFilter.has(p)) priceFilter.delete(p); else priceFilter.add(p);
-          chip.classList.toggle('active', priceFilter.has(p));
-          if (currentEatCat) renderEatCategory(currentEatCat);
-        });
+    // Neighborhood filter — fill the dropdown from the master list (with counts),
+    // then filter the current tab on change.
+    const nbhdEl = document.getElementById('eatNbhdFilter');
+    if (nbhdEl) {
+      const counts = new Map();
+      for (const r of RESTAURANTS)
+        for (const n of placeNeighborhoods(r.location))
+          counts.set(n, (counts.get(n) || 0) + 1);
+      [...counts.keys()].sort((a, b) => a.localeCompare(b)).forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = `${n} (${counts.get(n)})`;
+        nbhdEl.appendChild(opt);
+      });
+      nbhdEl.addEventListener('change', () => {
+        neighborhoodFilter = nbhdEl.value;
+        nbhdEl.classList.toggle('active', !!neighborhoodFilter);
+        if (currentEatCat) renderEatCategory(currentEatCat);
       });
     }
     // Click a tile to expand its description + map
