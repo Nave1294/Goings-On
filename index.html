@@ -1237,6 +1237,8 @@
     .spin-action:hover { filter: brightness(0.97); }
     .spin-action:active { transform: scale(0.96); }
     .spin-action.spin-again { color: #fff; background: var(--accent); }
+    @keyframes spinFlicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+    .spin-rolling { color: var(--text-secondary); animation: spinFlicker 0.26s linear infinite; }
   </style>
 </head>
 <body>
@@ -3440,26 +3442,49 @@
       </div>`;
   }
   let lastSpinName = null;
+  let spinGen = 0; // bumps each spin so a stale roll can't clobber a newer one
   function spinRandomEat() {
     const card = document.getElementById('spinCard');
     const overlay = document.getElementById('spinOverlay');
     if (!card || !overlay) return;
+    const myGen = ++spinGen;
     const pool = currentEatPool();
+    overlay.classList.add('open');
+
     if (!pool.length) {
       card.innerHTML = `<button class="add-close" data-spin-close aria-label="Close">✕</button>
         <div class="spin-eyebrow">🎲 Spin</div>
         <div class="spin-name">Nothing to pick</div>
         <div class="spin-desc">No spots match your current filters. Clear a filter or switch tabs, then spin again.</div>
         <div class="spin-actions"><button class="spin-action spin-again" data-spin-close type="button">Got it</button></div>`;
-      overlay.classList.add('open');
       return;
     }
+
     let pick;
     do { pick = pool[Math.floor(Math.random() * pool.length)]; }
     while (pool.length > 1 && pick.name === lastSpinName);
     lastSpinName = pick.name;
-    card.innerHTML = spinCardHTML(pick);
-    overlay.classList.add('open');
+
+    // Tiny pools or reduced-motion users: skip the roll, reveal straight away.
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (pool.length < 3 || reduceMotion) { card.innerHTML = spinCardHTML(pick); return; }
+
+    // Slot-machine roll: flick through random names, decelerating, then land.
+    const names = pool.map(p => p.name);
+    card.innerHTML = `<button class="add-close" data-spin-close aria-label="Close">✕</button>
+      <div class="spin-eyebrow">🎲 Rolling…</div>
+      <div class="spin-name spin-rolling" id="spinRoll">${escapeHtml(pick.name)}</div>`;
+    const rollEl = card.querySelector('#spinRoll');
+    const ticks = 10;
+    let i = 0;
+    const step = () => {
+      if (spinGen !== myGen || !overlay.classList.contains('open')) return; // superseded or closed
+      if (i >= ticks) { card.innerHTML = spinCardHTML(pick); return; }
+      rollEl.textContent = names[Math.floor(Math.random() * names.length)];
+      i++;
+      setTimeout(step, 45 + i * 11); // ~50ms → ~155ms, decelerating
+    };
+    step();
   }
 
   async function renderEatCategory(catId) {
