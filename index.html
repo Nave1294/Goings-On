@@ -1096,6 +1096,26 @@
     .near-btn:active { transform: scale(0.95); }
     .near-btn.active { color: var(--accent); background: var(--accent-soft); }
     .near-btn.loading { opacity: 0.5; pointer-events: none; }
+    /* Inline filter toolbar (price chips left, Near me right) */
+    .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .price-filter { display: inline-flex; gap: 4px; }
+    .price-chip {
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+      min-width: 1.9rem;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .price-chip:hover { color: var(--accent); border-color: var(--accent); }
+    .price-chip:active { transform: scale(0.94); }
+    .price-chip.active { color: #fff; background: var(--accent); border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -1129,7 +1149,13 @@
   </div>
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
-  <div class="proximity-bar">
+  <div class="proximity-bar eat-toolbar">
+    <div class="price-filter" id="eatPriceFilter" role="group" aria-label="Filter by price">
+      <button class="price-chip" data-price="$" type="button" title="Inexpensive">$</button>
+      <button class="price-chip" data-price="$$" type="button" title="Moderate">$$</button>
+      <button class="price-chip" data-price="$$$" type="button" title="Pricey">$$$</button>
+      <button class="price-chip" data-price="$$$$" type="button" title="Splurge">$$$$</button>
+    </div>
     <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
   <div class="day-panel">
@@ -3201,6 +3227,19 @@
     });
   }
 
+  // ── Price filter ──
+  // Selected price levels ('$'..'$$$$'); empty = show everything.
+  const priceFilter = new Set();
+
+  // Keep a place if no filter is active, it has no price (curated/article
+  // items like Trending), or its price is one of the selected levels.
+  function matchesPriceFilter(p) {
+    if (!priceFilter.size) return true;
+    if (!p.price) return true;
+    return priceFilter.has(p.price);
+  }
+  function applyPriceFilter(places) { return places.filter(matchesPriceFilter); }
+
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
     currentEatCat = cat.id;
@@ -3221,9 +3260,19 @@
       return;
     }
 
+    // Nothing survives the active price filter → friendly nudge instead of a blank list.
+    if (priceFilter.size && !allPlaces.some(matchesPriceFilter)) {
+      list.innerHTML = `<div class="eat-content eat-empty">
+        <div class="eat-empty-icon">💸</div>
+        <div class="eat-empty-text">No ${[...priceFilter].join(' / ')} spots in ${escapeHtml(cat.label)}. Try another price or tab.</div>
+      </div>`;
+      return;
+    }
+
     if (proximityActive && userLoc) {
-      await Promise.all(allPlaces.map(ensurePlaceCoords));
-      const sorted = [...allPlaces].sort((a, b) => {
+      const filtered = applyPriceFilter(allPlaces);
+      await Promise.all(filtered.map(ensurePlaceCoords));
+      const sorted = [...filtered].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
       });
@@ -3234,7 +3283,10 @@
         ${unique.map(restoTileHTML).join('')}
       </div>`;
     } else {
-      list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
+      const groups = cat.sections
+        .map(s => ({ label: s.label, places: applyPriceFilter(s.places) }))
+        .filter(s => s.places.length);
+      list.innerHTML = `<div class="eat-content">${groups.map(section => `
         ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
         ${section.places.map(restoTileHTML).join('')}
       `).join('')}</div>`;
@@ -3253,6 +3305,18 @@
     tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
       tab.addEventListener('click', () => renderEatCategory(tab.dataset.cat));
     });
+    // Price filter chips — toggle a level on/off and re-render the current tab
+    const priceEl = document.getElementById('eatPriceFilter');
+    if (priceEl) {
+      priceEl.querySelectorAll('.price-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const p = chip.dataset.price;
+          if (priceFilter.has(p)) priceFilter.delete(p); else priceFilter.add(p);
+          chip.classList.toggle('active', priceFilter.has(p));
+          if (currentEatCat) renderEatCategory(currentEatCat);
+        });
+      });
+    }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
     // Open on the first category that actually has spots
