@@ -1120,6 +1120,78 @@
     }
     .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
     .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
+    .proximity-bar.eat-toolbar { flex-wrap: wrap; }
+    .eat-filters { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--text-secondary);
+      background-color: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.25rem 0.7rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .filter-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .filter-btn.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
+    .filter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.05rem;
+      height: 1.05rem;
+      padding: 0 0.25rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 999px;
+    }
+    .mood-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      margin: -0.15rem 0 0.7rem;
+      padding: 0.6rem 0.7rem;
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: 14px;
+      animation: fadeIn 0.2s ease;
+    }
+    .mood-panel-title {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 0.1rem;
+    }
+    .mood-clear { font: inherit; font-size: 0.68rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
+    .mood-chip {
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.22rem 0.55rem;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .mood-chip:active { transform: scale(0.95); }
+    .mood-chip.excluded { color: #fff; background: #b5524a; border-color: #b5524a; text-decoration: line-through; }
   </style>
 </head>
 <body>
@@ -1154,11 +1226,15 @@
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="proximity-bar eat-toolbar">
-    <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
-      <option value="">📍 All neighborhoods</option>
-    </select>
+    <div class="eat-filters">
+      <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
+        <option value="">📍 All neighborhoods</option>
+      </select>
+      <button class="filter-btn" id="eatMoodBtn" type="button" aria-expanded="false" aria-controls="eatMoodPanel">🙅 Not in the mood<span class="filter-badge" hidden>0</span></button>
+    </div>
     <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
+  <div class="mood-panel" id="eatMoodPanel" hidden></div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
@@ -3278,7 +3354,14 @@
   function matchesNeighborhood(p) {
     return !neighborhoodFilter || placeNeighborhoods(p.location).includes(neighborhoodFilter);
   }
-  function applyNeighborhoodFilter(places) { return places.filter(matchesNeighborhood); }
+
+  // ── "Not in the mood for…" — exclude whole cuisine groups ──
+  const excludedCuisines = new Set(); // cuisine-group labels to hide
+  function cuisineGroupLabel(p) { return CUISINE_GROUPS[cuisineGroupIndex(p.cuisine)].label; }
+  function matchesMood(p) { return !excludedCuisines.size || !excludedCuisines.has(cuisineGroupLabel(p)); }
+
+  // A place is shown only if it clears every active filter.
+  function passesEatFilters(p) { return matchesNeighborhood(p) && matchesMood(p); }
 
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
@@ -3300,17 +3383,17 @@
       return;
     }
 
-    // Nothing survives the active neighborhood filter → friendly nudge instead of a blank list.
-    if (neighborhoodFilter && !allPlaces.some(matchesNeighborhood)) {
+    // Nothing survives the active filters → friendly nudge instead of a blank list.
+    if ((neighborhoodFilter || excludedCuisines.size) && !allPlaces.some(passesEatFilters)) {
       list.innerHTML = `<div class="eat-content eat-empty">
-        <div class="eat-empty-icon">📍</div>
-        <div class="eat-empty-text">No ${escapeHtml(neighborhoodFilter)} spots in ${escapeHtml(cat.label)}. Try another neighborhood or tab.</div>
+        <div class="eat-empty-icon">🔍</div>
+        <div class="eat-empty-text">Nothing in ${escapeHtml(cat.label)} matches your current filters. Try clearing one or another tab.</div>
       </div>`;
       return;
     }
 
     if (proximityActive && userLoc) {
-      const filtered = applyNeighborhoodFilter(allPlaces);
+      const filtered = allPlaces.filter(passesEatFilters);
       await Promise.all(filtered.map(ensurePlaceCoords));
       const sorted = [...filtered].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
@@ -3324,7 +3407,7 @@
       </div>`;
     } else {
       const groups = cat.sections
-        .map(s => ({ label: s.label, places: applyNeighborhoodFilter(s.places) }))
+        .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
         .filter(s => s.places.length);
       list.innerHTML = `<div class="eat-content">${groups.map(section => `
         ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
@@ -3362,6 +3445,50 @@
       nbhdEl.addEventListener('change', () => {
         neighborhoodFilter = nbhdEl.value;
         nbhdEl.classList.toggle('active', !!neighborhoodFilter);
+        if (currentEatCat) renderEatCategory(currentEatCat);
+      });
+    }
+    // "Not in the mood for…" — build a chip per cuisine group present in the data,
+    // toggle exclusions, and re-render the current tab.
+    const moodBtn = document.getElementById('eatMoodBtn');
+    const moodPanel = document.getElementById('eatMoodPanel');
+    if (moodBtn && moodPanel) {
+      const moodBadge = moodBtn.querySelector('.filter-badge');
+      const present = [];
+      const seenG = new Set();
+      for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
+        const gi = cuisineGroupIndex(r.cuisine);
+        if (!seenG.has(gi)) { seenG.add(gi); present.push(gi); }
+      }
+      present.sort((a, b) => a - b);
+      const chips = present.map(gi =>
+        `<button class="mood-chip" type="button" data-group="${escapeAttr(CUISINE_GROUPS[gi].label)}">${escapeHtml(CUISINE_GROUPS[gi].label)}</button>`).join('');
+      moodPanel.innerHTML = `<div class="mood-panel-title">Hide cuisines you're not feeling<button class="mood-clear" type="button" id="eatMoodClear">Clear all</button></div>${chips}`;
+
+      const syncMood = () => {
+        const n = excludedCuisines.size;
+        moodBadge.textContent = n;
+        moodBadge.hidden = n === 0;
+        moodBtn.classList.toggle('active', n > 0);
+      };
+      moodBtn.addEventListener('click', () => {
+        const willOpen = moodPanel.hasAttribute('hidden');
+        moodPanel.toggleAttribute('hidden', !willOpen);
+        moodBtn.setAttribute('aria-expanded', String(willOpen));
+      });
+      moodPanel.querySelectorAll('.mood-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const g = chip.dataset.group;
+          if (excludedCuisines.has(g)) excludedCuisines.delete(g); else excludedCuisines.add(g);
+          chip.classList.toggle('excluded', excludedCuisines.has(g));
+          syncMood();
+          if (currentEatCat) renderEatCategory(currentEatCat);
+        });
+      });
+      document.getElementById('eatMoodClear').addEventListener('click', () => {
+        excludedCuisines.clear();
+        moodPanel.querySelectorAll('.mood-chip.excluded').forEach(c => c.classList.remove('excluded'));
+        syncMood();
         if (currentEatCat) renderEatCategory(currentEatCat);
       });
     }
