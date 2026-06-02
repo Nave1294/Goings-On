@@ -1192,6 +1192,51 @@
     }
     .mood-chip:active { transform: scale(0.95); }
     .mood-chip.excluded { color: #fff; background: #b5524a; border-color: #b5524a; text-decoration: line-through; }
+    /* Random chooser ("Spin") */
+    .spin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+      color: #fff;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.25rem 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.12s ease, filter 0.15s ease;
+    }
+    .spin-btn:hover { filter: brightness(1.06); }
+    .spin-btn:active { transform: scale(0.95); }
+    @keyframes spinPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
+    .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
+    .spin-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.8rem; font-size: 0.82rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.9rem; }
+    .spin-desc { font-size: 0.92rem; line-height: 1.5; text-align: center; margin-bottom: 1.25rem; }
+    .spin-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+    .spin-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .spin-action:hover { filter: brightness(0.97); }
+    .spin-action:active { transform: scale(0.96); }
+    .spin-action.spin-again { color: #fff; background: var(--accent); }
   </style>
 </head>
 <body>
@@ -1231,6 +1276,7 @@
         <option value="">📍 All neighborhoods</option>
       </select>
       <button class="filter-btn" id="eatMoodBtn" type="button" aria-expanded="false" aria-controls="eatMoodPanel">🙅 Not in the mood<span class="filter-badge" hidden>0</span></button>
+      <button class="spin-btn" id="eatSpinBtn" type="button" title="Pick a random spot from this list">🎲 Spin</button>
     </div>
     <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
@@ -1320,6 +1366,10 @@
       </div>
     </a>
   </div>
+</div>
+
+<div class="add-overlay" id="spinOverlay" role="dialog" aria-modal="true" aria-label="Random pick">
+  <div class="add-card" id="spinCard"></div>
 </div>
 
 
@@ -3363,6 +3413,55 @@
   // A place is shown only if it clears every active filter.
   function passesEatFilters(p) { return matchesNeighborhood(p) && matchesMood(p); }
 
+  // ── Random chooser ("Spin") ──
+  // The pool is whatever the current tab shows after filters (deduped).
+  function currentEatPool() {
+    const cat = PLACES_TO_EAT.find(c => c.id === currentEatCat) || PLACES_TO_EAT[0];
+    return dedupeByName(cat.sections.flatMap(s => s.places).filter(passesEatFilters));
+  }
+  function spinCardHTML(r) {
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    return `
+      <button class="add-close" data-spin-close aria-label="Close">✕</button>
+      <div class="spin-eyebrow">🎲 Your pick</div>
+      <div class="spin-name">${escapeHtml(r.name)}</div>
+      <div class="spin-meta">
+        ${r.cuisine ? `<span>🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
+        ${r.location ? `<span>📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
+        ${r.price ? `<span>${escapeHtml(r.price)}</span>` : ''}
+      </div>
+      ${r.desc ? `<div class="spin-desc">${escapeHtml(r.desc)}</div>` : ''}
+      <div class="spin-actions">
+        <button class="spin-action spin-again" data-spin-again type="button">🎲 Spin again</button>
+        <a class="spin-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
+        ${r.website ? `<a class="spin-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
+        ${r.reservation ? `<a class="spin-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+        <button class="spin-action" data-spin-close type="button">Done</button>
+      </div>`;
+  }
+  let lastSpinName = null;
+  function spinRandomEat() {
+    const card = document.getElementById('spinCard');
+    const overlay = document.getElementById('spinOverlay');
+    if (!card || !overlay) return;
+    const pool = currentEatPool();
+    if (!pool.length) {
+      card.innerHTML = `<button class="add-close" data-spin-close aria-label="Close">✕</button>
+        <div class="spin-eyebrow">🎲 Spin</div>
+        <div class="spin-name">Nothing to pick</div>
+        <div class="spin-desc">No spots match your current filters. Clear a filter or switch tabs, then spin again.</div>
+        <div class="spin-actions"><button class="spin-action spin-again" data-spin-close type="button">Got it</button></div>`;
+      overlay.classList.add('open');
+      return;
+    }
+    let pick;
+    do { pick = pool[Math.floor(Math.random() * pool.length)]; }
+    while (pool.length > 1 && pick.name === lastSpinName);
+    lastSpinName = pick.name;
+    card.innerHTML = spinCardHTML(pick);
+    overlay.classList.add('open');
+  }
+
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
     currentEatCat = cat.id;
@@ -3490,6 +3589,16 @@
         moodPanel.querySelectorAll('.mood-chip.excluded').forEach(c => c.classList.remove('excluded'));
         syncMood();
         if (currentEatCat) renderEatCategory(currentEatCat);
+      });
+    }
+    // Random chooser — spin from the current (filtered) pool
+    const spinBtn = document.getElementById('eatSpinBtn');
+    const spinOverlay = document.getElementById('spinOverlay');
+    if (spinBtn && spinOverlay) {
+      spinBtn.addEventListener('click', spinRandomEat);
+      spinOverlay.addEventListener('click', e => {
+        if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
+        else if (e.target.closest('[data-spin-again]')) spinRandomEat();
       });
     }
     // Click a tile to expand its description + map
