@@ -1097,7 +1097,7 @@
     .near-btn.active { color: var(--accent); background: var(--accent-soft); }
     .near-btn.loading { opacity: 0.5; pointer-events: none; }
     /* Inline filter toolbar (neighborhood dropdown left, Near me right) */
-    .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; }
     .nbhd-select {
       font: inherit;
       font-size: 0.72rem;
@@ -1120,98 +1120,145 @@
     }
     .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
     .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
-    .proximity-bar.eat-toolbar { flex-wrap: wrap; }
-    .eat-filters { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
-    .filter-btn {
-      display: inline-flex;
+    .mood-clear { font: inherit; font-size: 0.72rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
+    .mood-chip {
+      font: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--divider);
+      border-radius: 999px;
+      padding: 0.28rem 0.65rem;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .mood-chip:active { transform: scale(0.95); }
+    .mood-chip.excluded { color: #fff; background: #b5524a; border-color: #b5524a; text-decoration: line-through; }
+    /* Discover FAB (bottom-left, visible only on the eat view) */
+    .eat-fab {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      display: none;
       align-items: center;
       gap: 5px;
       font: inherit;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: -0.005em;
-      color: var(--text-secondary);
-      background-color: var(--surface);
-      border: 1px solid var(--divider);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      background: var(--accent);
+      border: none;
       border-radius: 999px;
-      padding: 0.25rem 0.7rem;
+      padding: 0.65rem 1.1rem;
       cursor: pointer;
+      box-shadow: 0 6px 18px rgba(45, 106, 79, 0.32), 0 1px 3px rgba(0,0,0,0.08);
+      z-index: 50;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
       white-space: nowrap;
-      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
     }
-    .filter-btn:hover { color: var(--accent); border-color: var(--accent); }
-    .filter-btn.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
-    .filter-badge {
+    body[data-view="places-to-eat"] .eat-fab { display: inline-flex; }
+    .eat-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(45, 106, 79, 0.4), 0 2px 4px rgba(0,0,0,0.1); }
+    .eat-fab:active { transform: scale(0.95); }
+    .eat-fab-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 1.05rem;
       height: 1.05rem;
-      padding: 0 0.25rem;
+      padding: 0 0.2rem;
       font-size: 0.62rem;
       font-weight: 700;
-      line-height: 1;
-      color: #fff;
-      background: var(--accent);
+      color: var(--accent);
+      background: #fff;
       border-radius: 999px;
     }
-    .mood-panel {
+    /* Discover bottom sheet */
+    .eat-sheet-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(0,0,0,0.38);
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      align-items: center;
-      margin: -0.15rem 0 0.7rem;
-      padding: 0.6rem 0.7rem;
-      background: var(--surface);
-      border: 1px solid var(--divider);
-      border-radius: 14px;
-      animation: fadeIn 0.2s ease;
+      align-items: flex-end;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
     }
-    .mood-panel-title {
+    .eat-sheet-overlay[hidden] { display: none; }
+    .eat-sheet {
+      background: var(--surface);
+      border-radius: 22px 22px 0 0;
+      padding: 0 1.4rem 2.5rem;
       width: 100%;
+      max-height: 82vh;
+      overflow-y: auto;
+      animation: sheetUp 0.26s ease;
+    }
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .eat-sheet-handle {
+      width: 2.5rem;
+      height: 0.28rem;
+      background: var(--divider);
+      border-radius: 999px;
+      margin: 0.75rem auto 1rem;
+    }
+    .eat-sheet-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+    .eat-sheet-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    .eat-sheet-close {
+      font: inherit;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      background: var(--divider);
+      border: none;
+      border-radius: 50%;
+      width: 1.85rem;
+      height: 1.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .eat-sheet-close:hover { filter: brightness(0.92); }
+    .eat-sheet-spin-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      margin-bottom: 1.6rem;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-sheet-spin-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-spin-btn:active { transform: scale(0.98); }
+    .eat-sheet-mood-label {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-secondary);
-      margin-bottom: 0.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
     }
-    .mood-clear { font: inherit; font-size: 0.68rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
-    .mood-chip {
-      font: inherit;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: none;
-      border: 1px solid var(--divider);
-      border-radius: 999px;
-      padding: 0.22rem 0.55rem;
-      cursor: pointer;
-      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
-    }
-    .mood-chip:active { transform: scale(0.95); }
-    .mood-chip.excluded { color: #fff; background: #b5524a; border-color: #b5524a; text-decoration: line-through; }
-    /* Random chooser ("Spin") */
-    .spin-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font: inherit;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: -0.005em;
-      color: #fff;
-      background: var(--accent);
-      border: 1px solid var(--accent);
-      border-radius: 999px;
-      padding: 0.25rem 0.8rem;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: transform 0.12s ease, filter 0.15s ease;
-    }
-    .spin-btn:hover { filter: brightness(1.06); }
-    .spin-btn:active { transform: scale(0.95); }
+    .eat-mood-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
     @keyframes spinPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
     .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
@@ -1241,7 +1288,7 @@
     .spin-rolling { color: var(--text-secondary); animation: spinFlicker 0.26s linear infinite; }
   </style>
 </head>
-<body>
+<body data-view="home">
 
 <div class="bg" id="bg"></div>
 
@@ -1273,16 +1320,11 @@
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="proximity-bar eat-toolbar">
-    <div class="eat-filters">
-      <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
-        <option value="">📍 All neighborhoods</option>
-      </select>
-      <button class="filter-btn" id="eatMoodBtn" type="button" aria-expanded="false" aria-controls="eatMoodPanel">🙅 Not in the mood<span class="filter-badge" hidden>0</span></button>
-      <button class="spin-btn" id="eatSpinBtn" type="button" title="Pick a random spot from this list">🎲 Spin</button>
-    </div>
+    <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
+      <option value="">📍 All neighborhoods</option>
+    </select>
     <button class="near-btn" data-scope="places" type="button" title="Sort by distance from you">📍 Near me</button>
   </div>
-  <div class="mood-panel" id="eatMoodPanel" hidden></div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
@@ -1372,6 +1414,28 @@
 
 <div class="add-overlay" id="spinOverlay" role="dialog" aria-modal="true" aria-label="Random pick">
   <div class="add-card" id="spinCard"></div>
+</div>
+
+<!-- Places to Eat: Discover FAB + bottom sheet -->
+<button class="eat-fab" id="eatFab" type="button" aria-label="Discover restaurants" aria-haspopup="dialog">
+  🎲 Discover<span class="eat-fab-badge" hidden></span>
+</button>
+<div class="eat-sheet-overlay" id="eatSheetOverlay" hidden role="dialog" aria-modal="true" aria-label="Discover restaurants">
+  <div class="eat-sheet" id="eatSheet">
+    <div class="eat-sheet-handle"></div>
+    <div class="eat-sheet-row">
+      <span class="eat-sheet-title">🎲 Discover</span>
+      <button class="eat-sheet-close" id="eatSheetClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">
+      Pick a random spot for me
+    </button>
+    <div class="eat-sheet-mood-label">
+      Not in the mood for…
+      <button class="mood-clear" type="button" id="eatMoodClear">Clear all</button>
+    </div>
+    <div class="eat-mood-chips" id="eatMoodChips"></div>
+  </div>
 </div>
 
 
@@ -3345,6 +3409,7 @@
     (target || document.getElementById('view-home')).classList.add('active');
     document.querySelectorAll('.cat-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.view === viewId));
+    document.body.dataset.view = viewId || 'home';
     window.scrollTo(0, 0);
   }
 
@@ -3572,12 +3637,19 @@
         if (currentEatCat) renderEatCategory(currentEatCat);
       });
     }
-    // "Not in the mood for…" — build a chip per cuisine group present in the data,
-    // toggle exclusions, and re-render the current tab.
-    const moodBtn = document.getElementById('eatMoodBtn');
-    const moodPanel = document.getElementById('eatMoodPanel');
-    if (moodBtn && moodPanel) {
-      const moodBadge = moodBtn.querySelector('.filter-badge');
+    // Discover FAB + bottom sheet: cuisine exclusions + random spin
+    const fab = document.getElementById('eatFab');
+    const fabBadge = fab && fab.querySelector('.eat-fab-badge');
+    const sheetOverlay = document.getElementById('eatSheetOverlay');
+    const sheet = document.getElementById('eatSheet');
+    if (fab && sheetOverlay) {
+      const openSheet = () => sheetOverlay.removeAttribute('hidden');
+      const closeSheet = () => sheetOverlay.setAttribute('hidden', '');
+      fab.addEventListener('click', openSheet);
+      document.getElementById('eatSheetClose').addEventListener('click', closeSheet);
+      sheetOverlay.addEventListener('click', e => { if (!sheet.contains(e.target)) closeSheet(); });
+
+      // Build cuisine chips
       const present = [];
       const seenG = new Set();
       for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
@@ -3585,46 +3657,40 @@
         if (!seenG.has(gi)) { seenG.add(gi); present.push(gi); }
       }
       present.sort((a, b) => a - b);
-      const chips = present.map(gi =>
+      document.getElementById('eatMoodChips').innerHTML = present.map(gi =>
         `<button class="mood-chip" type="button" data-group="${escapeAttr(CUISINE_GROUPS[gi].label)}">${escapeHtml(CUISINE_GROUPS[gi].label)}</button>`).join('');
-      moodPanel.innerHTML = `<div class="mood-panel-title">Hide cuisines you're not feeling<button class="mood-clear" type="button" id="eatMoodClear">Clear all</button></div>${chips}`;
 
-      const syncMood = () => {
+      const syncFab = () => {
         const n = excludedCuisines.size;
-        moodBadge.textContent = n;
-        moodBadge.hidden = n === 0;
-        moodBtn.classList.toggle('active', n > 0);
+        if (fabBadge) { fabBadge.textContent = n; fabBadge.hidden = n === 0; }
       };
-      moodBtn.addEventListener('click', () => {
-        const willOpen = moodPanel.hasAttribute('hidden');
-        moodPanel.toggleAttribute('hidden', !willOpen);
-        moodBtn.setAttribute('aria-expanded', String(willOpen));
-      });
-      moodPanel.querySelectorAll('.mood-chip').forEach(chip => {
+
+      document.getElementById('eatMoodChips').querySelectorAll('.mood-chip').forEach(chip => {
         chip.addEventListener('click', () => {
           const g = chip.dataset.group;
           if (excludedCuisines.has(g)) excludedCuisines.delete(g); else excludedCuisines.add(g);
           chip.classList.toggle('excluded', excludedCuisines.has(g));
-          syncMood();
+          syncFab();
           if (currentEatCat) renderEatCategory(currentEatCat);
         });
       });
       document.getElementById('eatMoodClear').addEventListener('click', () => {
         excludedCuisines.clear();
-        moodPanel.querySelectorAll('.mood-chip.excluded').forEach(c => c.classList.remove('excluded'));
-        syncMood();
+        document.getElementById('eatMoodChips').querySelectorAll('.mood-chip.excluded').forEach(c => c.classList.remove('excluded'));
+        syncFab();
         if (currentEatCat) renderEatCategory(currentEatCat);
       });
-    }
-    // Random chooser — spin from the current (filtered) pool
-    const spinBtn = document.getElementById('eatSpinBtn');
-    const spinOverlay = document.getElementById('spinOverlay');
-    if (spinBtn && spinOverlay) {
-      spinBtn.addEventListener('click', spinRandomEat);
-      spinOverlay.addEventListener('click', e => {
-        if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
-        else if (e.target.closest('[data-spin-again]')) spinRandomEat();
-      });
+
+      // Spin button inside sheet
+      const spinBtn = document.getElementById('eatSpinBtn');
+      const spinOverlay = document.getElementById('spinOverlay');
+      if (spinBtn && spinOverlay) {
+        spinBtn.addEventListener('click', () => { closeSheet(); spinRandomEat(); });
+        spinOverlay.addEventListener('click', e => {
+          if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
+          else if (e.target.closest('[data-spin-again]')) spinRandomEat();
+        });
+      }
     }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
