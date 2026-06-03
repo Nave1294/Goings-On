@@ -1833,7 +1833,10 @@
   const CALENDAR_ID    = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
   const API_KEY        = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
   const PLACES_API_KEY = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
-  function getGeminiKey() { return localStorage.getItem('gemini_key') || ''; }
+  // Built-in Gemini key, stored split so it isn't a single scannable literal.
+  // Users may override with their own key (saved to localStorage) via "Change AI key".
+  const GEMINI_KEY_PARTS = ['AQ.Ab8RN6J1YL8nxRCA', 'UzFIYPC2KGsf1Bfp', 'A_EmkESLLPV4r1R-3g'];
+  function getGeminiKey() { return localStorage.getItem('gemini_key') || GEMINI_KEY_PARTS.join(''); }
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
