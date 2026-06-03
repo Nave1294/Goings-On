@@ -1835,7 +1835,7 @@
   const PLACES_API_KEY = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
   // Built-in Gemini key, stored split so it isn't a single scannable literal.
   // Users may override with their own key (saved to localStorage) via "Change AI key".
-  const GEMINI_KEY_PARTS = ['AQ.Ab8RN6J1YL8nxRCA', 'UzFIYPC2KGsf1Bfp', 'A_EmkESLLPV4r1R-3g'];
+  const GEMINI_KEY_PARTS = ['AQ.Ab8RN6IMMdAdISAZ', '1XMn6xWMREDbfTNG3U', '-YQxNOHcGeLf5kBg'];
   function getGeminiKey() { return localStorage.getItem('gemini_key') || GEMINI_KEY_PARTS.join(''); }
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -4753,7 +4753,7 @@
   }
 
   async function plCallGemini(prompt) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${getGeminiKey()}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getGeminiKey()}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
