@@ -1702,6 +1702,31 @@
   </div>
 </div>
 
+<div class="container view" id="view-bakeries">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Bakeries</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="bakerySubTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="bakeries" type="button" title="Sort by distance from you">📍 Near me</button>
+  </div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow" id="bakeryEyebrow">Bakeries</div>
+        <div class="day-title" id="bakeryTitle">Must Try First</div>
+        <div class="day-subtitle" id="bakerySubtitle">Philly's best neighborhood bakeries</div>
+      </div>
+    </div>
+    <div id="bakeryList"></div>
+  </div>
+</div>
+
 <div class="container view" id="view-farmers-markets">
   <div class="brand-row">
     <button class="hamburger-btn" type="button" aria-label="Open categories">
@@ -3830,10 +3855,100 @@
   }
 
   // Categories shown when the hamburger expands. Add more here as new views are built.
+  const BAKERY_SECTIONS = [
+    { label: 'Must Try First', places: [
+      { name: 'Essen Bakery', location: '1437 E Passyunk Ave, East Passyunk', desc: "Chef Tova du Plessis's shop has become a beloved business on East Passyunk Avenue, thanks to its fan-favorite chocolate halva babka, black-and-white cookies, and rugelach. Also a savory menu with bagels and sandwiches.", website: '' },
+      { name: 'Merzbacher\'s', location: '4530 Germantown Ave, Germantown', desc: 'The Philly Muffin — a bagel/English muffin/sandwich-roll hybrid — started it all. Also makes Pullman loaves and baguettes from farmer-sourced grains and hand-milled flour. Find their goods at the Rittenhouse Farmers Market on Saturdays.', website: '' },
+      { name: 'Machine Shop Boulangerie', location: '1901 S 9th St, East Passyunk', desc: "Machine Shop's sunny space on the ground floor of the Bok Building is one of the hottest spots in town for lemon meringue tarts, caneles, morning buns, and other French-inspired baked goods. Go early — they sell out, especially on weekends.", website: '' },
+      { name: 'Mighty Bread Company', location: '1211 Gerritt St, East Passyunk', desc: 'Airy cafe with crowd-pleasing quiches, sandwiches, salads, and a case full of pastries. The sourdough has impossibly large air pockets and a nice shatter on the crust. The asiago-romano-parmesan loaf is dizzyingly good.', website: '' },
+      { name: 'Dodo Bakery', location: '2653 S 11th St, South Philly', desc: 'Freshly baked Hong Kong-style pastries and buns, plus bubble tea and smoothies — pork floss buns, egg tarts, sponge cakes and more, way down in South Philly.', website: '' },
+      { name: 'New June', location: '5401 Tacony St, Kensington', desc: "Noelle Blizzard's Best of Philly-winning cakes — heart-shaped, round, or multi-tiered towers covered in buttercream with vintage Lambeth-style piping, edible glitter, cherries, and flowers. Order online for pickup or find a slice at pop-ups around Philly.", website: '' },
+      { name: 'Second Daughter Baking Company', location: '1901 S 9th St, East Passyunk', desc: 'Sister team Rhonda Saltzman and Mercedes Brooks at the Bok Building. Best known for fudgy, salty-sweet brownies (2021 Best of Philly) and brown butter chocolate chip jawns. Retail Thursday-Monday, 9am-4pm or sellout.', website: '' },
+      { name: 'DreamWorld Bakes', location: 'University City', desc: "Gorgeous celebration cakes packed with flavor — covered with flowers, edible glitter, and mini disco balls. Even Patti LaBelle had a custom DreamWorld cake for her 80th birthday. Order custom via website or find slices at Riverwards Produce.", website: '' },
+      { name: 'Kouklet & Tanda', location: '1647 E Passyunk Ave, East Passyunk', desc: 'Brazilian bakery known for bolo de rolo — soft, spongy cake rolls in classic guava, vanilla birthday cake, double chocolate, and more. Weekly rotational sweet and savory menu for preorder pickup. Nationwide delivery via Goldbelly.', website: '' },
+      { name: "Jezabel's Cafe", location: '206 S 45th St, University City', desc: 'In addition to insanely delicious empanadas and alfajores, a go-to for larger-format cakes and pies beyond the basics — Basque burnt-ricotta cake, chocolate olive-oil cake. No one will miss the grocery-store sheet cake.', website: '' },
+      { name: 'Fiore', location: '2413 Frankford Ave, East Kensington', desc: 'Ed Crochet and Justine MacNeil focus on daytime fare with Italian pastries — pistachio cornetti and bomboloni — plus sandwiches, pasta, Roman-style pizza, and gelato in their East Kensington space.', website: '' },
+      { name: 'Ursa Bakery', location: '4032 N Broad St, Nicetown-Hunting Park', desc: "Vetri's former head baker Claire Kopp McWilliams makes sourdough from fresh-milled Pennsylvania wheat. Find her loaves at Fairmount Farmers Market (Thursdays) and East Falls Farmers Market (Saturdays). Well worth seeking out.", website: '' },
+      { name: 'Corropolese Bakery & Deli', location: 'Multiple locations (Norristown · Limerick · Audubon)', desc: "A deli, bread-maker, and pastry shop all at once — hoagies on just-baked rolls, tomato pie prized for its tangy sauce and crisp edge, cannoli, and apple fritters. Don't overthink it; just grab a little of everything.", website: '' },
+      { name: 'The Night Kitchen Bakery & Cafe', location: '7725 Germantown Ave, Chestnut Hill', desc: "Birthday cakes worth sitting in traffic on the Conshohocken Curve — full of homemade soulfulness. Adam Sandler's wife ordered a custom birthday cake here while he filmed Hustle in Philly. Coffee, sandwiches, and counter sweets also call to you.", website: '' },
+      { name: 'Lost Bread Co.', location: '1313 N Howard St, Kensington', desc: 'Beautiful rustic loaves, addictive pretzel shortbread cookies, granola, and in-house-milled flour. Ask for a sourdough starter in the shop or email ahead for farmers market pickup.', website: '' },
+      { name: 'Metropolitan Bakery', location: '262 S 19th St, Rittenhouse · 4013 Walnut St, University City · 51 N 12th St, Market East', desc: "It ushered in an era for Philadelphia — before it opened in 1993, gourmet bread in the city was elusive. Bakeries double as neighborhood hangouts. Must-get: Metro's granola and raisin-nut, multigrain, spelt, or chocolate-cherry bread.", website: '' },
+      { name: 'Isgro Pastries', location: '1009 Christian St, Bella Vista', desc: 'Founded in 1904, still using original recipes, still run by family, with lines that grow longer every year. Philly food royalty alongside Di Bruno Brothers and Pat Olivieri. The ricotta cookies and cannoli are essential.', website: '' },
+    ]},
+    { label: 'Chinatown, Center City & Old City', places: [
+      { name: "K'Far Cafe", location: '110 S 19th St, Rittenhouse', desc: 'This all-day CookNSolo cafe does amazing things with kubaneh toasts, rugelach, Jerusalem-style bagels, and seasonal chocolate-coconut babka. Also gluten-free pecan pie for dessert.', website: '' },
+      { name: 'Bread Top House', location: '1041 Race St, Chinatown', desc: 'Cozy corner bakery specializing in Asian baked goods — moon cakes, egg tarts, and pineapple buns. Cash-only, but also accepts Venmo and Zelle.', website: '' },
+      { name: 'A La Mousse', location: '145 N 11th St, Chinatown · 1622 South St · Narberth', desc: 'Intricate cakes including a chocolate mousse brown bear, Hokkaido double cheesecake, and just about anything with mousse. A local small-batch bakery chain with a Chinese-French fusion bent.', website: '' },
+      { name: 'High Street Bakery', location: '101 S 9th St, Center City', desc: "Grain artistry at its finest — focaccia polka-dotted with roasted cherry tomatoes is almost too beautiful to eat. Also: lemon-pepper pound cake, cinnamon buns, and croissants.", website: '' },
+      { name: 'ICI Macarons & Cafe', location: '11 N 3rd St, Old City', desc: "Philly's most delicate macarons — dainty, tasty, and easy on the eyes, as French export as it should be. Note: temporarily closed while moving to a new nearby location.", website: '' },
+      { name: 'Oui Pastries', location: '160 N 3rd St, Old City', desc: "Super-French pastries done well, but the real draw is their bake-at-home croissants — keep in the freezer, defrost overnight, bake in the morning. There's nothing better than freshly baked croissants in your pajamas.", website: '' },
+      { name: 'Bloomsday', location: '414 S 2nd St, Society Hill', desc: "Rotating house-made pastries plus a standout 'croiffle' — waffled croissant dough filled with blueberry-pomegranate compote and lemon curd mascarpone cream. Also a strawberry bomb and gluten-free chocolate Swiss roll.", website: '' },
+      { name: "J'aime French Bakery", location: '212 S 12th St, Midtown Village · Rittenhouse', desc: "Bastien Ornano's chic Parisian patisserie with Nutella chouquettes, fruit tarts, and galettes. Get the quiche or a baguette to take home. A second location (J'aime French Cafe) in Rittenhouse.", website: '' },
+      { name: 'The Bakeshop on 20th', location: '269 S 20th St, Rittenhouse', desc: 'Vast selection of cookies, brownies, scones, sticky buns, and croissants — working hard to recreate the comfort foods of your childhood. Also sandwiches from the all-day cafe menu.', website: '' },
+      { name: 'Flying Monkey Bakery', location: '51 N 12th St, Reading Terminal Market', desc: "Whoopie pies put Flying Monkey on the map — available in flavors from chocolate Guinness to banana-chocolate-chip. But the massive menu of sweets, cakes, and pies spans key lime, brownies, cupcakes, and more.", website: '' },
+    ]},
+    { label: 'Fishtown, Kensington & Northern Liberties', places: [
+      { name: 'Gilda Cafe & Market', location: '300 E Girard Ave, Fishtown', desc: 'Get here early for the pasteis de nata — hand-rolled Portuguese custard tarts made fresh daily, baked and brulee\'d to perfection. Also lemon-raspberry and chocolate-sea salt versions. Bring your laptop; stay awhile.', website: '' },
+      { name: "Stock's Bakery", location: '2614 E Lehigh Ave, Kensington', desc: "The pound cake people go bonkers over a few times a year. Also solid pastries, cookies, pies, and cakes for the neighbors. Note the bakery closes most of summer — check hours before visiting.", website: '' },
+      { name: "Kaplan's New Model Bakery", location: '901 N 3rd St, Northern Liberties', desc: "Serving kosher baked goods to Philly for over 100 years. The rye bread has been a multigenerational favorite, gracing tables across the city for decades.", website: '' },
+      { name: 'Cake Life Bake Shop', location: '1306 Frankford Ave, Fishtown', desc: 'The bakery that made Beyonce\'s birthday cake — twice — serves beautiful layer cakes, cupcakes, cookies, brownies, and pastries, plus savory quiches and pies. The cinnamon rolls are legendary.', website: '' },
+      { name: 'Whipped Bake Shop', location: '636 Belgrade St, Fishtown', desc: "Baker Zoe Lukas and her team craft remarkable cakes for weddings, birthdays, and Tuesdays. Appointment-only — preordering is a must.", website: '' },
+      { name: 'Philly Style Bagels', location: '218 Arch St, Old City · 1451 E Columbia Ave, Fishtown', desc: 'Bagels, bagels with spreads, bagel sandwiches — nothing else. But groundbreaking: infused with Yards beer during the boil, so good they\'ve become their own recognized style.', website: '' },
+      { name: 'The Kettle Black', location: '631 N 2nd St, Northern Liberties', desc: 'Small-batch artisan bakery and coffee shop specializing in a few loaves, bagels, and really good coffee. Check Instagram stories for the daily menu — open 8am until sellout.', website: '' },
+      { name: "Darnel's Cakes", location: '444 N 3rd St, Northern Liberties', desc: 'Excellent breakfast sandwiches, buttermilk biscuits, quiches, and a large selection of cakes. Also serves salads, smashburger, mac and cheese. Find Darnel\'s at Lansdale and East Falls Farmers Markets on weekends.', website: '' },
+    ]},
+    { label: 'Queen Village, Bella Vista, East Passyunk & Pennsport', places: [
+      { name: 'Cake & Joe', location: '1401 E Moyamensing Ave, Pennsport · 2012 Frankford Ave, Fishtown', desc: 'Intricate, elegant mousse cakes and other pastries — French, Japanese, Chinese, and American flavors intertwined. Two locations; check which is currently open before visiting.', website: '' },
+      { name: 'Sweet Life Bakeshop', location: '740 South St, Bella Vista', desc: 'Nowhere else will you find so many types of banana pudding — classic, strawberry-banana, salted-caramel banana, peaches and cream, and more. Also cupcakes, mini pineapple upside-down cakes, and mini pies.', website: '' },
+      { name: 'Termini Bros.', location: '1523 S 8th St, East Passyunk · multiple locations', desc: "With several locations around the city, you can get your cannoli fix anywhere these days. But you can't call yourself a true Philadelphian without a visit to the East Passyunk flagship, for the original cash registers and dizzying array of confections.", website: '' },
+      { name: 'Artisan Boulanger Patissier', location: '1218 Mifflin St, East Passyunk', desc: "The people huddled on the street at 7am on weekends munching almond sticks and croissants should tell you everything. Multiple James Beard nominations. A second location in Media.", website: '' },
+      { name: 'Vanilya', location: '1611 E Passyunk Ave, East Passyunk', desc: "Don't walk by this unassuming window — you'd miss perfect New York-style bagels, croissants, and cookies. The za'atar bagel, if still available, is a must.", website: '' },
+      { name: 'Stargazy', location: '1838 E Passyunk Ave, East Passyunk', desc: "British native Sam Jacobson's tiny South Philly pie shop: flaky sausage rolls, an ever-changing roster of pastries and meat pies, and millionaire's shortbread. A few mismatched tables, free tea, and a lot of charm.", website: '' },
+      { name: 'Omi Kitchen', location: '1600 S 12th St, East Passyunk', desc: "You can't miss the bright pink-and-yellow exterior at 12th and Tasker. Specializes in rotis — fluffy Indonesian bread (not the Indian flatbread) with sweet and savory fillings: chocolate, durian, cheese, pizza.", website: '' },
+      { name: 'Slice & Schmear', location: '1700 S 10th St, East Passyunk', desc: "LA-style bagels — scooped or unscooped, filled with cream cheese in flavors like scallion and habanero honey. Plans to add pizza.", website: '' },
+      { name: 'Varallo Bros. Bakery', location: '1639 S 10th St, East Passyunk', desc: 'An authentic Italian bakery to its bones, drawing South Philly neighbors for decades to munch on traditional cookies, pastries, cakes and everything else under the sun.', website: '' },
+      { name: 'Creme Brulee Bistro & Cafe', location: '1800 S 4th St, Pennsport', desc: "Opera cakes adorned with gold leaf — in Pennsport. Armando Tapia's cafe does the tartlet better than some of Rittenhouse's poshest bakeries. Plus colorful meringues, textbook eclairs, and plenty of seating.", website: '' },
+    ]},
+    { label: 'South Philly, Point Breeze & West Philly', places: [
+      { name: 'Party Girl Bake Club', location: 'South Philly (pop-ups)', desc: "Mallory Valvano's bright, tongue-in-cheek cakes full of personality and flavor — known to include potato chips and be topped with candy. Order custom via online form; find slices at pop-ups and cake decorating classes around the city.", website: '' },
+      { name: 'Small Oven Pastry Shop', location: '2204 Washington Ave, Point Breeze', desc: 'Chef Chad Durkin serves gorgeous classic French pastries — mille-feuille and cream puffs, cookies, cakes, and tarts. Get a porchetta sandwich from Porcos, which shares the same space.', website: '' },
+      { name: 'Batter & Crumbs', location: '1401 Reed St, Point Breeze', desc: "Vegan bakery and cafe with rotating sweet and savory treats — cinnamon buns to the popular spinach jawn (handheld spinach-filled pastry with Italian herbs). Also some gluten-free pastries and hearty sandwiches.", website: '' },
+      { name: 'Manakeesh Cafe Bakery', location: '4420 Walnut St, University City', desc: "Lebanese bakery and grill where the baked goods shouldn't be missed — freshly made, perfectly flaky baklava and French crepes with cookie butter, Nutella, walnut honey, and more.", website: '' },
+      { name: "Frangelli's Bakery", location: '847 W Ritner St, South Philly', desc: "It's rare a shop is good at both cake and yeast doughnuts, but Frangelli's churns both daily, just as the original owners did in the 1940s. The cannoli cake, cookies, and sticky buns get less attention but are just as delectable.", website: '' },
+      { name: "Cacia's Bakery", location: '1526 W Ritner St, South Philly · multiple locations', desc: "The Cacia family swears it's the brick ovens that make it taste so good. Tomato pie, stuffed breads, and sauce-less pizzazz pizza are first-rate. The dinner rolls and pastries are equally tasty.", website: '' },
+      { name: 'Four Worlds Bakery', location: '4634 Woodland Ave, West Philly', desc: 'Baker Michael Dolich started in his home kitchen before opening this West Philly storefront — sourdough loaves and bagels, dense challah, flaky croissants, and more near the Grays Ferry Bridge.', website: '' },
+    ]},
+    { label: 'Northwest, North & Northeast Philly', places: [
+      { name: 'Flakely', location: '220 Krams Ave, Manayunk', desc: "Chef Lila Colello was diagnosed with celiac disease and was determined to match wheat-flour flavor. She's done it — gluten-free croissants, muffins, and bagels through a pink takeout window in Manayunk. Also a gluten-free pastry ATM at Salt & Vinegar on 9th St.", website: '' },
+      { name: 'Crust Vegan Bakery', location: '4409 Main St, Manayunk', desc: "You don't need to be vegan to enjoy Crust's classic American pastries — excellent pies, cookies, and cakes, all without any animal products.", website: '' },
+      { name: "Denise's Delicacies", location: '2916 N 22nd St, North Philly', desc: "When her bakery caught fire, the community insisted she reopen. With her nieces now at the helm, Denise's legendary pound cakes are available plain or dressed up for a birthday party.", website: '' },
+      { name: 'Georgian Bread and Cuisine', location: '10865 Bustleton Ave, Northeast Philly', desc: 'A restaurant along one side (fantastic Georgian cuisine, khachapuri, and huge pelmeni) and a full-service bakery turning out fantastic breads and European pastries from stone ovens visible from the front window.', website: '' },
+      { name: "Haegele's Bakery", location: '4164 Barnett St, Northeast Philly', desc: "Around since 1930 and still family-owned, a Northeast institution. One of the few places left for German sweets like kirschstrudel and hefekranz, plus a ton of seasonal options.", website: '' },
+      { name: 'Frosted Fox Cake Shop', location: '6511 Germantown Ave, Mount Airy', desc: "Unique cupcakes, custom cookies, chocolate chip brownie bars, and — no lie — to-go Scrapple Cups filled with leftover cake pieces, fillings, and icing all mixed up. Five dollars.", website: '' },
+      { name: 'Wild Flour Bakery', location: '8701 Torresdale Ave, Northeast Philly', desc: "Small family operation supplying some of the best city restaurants for over 20 years — breads and pastries available for preorder pickup or at weekend farmers markets in Headhouse, Rittenhouse, Collingswood, and more.", website: '' },
+      { name: 'Baker Street Bread', location: '8009 Germantown Rd, Chestnut Hill', desc: "Supplying the city's top eateries since 1992. Worth a visit to the Chestnut Hill storefront, where a giant wall is filled shelf-to-shelf with goods straight from the oven — a sight (and smell) you'll never forget.", website: '' },
+      { name: "Bredenbeck's Bakery", location: '8126 Germantown Ave, Chestnut Hill', desc: "A Chestnut Hill stalwart that does it all — glazed rum ring with morning coffee, baby's first birthday cake, and mini key lime pies that can (and should) be ordered by the dozen. Also serves ice cream.", website: '' },
+    ]},
+    { label: 'Philly Suburbs', places: [
+      { name: 'Bakery House', location: '604 W Lancaster Ave, Bryn Mawr', desc: 'Whether you need a three-tiered Tastykake themed cake or an apple pecan caramel pie that rivals grandma\'s Thanksgiving, Bakery House has you covered.', website: '' },
+      { name: 'Weinrich Germany Bakery', location: '3545 W Chester Pike, Newtown Square', desc: "Since 1961, serving classic German baked goods — brotchen, pumpernickel, linzer tart cookies, and German butter cake. For the holidays, traditional gingerbread cookies and houses as festive as Nuremberg's Christkindlesmarkt.", website: '' },
+      { name: 'Delice et Chocolat', location: '9 E Lancaster Ave, Ardmore', desc: "French-born brothers Joseph and Antoine Amrani worked at Le Bec-Fin when Perrier had the tallest toque in town. Now their sleek cafe has artisan chocolates and delicate macarons.", website: '' },
+      { name: 'Dulce Artisanal Pastry', location: '740A Haddon Ave, Collingswood', desc: "Rotating seasonal menu that veers off-the-beaten path — chamomile and butterfly pea flower panna cotta, raspberry hibiscus craquelin, fresh breads, and a buffalo chicken croissant.", website: '' },
+      { name: "Clay's Creative Corner Bakery", location: '700 Lancaster Ave, Berwyn', desc: "If you grew up on the Main Line, there's a strong chance every one of your birthday cakes came from Clay's — which is why people have such strong connections to this Berwyn institution.", website: '' },
+      { name: "Clara's Custom Cakes", location: '130 W Main St, Collegeville', desc: "For when you absolutely, positively need a birthday cake that looks like two meerkats. Or a zombie, Boba Fett's helmet, or a birch-log wedding cake. Some of the coolest custom cakes around.", website: '' },
+      { name: 'Pie Lady Cafe', location: '9 E Main St, Moorestown', desc: "The muffins and doughnuts are good, but take a clue from the name and get a slice (or two) of whichever pie special is on the board — fruit- or custard-filled, latticed, or crumble-topped.", website: '' },
+      { name: "Napoleon's Cremepuffery", location: '947 E Gibbsboro Rd, Lindenwold', desc: "This South Jersey bakery has been putting out puffs since the '80s, when owner Charlene Napoleon converted an old ice-cream truck into a mobile bakery for festivals. Ahead of its time.", website: '' },
+      { name: 'Wild Yeast Bakehouse', location: 'Bryn Mawr', desc: "John Goncher makes slow-fermented, naturally leavened sourdough from locally sourced grains — exceptionally chewy and sour crumb, sturdy crispy crust. Find at the Media farmers market (get there early — loaves sell out fast).", website: '' },
+      { name: 'The Little Blue Owl Baking Company', location: '207 Haverford Ave, Narberth', desc: "Formerly Le Petit Mitron. Angela and Andrew Ling took over this beloved French bakery in 2022 — beautiful pastries including croissants, caneles, and a wildly popular kouign-amann. Don't leave without the 'dough knot,' a knotted croissant with seasonal filling.", website: '' },
+      { name: 'Classic Cake', location: '486 Evesham Rd, Cherry Hill', desc: "Reopened in Cherry Hill after years of closure — cakes, breakfast pastries, cookies, cupcakes, brownies, pies, and an on-site cake studio for custom orders.", website: '' },
+    ]},
+  ];
+
   const CATEGORIES = [
     { view: 'home',            emoji: '📅', label: 'Goings On' },
     { view: 'places-to-eat',   emoji: '🍽️', label: 'Places to Eat' },
     { view: 'bookstores',      emoji: '📚', label: 'Bookstores' },
+    { view: 'bakeries',        emoji: '🥐', label: 'Bakeries' },
     { view: 'farmers-markets', emoji: '🌽', label: 'Farmers Markets' },
   ];
 
@@ -4996,6 +5111,80 @@ Valid types: "meal", "activity", "dessert"`;
     loadRestoImages(list);
   }
 
+  // ── Bakeries ─────────────────────────────────────────────────────
+  function bakeryTileHTML(r) {
+    const fullLoc = r.name + ' ' + (r.location || '');
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
+    const query = r.location ? `${r.name}, ${r.location}` : r.name;
+    return `
+      <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
+        <div class="resto-main">
+          <div class="resto-img-placeholder">🥐</div>
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(r.name)}</div>
+            <div class="resto-meta">
+              ${r.location ? `<span class="resto-meta-item">📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
+            </div>
+            <div class="resto-dist"></div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${r.desc ? `<div class="resto-desc">${escapeHtml(r.desc)}</div>` : ''}
+            <div class="resto-actions">
+              ${r.website ? `<a class="resto-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  let currentBakerySection = null;
+
+  async function renderBakerySection(label) {
+    const section = BAKERY_SECTIONS.find(s => s.label === label) || BAKERY_SECTIONS[0];
+    currentBakerySection = section.label;
+    document.querySelectorAll('#bakerySubTabs .sub-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.section === section.label));
+
+    document.getElementById('bakeryTitle').textContent = section.label;
+
+    const list = document.getElementById('bakeryList');
+
+    if (proximityActive && userLoc) {
+      const allPlaces = BAKERY_SECTIONS.flatMap(s => s.places);
+      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const sorted = [...allPlaces].sort((a, b) => {
+        const da = placeDist(a), db = placeDist(b);
+        return da === db ? 0 : da - db;
+      });
+      const unique = dedupeByName(sorted);
+      list.innerHTML = `<div class="eat-content">
+        <div class="eat-section-header">📍 Nearest first</div>
+        ${unique.map(bakeryTileHTML).join('')}
+      </div>`;
+    } else {
+      list.innerHTML = `<div class="eat-content">
+        ${section.places.map(bakeryTileHTML).join('')}
+      </div>`;
+    }
+
+    loadRestoImages(list);
+  }
+
+  function setupBakeryTabs() {
+    const tabsEl = document.getElementById('bakerySubTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = BAKERY_SECTIONS.map((s, i) =>
+      `<button class="sub-tab${i === 0 ? ' active' : ''}" data-section="${escapeAttr(s.label)}" type="button">${escapeHtml(s.label)}</button>`).join('');
+    tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => renderBakerySection(tab.dataset.section));
+    });
+    document.getElementById('bakeryList').addEventListener('click', onRestoMainClick);
+    renderBakerySection(BAKERY_SECTIONS[0].label);
+  }
+
   // ── Farmers Markets ──────────────────────────────────────────────
   const FM_DAY_TABS = ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   let currentFmDay = 'All';
@@ -5121,6 +5310,7 @@ Valid types: "meal", "activity", "dessert"`;
   function refreshForLocation() {
     if (currentEatCat) renderEatCategory(currentEatCat);
     if (currentBookCat) renderBookCategory(currentBookCat);
+    if (currentBakerySection) renderBakerySection(currentBakerySection);
     if (currentFmDay) renderFmDay(currentFmDay);
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
@@ -5167,6 +5357,7 @@ Valid types: "meal", "activity", "dessert"`;
 
     setupEatTabs();
     setupBookTabs();
+    setupBakeryTabs();
     setupFmTabs();
   }
 
