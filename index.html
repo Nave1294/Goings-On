@@ -1514,6 +1514,10 @@
     .pl-next:active { transform: scale(0.98); }
     .pl-warn { font-size: 0.8rem; font-weight: 600; color: #b4452f; margin-top: 0.8rem; }
     .pl-warn[hidden] { display: none; }
+    .pl-key-input { width: 100%; box-sizing: border-box; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--text1); outline: none; }
+    .pl-key-input:focus { border-color: var(--accent); }
+    .pl-key-reset { font-size: 0.75rem; color: var(--text3); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-top: 1rem; display: block; }
+    .pl-key-reset:hover { color: var(--accent); }
     .pl-time-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .pl-time-chip {
       font: inherit; font-size: 0.82rem; font-weight: 600;
@@ -1829,6 +1833,7 @@
   const CALENDAR_ID    = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
   const API_KEY        = 'AIzaSyDsFFei306aI99bm8ppYuzXpEgtzfVyGZY';
   const PLACES_API_KEY = 'AIzaSyCF55hFl2yyMOsLEl24FXdeUbGjAX9oeSk';
+  function getGeminiKey() { return localStorage.getItem('gemini_key') || ''; }
 
   const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const DAYS_LONG  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -4744,13 +4749,198 @@
     }
   }
 
-  async function plBuildAndRender() {
+  async function plCallGemini(prompt) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${getGeminiKey()}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.9, maxOutputTokens: 1200 },
+      }),
+    });
+    if (!res.ok) throw new Error('Gemini ' + res.status);
+    const data = await res.json();
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    const m = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/(\[[\s\S]*\])/);
+    return JSON.parse(m ? m[1] : text);
+  }
+
+  async function plBuildItineraryAI() {
+    const order = plSlotOrder();
+    const times = plSlotTimes(order.length);
+    const dayEvents = plRankedEventsForDay();
+    const dayDate = plDays()[PL.dayIdx];
+    const dayName = dayDate ? DAYS_LONG[dayDate.getDay()] : 'today';
+
+    const transitLabel = (PL_TRANSIT_MODES.find(m => m.id === PL.transit) || {}).label || 'walking';
+    const occasionLabel = (PL_OCCASIONS.find(o => o.id === PL.occasion) || {}).label || 'casual hangout';
+    const foodLabel = (PL_FOODS.find(f => f.id === PL.food) || {}).label || 'any';
+
+    const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)];
+    const restaurantList = allR.map(r =>
+      '"' + r.name + '" | ' + (r.cuisine || '') + ' | ' + (r.location ? r.location.split(',').slice(-1)[0].trim() : 'Philly') + ' | ' + (r.price || '') + ' | tags:' + (r.tags || []).join(',') + ' | ' + (r.desc || '').slice(0, 70)
+    ).join('\n');
+
+    const ideaList = DN_FALLBACK_IDEAS.map(i => '"' + i.title + '" | ' + (i.nbhd || 'Philadelphia')).join('\n');
+
+    const eventList = dayEvents.length
+      ? dayEvents.slice(0, 6).map(e => '"' + (e.summary || 'Event') + '" at ' + (e.location || 'TBD') + (e.start && e.start.dateTime ? ' (' + fmtTime(e.start.dateTime) + ')' : '')).join('\n')
+      : 'No events on calendar.';
+
+    const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
+    const transitNote = PL.transit === 'walk' ? 'Walking only — stops should be in the same or adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — stops within about 10 min drive.' : 'Public transit — reachable with no transfers.';
+
+    const prompt = `You are planning a Philadelphia evening/outing. Return ONLY a raw JSON array — no prose, no markdown fences.
+
+OUTING:
+- Day: ${dayName}, ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)}
+- Occasion: ${occasionLabel}
+- Food preference: ${foodLabel} (steer restaurant picks to match, or ignore if "any")
+- Transit: ${transitLabel} — ${transitNote}
+- Stops to plan: ${slotDesc}
+
+CALENDAR EVENTS:
+${eventList}
+
+RESTAURANTS (pick from these by exact name):
+${restaurantList}
+
+ACTIVITY IDEAS (use if no calendar event fits):
+${ideaList}
+
+RULES:
+1. Pick stops that pair well thematically — cohesive vibe, same part of the city if walking.
+2. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
+3. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
+4. Use a REAL calendar event for activity slots when one exists and fits the time; otherwise use an idea.
+5. Name restaurants EXACTLY as listed. Name ideas/events EXACTLY as listed.
+6. "hour" is the 24h start hour as an integer.
+
+Return JSON array only:
+[{"type":"meal","name":"Exact Name","hour":18},{"type":"activity","name":"Exact Name","hour":20,"isCalendarEvent":false}]
+
+Valid types: "meal", "activity", "dessert"`;
+
+    let picks;
+    try {
+      picks = await plCallGemini(prompt);
+    } catch (e) {
+      console.warn('Gemini failed, falling back to algorithm:', e);
+      return plBuildItinerary();
+    }
+
+    if (!Array.isArray(picks) || !picks.length) return plBuildItinerary();
+
+    const stops = [];
+    for (const pick of picks) {
+      if (pick.type === 'activity') {
+        if (pick.isCalendarEvent) {
+          const ev = dayEvents.find(e => (e.summary || '').toLowerCase() === pick.name.toLowerCase())
+            || dayEvents.find(e => (e.summary || '').toLowerCase().includes((pick.name || '').slice(0, 12).toLowerCase()));
+          if (ev) {
+            await ensureEventCoords(ev);
+            const c = eventCoords(ev);
+            const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
+            stops.push({
+              kind: 'activity', hour: pick.hour,
+              emoji: '🎟️', eyebrow: 'Activity',
+              title: ev.summary || pick.name,
+              meta: [when && ('🕒 ' + when), ev.location && ('📍 ' + ev.location.split(',')[0])].filter(Boolean),
+              desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
+              actions: [
+                ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
+                ev.location && { label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location) },
+              ].filter(Boolean),
+              coords: c || null,
+            });
+            continue;
+          }
+        }
+        const idea = DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase() === (pick.name || '').toLowerCase())
+          || DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase().includes((pick.name || '').slice(0, 14).toLowerCase()));
+        if (idea) {
+          await plEnsureIdeaCoords(idea);
+          const mealTitle = (stops.find(s => s.kind === 'meal') || {}).title || 'a spot nearby';
+          stops.push({
+            kind: 'activity', hour: pick.hour,
+            emoji: '✨', eyebrow: 'Idea',
+            title: idea.title,
+            meta: [idea.nbhd && ('📍 ' + idea.nbhd)].filter(Boolean),
+            desc: idea.line(mealTitle),
+            actions: [{ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(idea.title + ' Philadelphia') }],
+            coords: idea._coords || null,
+          });
+          continue;
+        }
+      } else {
+        const r = allR.find(x => x.name.toLowerCase() === (pick.name || '').toLowerCase())
+          || allR.find(x => x.name.toLowerCase().includes((pick.name || '').slice(0, 12).toLowerCase()));
+        if (r) {
+          await ensurePlaceCoords(r);
+          const mt = plMealTypeAt(pick.hour);
+          const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.location ? r.name + ', ' + r.location : r.name);
+          stops.push({
+            kind: pick.type === 'dessert' ? 'dessert' : 'meal',
+            hour: pick.hour,
+            emoji: pick.type === 'dessert' ? '🍦' : '🍴',
+            eyebrow: pick.type === 'dessert' ? 'Dessert / drinks' : (mt ? plCap(mt) : 'Bite to eat'),
+            title: r.name,
+            meta: [r.cuisine && ('🍴 ' + r.cuisine), r.location && ('📍 ' + r.location.split(',')[0]), r.price].filter(Boolean),
+            desc: r.desc || '',
+            actions: [
+              r.website && { label: '🌐 Website', href: r.website },
+              r.reservation && { label: '📅 Reserve', href: r.reservation },
+              { label: '🗺️ Map', href: mapHref },
+            ].filter(Boolean),
+            coords: r._coords || null,
+            r,
+          });
+          continue;
+        }
+      }
+    }
+
+    return stops.length ? stops : plBuildItinerary();
+  }
+
+  function plRenderKeyPrompt() {
+    const body = document.getElementById('plBody');
+    document.getElementById('plHeadline').textContent = 'One-time setup';
+    document.getElementById('plProgress').innerHTML = '';
+    body.innerHTML = `
+      <div class="pl-q">To use AI planning, paste your <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio key</a>. It stays on your device only.</div>
+      <input class="pl-key-input" id="plKeyInput" type="password" placeholder="Paste your Gemini API key…" autocomplete="off">
+      <div class="pl-warn" id="plKeyWarn" hidden>Please paste a key first.</div>
+      <button class="pl-next" id="plKeySave" type="button">Save &amp; build plan</button>
+      <button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plKeySkip" type="button">Skip — use basic planner</button>`;
+    document.getElementById('plKeySave').addEventListener('click', () => {
+      const val = (document.getElementById('plKeyInput').value || '').trim();
+      if (!val) { document.getElementById('plKeyWarn').hidden = false; return; }
+      localStorage.setItem('gemini_key', val);
+      plDoBuild();
+    });
+    document.getElementById('plKeySkip').addEventListener('click', async () => {
+      const body = document.getElementById('plBody');
+      document.getElementById('plHeadline').textContent = 'Building your plan…';
+      body.innerHTML = '<div class="dn-loading">✨ Pulling together a plan…</div>';
+      PL.stops = await plBuildItinerary();
+      plRenderItinerary();
+    });
+  }
+
+  async function plDoBuild() {
     const body = document.getElementById('plBody');
     document.getElementById('plHeadline').textContent = 'Building your plan…';
     document.getElementById('plProgress').innerHTML = '';
-    body.innerHTML = `<div class="dn-loading">✨ Pulling together a walkable plan…</div>`;
-    PL.stops = await plBuildItinerary();
+    body.innerHTML = '<div class="dn-loading">✨ Asking AI to plan your outing…</div>';
+    PL.stops = await plBuildItineraryAI();
     plRenderItinerary();
+  }
+
+  async function plBuildAndRender() {
+    if (!getGeminiKey()) { plRenderKeyPrompt(); return; }
+    plDoBuild();
   }
 
   function plRenderItinerary() {
@@ -4798,12 +4988,15 @@
       <div class="dn-feedback">
         <button class="dn-feedback-btn" id="plShuffle" type="button">🔀 Shuffle picks</button>
         <button class="dn-feedback-btn" id="plEdit" type="button">✏️ Edit answers</button>
-      </div>`;
+      </div>
+      ${getGeminiKey() ? '<button class="pl-key-reset" id="plKeyReset" type="button">Change AI key</button>' : ''}`;
 
     PL.shareText = plShareText(dayLabel);
     document.getElementById('plExport').addEventListener('click', plShare);
     document.getElementById('plShuffle').addEventListener('click', () => { PL.seed++; plBuildAndRender(); });
     document.getElementById('plEdit').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
+    const kr = document.getElementById('plKeyReset');
+    if (kr) kr.addEventListener('click', () => { localStorage.removeItem('gemini_key'); plRenderKeyPrompt(); });
   }
 
   // ── wizard ──
