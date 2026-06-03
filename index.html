@@ -4925,23 +4925,33 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   // For a 429, work out when the quota should be back and a friendly message.
+  // The API's retryDelay is authoritative — Google sometimes labels a short
+  // rate-limit window with a "PerDay" quota name, so we never assume "midnight"
+  // when it hands us a concrete (usually <1 min) retry delay.
   function plRateLimitInfo(err) {
     if (!err || err.status !== 429) return null;
     const now = new Date();
     const clock = t => t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (err.retryDelaySec != null) {
+      // Add a small cushion so we don't retry a hair too early.
+      const retryAt = new Date(now.getTime() + (err.retryDelaySec + 2) * 1000);
+      return {
+        retryAt,
+        message: `The shared free AI key is briefly over its rate limit. It should be ready again in a moment — hang tight.`,
+      };
+    }
+    // No concrete delay given. If it's clearly a daily cap, point at midnight PT.
     if (err.quotaScope === 'day') {
       const retryAt = plNextPacificMidnight();
       return {
         retryAt,
-        message: `You've used up the free <strong>daily</strong> AI quota (it ran out just now). Google resets it at midnight Pacific — about <strong>${clock(retryAt)}</strong> your time. Try again then.`,
+        message: `The shared free AI key has hit its <strong>daily</strong> limit. Google resets it at midnight Pacific — about <strong>${clock(retryAt)}</strong> your time. Try again then.`,
       };
     }
-    // Per-minute (or unspecified): use the API's retryDelay, default ~60s.
-    const secs = err.retryDelaySec || 60;
-    const retryAt = new Date(now.getTime() + secs * 1000);
+    // Unknown — assume a short window.
     return {
-      retryAt,
-      message: `The AI is briefly rate-limited — the free tier allows only a few plans per minute. It should be ready again in a moment.`,
+      retryAt: new Date(now.getTime() + 60000),
+      message: `The shared free AI key is briefly rate-limited. Try again in a moment.`,
     };
   }
 
