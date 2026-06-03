@@ -1120,21 +1120,6 @@
     }
     .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
     .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
-    .mood-clear { font: inherit; font-size: 0.72rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
-    .mood-chip {
-      font: inherit;
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: none;
-      border: 1px solid var(--divider);
-      border-radius: 999px;
-      padding: 0.28rem 0.65rem;
-      cursor: pointer;
-      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
-    }
-    .mood-chip:active { transform: scale(0.95); }
-    .mood-chip.excluded { color: #fff; background: #b5524a; border-color: #b5524a; text-decoration: line-through; }
     /* Discover FAB (bottom-left, visible only on the eat view) */
     .eat-fab {
       position: fixed;
@@ -1247,18 +1232,96 @@
     }
     .eat-sheet-spin-btn:hover { filter: brightness(1.06); }
     .eat-sheet-spin-btn:active { transform: scale(0.98); }
-    .eat-sheet-mood-label {
+    /* "Not in the mood" secondary button inside sheet */
+    .eat-sheet-mood-btn {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.75rem;
+      justify-content: center;
+      width: 100%;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      border-radius: 14px;
+      padding: 0.82rem 1rem;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: filter 0.15s ease, transform 0.12s ease;
     }
-    .eat-mood-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .eat-sheet-mood-btn:hover { filter: brightness(0.94); }
+    .eat-sheet-mood-btn:active { transform: scale(0.98); }
+    /* Excluded cuisine tags shown below the mood button */
+    .eat-sheet-tags { display: flex; flex-wrap: wrap; gap: 0.38rem; min-height: 0; padding-bottom: 0.2rem; }
+    .eat-sheet-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      background: #b5524a;
+      border: none;
+      border-radius: 999px;
+      padding: 0.22rem 0.55rem 0.22rem 0.65rem;
+      cursor: pointer;
+      transition: filter 0.15s ease;
+    }
+    .eat-sheet-tag:hover { filter: brightness(0.88); }
+    .eat-sheet-tag-x { font-size: 0.6rem; opacity: 0.72; }
+    /* Wizard */
+    .eat-wizard { text-align: center; padding: 0.8rem 0 0.5rem; }
+    .eat-wizard-prompt { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .eat-wizard-cuisine {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 1.35rem;
+      min-height: 2.2rem;
+    }
+    .eat-wizard-choices { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
+    .eat-wizard-nope, .eat-wizard-yep {
+      flex: 1;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      padding: 0.82rem 0.5rem;
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.1s ease;
+    }
+    .eat-wizard-nope { color: #fff; background: #b5524a; }
+    .eat-wizard-nope:hover { filter: brightness(1.06); }
+    .eat-wizard-nope:active, .eat-wizard-yep:active { transform: scale(0.96); }
+    .eat-wizard-nope.active { box-shadow: 0 0 0 3px rgba(181, 82, 74, 0.35); }
+    .eat-wizard-yep { color: var(--accent); background: var(--accent-soft); }
+    .eat-wizard-yep:hover { filter: brightness(0.93); }
+    .eat-wizard-done {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 14px;
+      padding: 0.82rem 1rem;
+      cursor: pointer;
+      margin-bottom: 0.65rem;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-wizard-done:hover { filter: brightness(1.06); }
+    .eat-wizard-done:active { transform: scale(0.98); }
+    .eat-wizard-progress { font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; }
     @keyframes spinPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
     .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
@@ -1427,14 +1490,23 @@
       <span class="eat-sheet-title">🎲 Discover</span>
       <button class="eat-sheet-close" id="eatSheetClose" type="button" aria-label="Close">✕</button>
     </div>
-    <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">
-      Pick a random spot for me
-    </button>
-    <div class="eat-sheet-mood-label">
-      Not in the mood for…
-      <button class="mood-clear" type="button" id="eatMoodClear">Clear all</button>
+    <!-- Default state -->
+    <div id="eatSheetDefault">
+      <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
+      <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
+      <div class="eat-sheet-tags" id="eatSheetTags"></div>
     </div>
-    <div class="eat-mood-chips" id="eatMoodChips"></div>
+    <!-- Wizard state -->
+    <div class="eat-wizard" id="eatSheetWizard" hidden>
+      <div class="eat-wizard-prompt">How about…</div>
+      <div class="eat-wizard-cuisine" id="eatWizardCuisine"></div>
+      <div class="eat-wizard-choices">
+        <button class="eat-wizard-nope" id="eatWizardNope" type="button">🙅 Not feeling it</button>
+        <button class="eat-wizard-yep" id="eatWizardYep" type="button">Sounds good →</button>
+      </div>
+      <button class="eat-wizard-done" id="eatWizardDone" type="button">Done — see results</button>
+      <div class="eat-wizard-progress" id="eatWizardProgress"></div>
+    </div>
   </div>
 </div>
 
@@ -3649,7 +3721,7 @@
       document.getElementById('eatSheetClose').addEventListener('click', closeSheet);
       sheetOverlay.addEventListener('click', e => { if (!sheet.contains(e.target)) closeSheet(); });
 
-      // Build cuisine chips
+      // Collect cuisine groups present in the data (for the mood wizard)
       const present = [];
       const seenG = new Set();
       for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
@@ -3657,29 +3729,76 @@
         if (!seenG.has(gi)) { seenG.add(gi); present.push(gi); }
       }
       present.sort((a, b) => a - b);
-      document.getElementById('eatMoodChips').innerHTML = present.map(gi =>
-        `<button class="mood-chip" type="button" data-group="${escapeAttr(CUISINE_GROUPS[gi].label)}">${escapeHtml(CUISINE_GROUPS[gi].label)}</button>`).join('');
 
       const syncFab = () => {
         const n = excludedCuisines.size;
         if (fabBadge) { fabBadge.textContent = n; fabBadge.hidden = n === 0; }
       };
 
-      document.getElementById('eatMoodChips').querySelectorAll('.mood-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          const g = chip.dataset.group;
-          if (excludedCuisines.has(g)) excludedCuisines.delete(g); else excludedCuisines.add(g);
-          chip.classList.toggle('excluded', excludedCuisines.has(g));
-          syncFab();
-          if (currentEatCat) renderEatCategory(currentEatCat);
+      const renderSheetTags = () => {
+        const container = document.getElementById('eatSheetTags');
+        if (!container) return;
+        if (!excludedCuisines.size) { container.innerHTML = ''; return; }
+        container.innerHTML = [...excludedCuisines].map(g =>
+          `<button class="eat-sheet-tag" type="button" data-group="${escapeAttr(g)}">${escapeHtml(g)}<span class="eat-sheet-tag-x" aria-hidden="true"> ✕</span></button>`
+        ).join('');
+        container.querySelectorAll('.eat-sheet-tag').forEach(tag => {
+          tag.addEventListener('click', () => {
+            excludedCuisines.delete(tag.dataset.group);
+            tag.remove();
+            if (!excludedCuisines.size) container.innerHTML = '';
+            syncFab();
+            if (currentEatCat) renderEatCategory(currentEatCat);
+          });
         });
-      });
-      document.getElementById('eatMoodClear').addEventListener('click', () => {
+      };
+
+      // Wizard state
+      let wizardQueue = [], wizardIdx = 0;
+      const wizardExcluded = new Set();
+
+      const showWizardStep = () => {
+        if (wizardIdx >= wizardQueue.length) { applyWizard(); return; }
+        const label = CUISINE_GROUPS[wizardQueue[wizardIdx]].label;
+        document.getElementById('eatWizardCuisine').textContent = label;
+        document.getElementById('eatWizardNope').classList.toggle('active', wizardExcluded.has(label));
+        document.getElementById('eatWizardProgress').textContent = `${wizardIdx + 1} of ${wizardQueue.length}`;
+      };
+
+      const applyWizard = () => {
         excludedCuisines.clear();
-        document.getElementById('eatMoodChips').querySelectorAll('.mood-chip.excluded').forEach(c => c.classList.remove('excluded'));
+        for (const g of wizardExcluded) excludedCuisines.add(g);
         syncFab();
+        renderSheetTags();
         if (currentEatCat) renderEatCategory(currentEatCat);
+        document.getElementById('eatSheetDefault').hidden = false;
+        document.getElementById('eatSheetWizard').hidden = true;
+        closeSheet();
+      };
+
+      document.getElementById('eatMoodWizardBtn').addEventListener('click', () => {
+        wizardQueue = [...present].sort(() => Math.random() - 0.5);
+        wizardIdx = 0;
+        wizardExcluded.clear();
+        for (const g of excludedCuisines) wizardExcluded.add(g); // carry over previous choices
+        document.getElementById('eatSheetDefault').hidden = true;
+        document.getElementById('eatSheetWizard').hidden = false;
+        showWizardStep();
       });
+
+      document.getElementById('eatWizardNope').addEventListener('click', () => {
+        wizardExcluded.add(CUISINE_GROUPS[wizardQueue[wizardIdx]].label);
+        wizardIdx++;
+        showWizardStep();
+      });
+
+      document.getElementById('eatWizardYep').addEventListener('click', () => {
+        wizardExcluded.delete(CUISINE_GROUPS[wizardQueue[wizardIdx]].label);
+        wizardIdx++;
+        showWizardStep();
+      });
+
+      document.getElementById('eatWizardDone').addEventListener('click', applyWizard);
 
       // Spin button inside sheet
       const spinBtn = document.getElementById('eatSpinBtn');
