@@ -4106,7 +4106,10 @@
 
     if (proximityActive && userLoc) {
       const filtered = allPlaces.filter(passesEatFilters);
-      await Promise.all(filtered.map(ensurePlaceCoords));
+      // Only geocode the first 30 unresolved places — geocoding the full list
+      // at once is expensive (Places API Text Search @ $32/1000).
+      const needCoords = filtered.filter(r => r._coords === undefined).slice(0, 30);
+      await Promise.all(needCoords.map(ensurePlaceCoords));
       const sorted = [...filtered].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
@@ -5223,7 +5226,8 @@ Valid types: "meal", "activity", "dessert"`;
     }
 
     if (proximityActive && userLoc) {
-      await Promise.all(allPlaces.map(ensurePlaceCoords));
+      const needCoords = allPlaces.filter(r => r._coords === undefined).slice(0, 30);
+      await Promise.all(needCoords.map(ensurePlaceCoords));
       const sorted = [...allPlaces].sort((a, b) => {
         const da = placeDist(a), db = placeDist(b);
         return da === db ? 0 : da - db;
