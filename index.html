@@ -1464,6 +1464,36 @@
     .dn-feedback-btn:active { transform: scale(0.97); }
     .dn-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); }
     .dn-empty-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
+    .dn-loading { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+    .dn-walk-pill {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.4rem; margin: -0.3rem 0 0.5rem;
+      font-size: 0.78rem; font-weight: 700; color: #6d4b8f;
+    }
+    .dn-walk-badge {
+      background: #f0e6f6; color: #6d4b8f;
+      border-radius: 999px; padding: 0.3rem 0.75rem;
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .dn-map-wrap {
+      border-radius: 16px; overflow: hidden;
+      margin-bottom: 0.9rem; position: relative;
+      border: 1px solid var(--divider);
+    }
+    .dn-map-img { width: 100%; display: block; }
+    .dn-map-footer {
+      display: flex; gap: 0.4rem; padding: 0.6rem 0.75rem;
+      background: var(--surface); border-top: 1px solid var(--divider);
+      align-items: center; flex-wrap: wrap;
+    }
+    .dn-map-link {
+      font: inherit; font-size: 0.76rem; font-weight: 600;
+      color: var(--accent); background: var(--accent-soft);
+      border: none; border-radius: 999px; padding: 0.35rem 0.7rem;
+      cursor: pointer; text-decoration: none;
+      transition: filter 0.15s ease;
+    }
+    .dn-map-link:hover { filter: brightness(0.96); }
     @keyframes spinPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
     .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
@@ -4133,6 +4163,8 @@
   let dnSelectedDayIdx = 0;
   let dnRestoSkip = 0;   // cycles through ranked restaurants on "different restaurant"
   let dnActSkip = 0;     // cycles through ranked activities on "different activity"
+  let dnRankedRestos = null;  // cached geocoded+distance-ranked restaurants for current event
+  let dnRankedForEv = null;   // the event that dnRankedRestos was computed for
 
   function dnDays() {
     return (lastRender && lastRender.days) || [];
@@ -4237,6 +4269,55 @@
     return `${label} in ${n}`;
   }
 
+  function dnWalkLabel(mi) {
+    const mins = Math.round(mi * 20);  // ~20 min/mile walking pace
+    if (mins <= 1) return '< 1 min walk';
+    if (mins < 60) return `~${mins} min walk`;
+    return `~${fmtMiles(mi)} walk`;
+  }
+
+  function dnStaticMapUrl(rCoords, eCoords) {
+    const base = 'https://maps.googleapis.com/maps/api/staticmap';
+    const params = new URLSearchParams({
+      size: '600x200',
+      scale: '2',
+      maptype: 'roadmap',
+      style: 'feature:poi|visibility:simplified',
+      key: PLACES_API_KEY,
+    });
+    params.append('markers', `color:0x2d6a4f|label:R|${rCoords.lat},${rCoords.lon}`);
+    params.append('markers', `color:0x6d4b8f|label:E|${eCoords.lat},${eCoords.lon}`);
+    return `${base}?${params.toString()}`;
+  }
+
+  // Pre-geocode top candidate restaurants + event, then rank by actual walking distance.
+  // Returns sorted array of { r, distMi } (closest first).
+  async function dnGeoRankRestos(ev, baseScorePool) {
+    // Take top 12 by theme/neighborhood score as candidates to geocode
+    const candidates = baseScorePool.slice(0, 12);
+    await Promise.all([
+      ensureEventCoords(ev),
+      ...candidates.map(x => ensurePlaceCoords(x.r)),
+    ]);
+    const eCoords = eventCoords(ev);
+    return candidates.map(x => {
+      const rCoords = x.r._coords;
+      let distMi = null;
+      let distBonus = 0;
+      if (eCoords && rCoords) {
+        distMi = haversineMiles(eCoords.lat, eCoords.lon, rCoords.lat, rCoords.lon);
+        // Heavy bonus for being walkable; penalty for being far
+        if      (distMi < 0.3)  distBonus = 80;
+        else if (distMi < 0.5)  distBonus = 60;
+        else if (distMi < 0.75) distBonus = 40;
+        else if (distMi < 1.0)  distBonus = 20;
+        else if (distMi < 1.5)  distBonus = 5;
+        else                    distBonus = -30;
+      }
+      return { r: x.r, s: x.s + distBonus, distMi };
+    }).sort((a, b) => b.s - a.s || Math.random() - 0.5);
+  }
+
   // ── Date Night rendering ──
   function setupDateNight() {
     const back = document.getElementById('dnBack');
@@ -4270,7 +4351,7 @@
     chips.querySelectorAll('.dn-day-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         dnSelectedDayIdx = +chip.dataset.idx;
-        dnRestoSkip = 0; dnActSkip = 0;
+        dnRestoSkip = 0; dnActSkip = 0; dnRankedRestos = null;
         chips.querySelectorAll('.dn-day-chip').forEach(c => c.classList.toggle('active', c === chip));
         renderDateNight();
       });
@@ -4281,20 +4362,32 @@
     overlay.removeAttribute('hidden');
   }
 
-  function renderDateNight() {
+  async function renderDateNight() {
     const body = document.getElementById('dnBody');
     const rankedEvents = dnRankEvents(dnSelectedDayIdx);
     const useCalendar = rankedEvents.length > 0;
 
-    let restaurant, activityHTML, timingText, vibeText, headline;
+    let restaurant, distMi = null, activityHTML, timingText, vibeText, ev;
 
     if (useCalendar) {
-      const ev = rankedEvents[dnActSkip % rankedEvents.length];
-      restaurant = dnBestRestoFor(ev, dnRestoSkip);
+      ev = rankedEvents[dnActSkip % rankedEvents.length];
+
+      // Geocode + distance-rank restaurants if we haven't for this event yet
+      if (dnRankedForEv !== ev || !dnRankedRestos) {
+        body.innerHTML = `<div class="dn-loading">🌙 Finding the best spots nearby…</div>`;
+        const basePool = RESTAURANTS
+          .map(r => ({ r, s: dnScorePair(ev, r) }))
+          .sort((a, b) => b.s - a.s || Math.random() - 0.5);
+        dnRankedRestos = await dnGeoRankRestos(ev, basePool);
+        dnRankedForEv = ev;
+      }
+
+      const pick = dnRankedRestos[dnRestoSkip % dnRankedRestos.length];
+      restaurant = pick.r;
+      distMi = pick.distMi;
+
       vibeText = dnVibe(ev, restaurant);
-      headline = ev.summary || 'A night out';
       timingText = dnTimingLine(ev);
-      const evN = placeNeighborhoods(ev.location || '')[0];
       const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
       const evLink = ev.htmlLink ? `<a class="dn-pair-action" href="${escapeAttr(ev.htmlLink)}" target="_blank" rel="noopener">📅 Event details</a>` : '';
       const evMap = ev.location ? `<a class="dn-pair-action" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">🗺️ Map</a>` : '';
@@ -4311,10 +4404,9 @@
         </div>`;
     } else {
       // Fallback: creative idea + restaurant
-      restaurant = RESTAURANTS[(dnRestoSkip + dnActSkip) % RESTAURANTS.length];
-      const restoNbhds = placeNeighborhoods(restaurant.location || '');
+      const tempResto = RESTAURANTS[(dnRestoSkip + dnActSkip) % RESTAURANTS.length];
+      const restoNbhds = placeNeighborhoods(tempResto.location || '');
       const idea = dnPickActivityIdea(dnActSkip, restoNbhds);
-      // Re-pick restaurant to suit the idea's themes/neighborhood when possible
       const better = RESTAURANTS
         .map(r => {
           let s = 0;
@@ -4329,7 +4421,6 @@
       const pool = better.filter(x => x.s > 0);
       restaurant = (pool.length ? pool : better)[dnRestoSkip % (pool.length || better.length)].r;
       vibeText = 'A do-it-yourself date';
-      headline = idea.title;
       timingText = idea.when === 'day'
         ? 'Best as an afternoon plan — slide into dinner right after.'
         : idea.when === 'evening'
@@ -4347,7 +4438,7 @@
     document.getElementById('dnHeadline').textContent = vibeText;
 
     const r = restaurant;
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location ? `${r.name}, ${r.location}` : r.name)}`;
+    const rMapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location ? `${r.name}, ${r.location}` : r.name)}`;
     const restoHTML = `
       <div class="dn-pair-card">
         <div class="dn-pair-eyebrow">🍴 Where to eat</div>
@@ -4361,13 +4452,31 @@
         <div class="dn-pair-actions">
           ${r.website ? `<a class="dn-pair-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
           ${r.reservation ? `<a class="dn-pair-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
-          <a class="dn-pair-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
+          <a class="dn-pair-action" href="${escapeAttr(rMapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
         </div>
       </div>`;
 
+    // Build walk pill + map block if we have coords for both
+    let mapHTML = '';
+    const rCoords = r._coords;
+    const eCoords = useCalendar && ev ? eventCoords(ev) : null;
+    if (rCoords && eCoords) {
+      const walkLabel = distMi != null ? dnWalkLabel(distMi) : '';
+      const dirHref = `https://www.google.com/maps/dir/?api=1&origin=${rCoords.lat},${rCoords.lon}&destination=${eCoords.lat},${eCoords.lon}&travelmode=walking`;
+      const staticSrc = dnStaticMapUrl(rCoords, eCoords);
+      mapHTML = `
+        <div class="dn-map-wrap">
+          <img class="dn-map-img" src="${escapeAttr(staticSrc)}" alt="Map showing restaurant and event locations" loading="lazy">
+          <div class="dn-map-footer">
+            ${walkLabel ? `<span class="dn-walk-badge">🚶 ${escapeHtml(walkLabel)}</span>` : ''}
+            <a class="dn-map-link" href="${escapeAttr(dirHref)}" target="_blank" rel="noopener">Walking directions →</a>
+          </div>
+        </div>`;
+    }
+
     body.innerHTML = `
       ${activityHTML}
-      <div class="dn-connector">＋ paired with ＋</div>
+      ${mapHTML ? `<div class="dn-connector">＋ paired with ＋</div>${mapHTML}` : `<div class="dn-connector">＋ paired with ＋</div>`}
       ${restoHTML}
       <div class="dn-timing"><span>🕒</span><span>${escapeHtml(timingText)}</span></div>
       <div class="dn-feedback">
@@ -4376,7 +4485,7 @@
       </div>`;
 
     document.getElementById('dnDiffResto').addEventListener('click', () => { dnRestoSkip++; renderDateNight(); });
-    document.getElementById('dnDiffAct').addEventListener('click', () => { dnActSkip++; dnRestoSkip = 0; renderDateNight(); });
+    document.getElementById('dnDiffAct').addEventListener('click', () => { dnActSkip++; dnRestoSkip = 0; dnRankedRestos = null; renderDateNight(); });
   }
 
   // ── Bookstores: sub-category tabs ──
