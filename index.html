@@ -4362,11 +4362,6 @@
     { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~30 min, direct service' },
     { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
-  function plMaxMiles() {
-    if (PL.transit === 'walk')  return 1.25;  // 25 min walk @ 20 min/mi
-    if (PL.transit === 'drive') return 3.5;   // ~10 min drive in city
-    return 5.0;                               // transit: ~30 min, same-zone preferred
-  }
   function plTransitDirHref(from, to) {
     const mode = PL.transit === 'drive' ? 'driving' : PL.transit === 'transit' ? 'transit' : 'walking';
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
@@ -4425,67 +4420,8 @@
     if (mins < 60) return `~${mins} min walk`;
     return `~${fmtMiles(mi)} walk`;
   }
-  function plDistBonus(mi) {
-    const max = plMaxMiles();
-    if (mi > max) return -999;     // hard disqualifier — too far for chosen mode
-    const ratio = mi / max;
-    if (ratio < 0.2)  return 80;
-    if (ratio < 0.35) return 60;
-    if (ratio < 0.5)  return 40;
-    if (ratio < 0.7)  return 20;
-    if (ratio < 0.9)  return 5;
-    return 0;
-  }
   function plCap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
-  function plPriceLen(r) { return (r.price || '').replace(/[^$]/g, '').length; }
 
-  // ── scoring ──
-  function plFoodScore(r) {
-    const price = plPriceLen(r);
-    switch (PL.food) {
-      case 'fancy':       return price >= 3 ? 14 : (price === 2 ? 4 : -6);
-      case 'casual':      return hasTag(r, 'cheap-eats') ? 14 : (price <= 2 ? 6 : -6);
-      case 'adventurous': return hasTag(r, 'unique') ? 16 : 0;
-      case 'drinks':      return /bar|wine|beer|cocktail|byob|lounge|pub|tavern/i.test(`${r.cuisine} ${r.desc}`) ? 14 : 0;
-      default:            return 0;
-    }
-  }
-  function plOccasionScore(r) {
-    const txt = `${r.cuisine} ${r.desc}`;
-    switch (PL.occasion) {
-      case 'date':        return hasTag(r, 'date-night') ? 12 : 0;
-      case 'celebration': return (hasTag(r, 'date-night') || plPriceLen(r) >= 3) ? 12 : 0;
-      case 'friends':     return /bar|pub|tavern|izakaya|share|group|tapas|beer/i.test(txt) ? 8 : 0;
-      case 'casual':      return (hasTag(r, 'cheap-eats') || hasTag(r, 'neighborhood')) ? 8 : 0;
-      case 'solo':        return (hasTag(r, 'cheap-eats') || /counter|cafe|coffee|bar|noodle|ramen/i.test(txt)) ? 6 : 0;
-      default:            return 0;
-    }
-  }
-  function plRestoScore(r, mealType) {
-    let s = 0;
-    if (mealType && hasTag(r, mealType)) s += 10;
-    s += plFoodScore(r);
-    s += plOccasionScore(r);
-    if (hasTag(r, 'unique')) s += 2;
-    return s;
-  }
-  function plEventScore(ev, hour) {
-    let s = eventThemes(ev).size * 6;
-    const eh = plEventHour(ev);
-    if (eh != null) s += Math.max(0, 6 - Math.abs(eh - hour)); // closeness to the slot time
-    else s += 2;                                               // all-day = flexible
-    if (PL.occasion === 'date') s += 2;
-    return s;
-  }
-
-  // ── pools ──
-  function plMealPool(mealType) {
-    return RESTAURANTS.filter(r => mealType ? (hasTag(r, mealType) || hasTag(r, 'dinner')) : true);
-  }
-  function plDessertPool() {
-    const pool = RESTAURANTS.filter(r => hasTag(r, 'dessert') || PL_DESSERT_RE.test(`${r.cuisine} ${r.desc}`));
-    return pool.length ? pool : RESTAURANTS;
-  }
   function plRankedEventsForDay() {
     const evs = plEventsForDay(PL.dayIdx).filter(ev => {
       const hr = plEventHour(ev);
@@ -4528,158 +4464,6 @@
     return times;
   }
 
-  async function plBuildItinerary() {
-    const order = plSlotOrder();
-    const times = plSlotTimes(order.length);
-    const dayEvents = plRankedEventsForDay();
-    const ctx = { usedR: new Set(), usedE: new Set(), usedIdea: new Set(), dayEvents, stops: [], activityThemes: new Set() };
-    let anchor = null;
-    for (let i = 0; i < order.length; i++) {
-      const stop = await plPickStop(order[i], times[i], anchor, ctx);
-      if (stop) {
-        ctx.stops.push(stop);
-        if (stop.coords) anchor = stop.coords;
-        // Accumulate themes from activities so restaurants can match them
-        if (stop.kind === 'activity' && stop.ev) {
-          for (const t of eventThemes(stop.ev)) ctx.activityThemes.add(t);
-        } else if (stop.kind === 'activity' && stop.idea) {
-          for (const t of stop.idea.themes) ctx.activityThemes.add(t);
-        }
-      }
-    }
-    return ctx.stops;
-  }
-
-  async function plPickStop(type, hour, anchor, ctx) {
-    if (type === 'activity') return plActivityStop(hour, anchor, ctx);
-
-    const mealType = type === 'dessert' ? null : (plMealTypeAt(hour) || 'dinner');
-    const pool = (type === 'dessert' ? plDessertPool() : plMealPool(mealType))
-      .filter(r => !ctx.usedR.has(r.name));
-    if (!pool.length) return null;
-
-    let scored = pool
-      .map(r => {
-        const rt = restaurantThemes(r);
-        let themeBonus = 0;
-        for (const t of ctx.activityThemes) if (rt.has(t)) themeBonus += 8; // theme overlap with activities
-        return {
-          r,
-          s: (type === 'dessert' ? plFoodScore(r) + plOccasionScore(r) : plRestoScore(r, mealType))
-             + themeBonus
-             + (PL.seed ? Math.random() * 6 : 0),
-          dist: null,
-        };
-      })
-      .sort((a, b) => b.s - a.s || Math.random() - 0.5)
-      .slice(0, 18); // wider pool so distance filtering still leaves good options
-
-    await Promise.all(scored.map(x => ensurePlaceCoords(x.r)));
-    if (anchor) {
-      scored.forEach(x => {
-        if (x.r._coords) {
-          x.dist = haversineMiles(anchor.lat, anchor.lon, x.r._coords.lat, x.r._coords.lon);
-          x.s += plDistBonus(x.dist);
-        }
-      });
-      scored.sort((a, b) => b.s - a.s);
-      // If all candidates exceed the mode limit, fall back to the nearest regardless
-      const valid = scored.filter(x => x.dist == null || x.dist <= plMaxMiles());
-      if (!valid.length) scored.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
-      else scored = valid;
-    }
-    const pick = scored[0];
-    ctx.usedR.add(pick.r.name);
-    return plRestoStop(type, hour, pick.r, pick.dist);
-  }
-
-  function plRestoStop(type, hour, r, dist) {
-    const mt = plMealTypeAt(hour);
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location ? `${r.name}, ${r.location}` : r.name)}`;
-    return {
-      kind: type,
-      hour,
-      emoji: type === 'dessert' ? '🍦' : '🍴',
-      eyebrow: type === 'dessert' ? 'Dessert / drinks' : (mt ? plCap(mt) : 'Bite to eat'),
-      title: r.name,
-      meta: [r.cuisine && `🍴 ${r.cuisine}`, r.location && `📍 ${r.location.split(',')[0]}`, r.price].filter(Boolean),
-      desc: r.desc || '',
-      actions: [
-        r.website && { label: '🌐 Website', href: r.website },
-        r.reservation && { label: '📅 Reserve', href: r.reservation },
-        { label: '🗺️ Map', href: mapHref },
-      ].filter(Boolean),
-      coords: r._coords || null,
-      dist,
-      r,
-    };
-  }
-
-  async function plActivityStop(hour, anchor, ctx) {
-    // Prefer a real, unused calendar event that fits the slot.
-    let best = null, bestScore = -1;
-    for (const ev of ctx.dayEvents) {
-      if (ctx.usedE.has(ev)) continue;
-      const eh = plEventHour(ev);
-      if (eh != null && eh < PL.startHour) continue;
-      const sc = plEventScore(ev, hour);
-      if (sc > bestScore) { bestScore = sc; best = ev; }
-    }
-    if (best) {
-      ctx.usedE.add(best);
-      await ensureEventCoords(best);
-      const c = eventCoords(best);
-      const when = best.start && best.start.dateTime ? fmtTime(best.start.dateTime) : 'All day';
-      return {
-        kind: 'activity',
-        hour,
-        emoji: '🎟️',
-        eyebrow: 'Activity',
-        title: best.summary || '(untitled event)',
-        meta: [when && `🕒 ${when}`, best.location && `📍 ${best.location.split(',')[0]}`].filter(Boolean),
-        desc: best.description ? stripTags(best.description).slice(0, 200) : '',
-        actions: [
-          best.htmlLink && { label: '📅 Details', href: best.htmlLink },
-          best.location && { label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(best.location)}` },
-        ].filter(Boolean),
-        coords: c || null,
-        ev: best,
-      };
-    }
-
-    // Fall back to a curated Philly idea, nearest to anchor within mode limit.
-    const ideas = DN_FALLBACK_IDEAS.filter(i => !ctx.usedIdea.has(i.title));
-    const pool = ideas.length ? ideas : DN_FALLBACK_IDEAS;
-    const windowed = PL.seed ? pool.slice().sort(() => Math.random() - 0.5) : pool.slice();
-    const cand = windowed.slice(0, 10);
-    await Promise.all(cand.map(plEnsureIdeaCoords));
-    let pick = cand[0], dist = null;
-    if (anchor) {
-      const maxMi = plMaxMiles();
-      const withDist = cand
-        .map(i => ({ i, mi: i._coords ? haversineMiles(anchor.lat, anchor.lon, i._coords.lat, i._coords.lon) : Infinity }))
-        .sort((a, b) => a.mi - b.mi);
-      const inRange = withDist.filter(x => x.mi <= maxMi);
-      const best = inRange.length ? inRange[0] : withDist[0];
-      pick = best.i;
-      if (best.mi !== Infinity) dist = best.mi;
-    }
-    ctx.usedIdea.add(pick.title);
-    const mealName = (ctx.stops.find(s => s.kind === 'meal' || s.kind === 'dessert') || {}).title || 'a spot nearby';
-    return {
-      kind: 'activity',
-      hour,
-      emoji: '✨',
-      eyebrow: 'Idea',
-      title: pick.title,
-      meta: [pick.nbhd && `📍 ${pick.nbhd}`].filter(Boolean),
-      desc: pick.line(mealName),
-      actions: [{ label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pick.title + ' Philadelphia')}` }],
-      coords: pick._coords || null,
-      dist,
-      idea: pick,
-    };
-  }
 
   // ── rendering ──
   function plVibeLabel() {
@@ -4825,15 +4609,8 @@ Return JSON array only:
 
 Valid types: "meal", "activity", "dessert"`;
 
-    let picks;
-    try {
-      picks = await plCallGemini(prompt);
-    } catch (e) {
-      console.warn('Gemini failed, falling back to algorithm:', e);
-      return plBuildItinerary();
-    }
-
-    if (!Array.isArray(picks) || !picks.length) return plBuildItinerary();
+    const picks = await plCallGemini(prompt);
+    if (!Array.isArray(picks) || !picks.length) throw new Error('Empty plan from AI');
 
     const stops = [];
     for (const pick of picks) {
@@ -4904,7 +4681,8 @@ Valid types: "meal", "activity", "dessert"`;
       }
     }
 
-    return stops.length ? stops : plBuildItinerary();
+    if (!stops.length) throw new Error('No usable stops from AI');
+    return stops;
   }
 
   function plRenderKeyPrompt() {
@@ -4915,20 +4693,12 @@ Valid types: "meal", "activity", "dessert"`;
       <div class="pl-q">To use AI planning, paste your <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio key</a>. It stays on your device only.</div>
       <input class="pl-key-input" id="plKeyInput" type="password" placeholder="Paste your Gemini API key…" autocomplete="off">
       <div class="pl-warn" id="plKeyWarn" hidden>Please paste a key first.</div>
-      <button class="pl-next" id="plKeySave" type="button">Save &amp; build plan</button>
-      <button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plKeySkip" type="button">Skip — use basic planner</button>`;
+      <button class="pl-next" id="plKeySave" type="button">Save &amp; build plan</button>`;
     document.getElementById('plKeySave').addEventListener('click', () => {
       const val = (document.getElementById('plKeyInput').value || '').trim();
       if (!val) { document.getElementById('plKeyWarn').hidden = false; return; }
       localStorage.setItem('gemini_key', val);
       plDoBuild();
-    });
-    document.getElementById('plKeySkip').addEventListener('click', async () => {
-      const body = document.getElementById('plBody');
-      document.getElementById('plHeadline').textContent = 'Building your plan…';
-      body.innerHTML = '<div class="dn-loading">✨ Pulling together a plan…</div>';
-      PL.stops = await plBuildItinerary();
-      plRenderItinerary();
     });
   }
 
@@ -4937,8 +4707,18 @@ Valid types: "meal", "activity", "dessert"`;
     document.getElementById('plHeadline').textContent = 'Building your plan…';
     document.getElementById('plProgress').innerHTML = '';
     body.innerHTML = '<div class="dn-loading">✨ Asking AI to plan your outing…</div>';
-    PL.stops = await plBuildItineraryAI();
-    plRenderItinerary();
+    try {
+      PL.stops = await plBuildItineraryAI();
+      plRenderItinerary();
+    } catch (e) {
+      console.warn('Planner AI failed:', e);
+      document.getElementById('plHeadline').textContent = 'Sorry!';
+      body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">😔</div>Sorry, the planner is unavailable right now. Please try again later.</div>
+        <button class="pl-next" id="plRetry" type="button">↻ Try again</button>
+        <button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plEditAns" type="button">✏️ Edit answers</button>`;
+      document.getElementById('plRetry').addEventListener('click', plDoBuild);
+      document.getElementById('plEditAns').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
+    }
   }
 
   async function plBuildAndRender() {
