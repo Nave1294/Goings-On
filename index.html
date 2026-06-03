@@ -4320,13 +4320,14 @@
   // food vibe — that builds a walkable, time-sequenced itinerary weaving
   // Goings On calendar events together with restaurants, dessert & ideas.
 
-  const PL_STEPS = ['day', 'time', 'compose', 'occasion', 'food'];
+  const PL_STEPS = ['day', 'time', 'compose', 'transit', 'occasion', 'food'];
   const PL = {
     step: 0,
     dayIdx: 0,
     startHour: 18,
     endHour: 22,
     comp: { meal: 1, activity: 1, dessert: 0 },
+    transit: 'walk',
     occasion: 'date',
     food: 'any',
     seed: 0,        // bumped on "Shuffle" to vary the picks
@@ -4348,6 +4349,32 @@
     { id: 'adventurous', emoji: '🌶️', label: 'Adventurous' },
     { id: 'drinks',      emoji: '🍸', label: 'Drinks-forward' },
   ];
+  const PL_TRANSIT_MODES = [
+    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~25 min on foot' },
+    { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~30 min, direct service' },
+    { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
+  ];
+  function plMaxMiles() {
+    if (PL.transit === 'walk')  return 1.25;  // 25 min walk @ 20 min/mi
+    if (PL.transit === 'drive') return 3.5;   // ~10 min drive in city
+    return 5.0;                               // transit: ~30 min, same-zone preferred
+  }
+  function plTransitDirHref(from, to) {
+    const mode = PL.transit === 'drive' ? 'driving' : PL.transit === 'transit' ? 'transit' : 'walking';
+    return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
+  }
+  function plLegLabel(mi) {
+    if (PL.transit === 'walk') {
+      const mins = Math.round(mi * 20);
+      return mins <= 1 ? '< 1 min walk' : `~${mins} min walk`;
+    }
+    if (PL.transit === 'drive') {
+      const mins = Math.round(mi / 25 * 60);
+      return mins <= 1 ? '< 1 min drive' : `~${mins} min drive`;
+    }
+    const mins = Math.round(mi / 12 * 60);
+    return mins <= 2 ? '< 5 min transit' : `~${mins} min transit`;
+  }
   const PL_TIME_OPTS = [
     { hr: 9, label: '9 AM' }, { hr: 10, label: '10 AM' }, { hr: 11, label: '11 AM' },
     { hr: 12, label: 'Noon' }, { hr: 13, label: '1 PM' }, { hr: 14, label: '2 PM' },
@@ -4391,12 +4418,15 @@
     return `~${fmtMiles(mi)} walk`;
   }
   function plDistBonus(mi) {
-    if (mi < 0.3) return 80;
-    if (mi < 0.5) return 60;
-    if (mi < 0.75) return 40;
-    if (mi < 1.0) return 20;
-    if (mi < 1.5) return 5;
-    return -30;
+    const max = plMaxMiles();
+    if (mi > max) return -999;     // hard disqualifier — too far for chosen mode
+    const ratio = mi / max;
+    if (ratio < 0.2)  return 80;
+    if (ratio < 0.35) return 60;
+    if (ratio < 0.5)  return 40;
+    if (ratio < 0.7)  return 20;
+    if (ratio < 0.9)  return 5;
+    return 0;
   }
   function plCap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
   function plPriceLen(r) { return (r.price || '').replace(/[^$]/g, '').length; }
@@ -4494,11 +4524,20 @@
     const order = plSlotOrder();
     const times = plSlotTimes(order.length);
     const dayEvents = plRankedEventsForDay();
-    const ctx = { usedR: new Set(), usedE: new Set(), usedIdea: new Set(), dayEvents, stops: [] };
+    const ctx = { usedR: new Set(), usedE: new Set(), usedIdea: new Set(), dayEvents, stops: [], activityThemes: new Set() };
     let anchor = null;
     for (let i = 0; i < order.length; i++) {
       const stop = await plPickStop(order[i], times[i], anchor, ctx);
-      if (stop) { ctx.stops.push(stop); if (stop.coords) anchor = stop.coords; }
+      if (stop) {
+        ctx.stops.push(stop);
+        if (stop.coords) anchor = stop.coords;
+        // Accumulate themes from activities so restaurants can match them
+        if (stop.kind === 'activity' && stop.ev) {
+          for (const t of eventThemes(stop.ev)) ctx.activityThemes.add(t);
+        } else if (stop.kind === 'activity' && stop.idea) {
+          for (const t of stop.idea.themes) ctx.activityThemes.add(t);
+        }
+      }
     }
     return ctx.stops;
   }
@@ -4512,14 +4551,20 @@
     if (!pool.length) return null;
 
     let scored = pool
-      .map(r => ({
-        r,
-        s: (type === 'dessert' ? plFoodScore(r) + plOccasionScore(r) : plRestoScore(r, mealType))
-           + (PL.seed ? Math.random() * 6 : 0),
-        dist: null,
-      }))
+      .map(r => {
+        const rt = restaurantThemes(r);
+        let themeBonus = 0;
+        for (const t of ctx.activityThemes) if (rt.has(t)) themeBonus += 8; // theme overlap with activities
+        return {
+          r,
+          s: (type === 'dessert' ? plFoodScore(r) + plOccasionScore(r) : plRestoScore(r, mealType))
+             + themeBonus
+             + (PL.seed ? Math.random() * 6 : 0),
+          dist: null,
+        };
+      })
       .sort((a, b) => b.s - a.s || Math.random() - 0.5)
-      .slice(0, 12);
+      .slice(0, 18); // wider pool so distance filtering still leaves good options
 
     await Promise.all(scored.map(x => ensurePlaceCoords(x.r)));
     if (anchor) {
@@ -4530,6 +4575,10 @@
         }
       });
       scored.sort((a, b) => b.s - a.s);
+      // If all candidates exceed the mode limit, fall back to the nearest regardless
+      const valid = scored.filter(x => x.dist == null || x.dist <= plMaxMiles());
+      if (!valid.length) scored.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
+      else scored = valid;
     }
     const pick = scored[0];
     ctx.usedR.add(pick.r.name);
@@ -4590,22 +4639,22 @@
       };
     }
 
-    // Fall back to a curated Philly idea, nearest to the anchor when possible.
+    // Fall back to a curated Philly idea, nearest to anchor within mode limit.
     const ideas = DN_FALLBACK_IDEAS.filter(i => !ctx.usedIdea.has(i.title));
     const pool = ideas.length ? ideas : DN_FALLBACK_IDEAS;
     const windowed = PL.seed ? pool.slice().sort(() => Math.random() - 0.5) : pool.slice();
-    const cand = windowed.slice(0, 6);
+    const cand = windowed.slice(0, 10);
     await Promise.all(cand.map(plEnsureIdeaCoords));
     let pick = cand[0], dist = null;
     if (anchor) {
-      let bd = Infinity;
-      for (const i of cand) {
-        if (i._coords) {
-          const mi = haversineMiles(anchor.lat, anchor.lon, i._coords.lat, i._coords.lon);
-          if (mi < bd) { bd = mi; pick = i; }
-        }
-      }
-      if (bd !== Infinity) dist = bd;
+      const maxMi = plMaxMiles();
+      const withDist = cand
+        .map(i => ({ i, mi: i._coords ? haversineMiles(anchor.lat, anchor.lon, i._coords.lat, i._coords.lon) : Infinity }))
+        .sort((a, b) => a.mi - b.mi);
+      const inRange = withDist.filter(x => x.mi <= maxMi);
+      const best = inRange.length ? inRange[0] : withDist[0];
+      pick = best.i;
+      if (best.mi !== Infinity) dist = best.mi;
     }
     ctx.usedIdea.add(pick.title);
     const mealName = (ctx.stops.find(s => s.kind === 'meal' || s.kind === 'dessert') || {}).title || 'a spot nearby';
@@ -4668,7 +4717,7 @@
       if (link) lines.push(`   ${link.href}`);
       const next = PL.stops[i + 1];
       if (next && s.coords && next.coords) {
-        lines.push(`   ↓ ${plWalkLabel(haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon))}`);
+        lines.push(`   ↓ ${plLegLabel(haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon))}`);
       }
       lines.push('');
     });
@@ -4731,8 +4780,9 @@
       if (next) {
         if (s.coords && next.coords) {
           const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
-          const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=walking`;
-          connector = `<div class="pl-connector"><span class="dn-walk-badge">🚶 ${plWalkLabel(mi)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+          const dir = plTransitDirHref(s.coords, next.coords);
+          const modeEmoji = (PL_TRANSIT_MODES.find(m => m.id === PL.transit) || {}).emoji || '🚶';
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${plLegLabel(mi)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
@@ -4773,8 +4823,9 @@
     if (key === 'day') plStepDay(body);
     else if (key === 'time') plStepTime(body);
     else if (key === 'compose') plStepCompose(body);
-    else if (key === 'occasion') plStepChips(body, 'occasion', PL_OCCASIONS, 'What’s the occasion?', 'Tune the vibe of the picks.');
-    else if (key === 'food') plStepChips(body, 'food', PL_FOODS, 'Any food vibe?', 'We’ll steer the food choices to match.');
+    else if (key === 'transit') plStepChips(body, 'transit', PL_TRANSIT_MODES, 'How are you getting around?', 'Stops will be picked within range for your mode.');
+    else if (key === 'occasion') plStepChips(body, 'occasion', PL_OCCASIONS, "What's the occasion?", 'Tune the vibe of the picks.');
+    else if (key === 'food') plStepChips(body, 'food', PL_FOODS, 'Any food vibe?', "We'll steer the food choices to match.");
   }
 
   function plStepDay(body) {
