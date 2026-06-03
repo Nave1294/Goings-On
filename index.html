@@ -4462,21 +4462,28 @@
     { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~20 min, direct service' },
     { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
-  function plTransitDirHref(from, to) {
-    const mode = PL.transit === 'drive' ? 'driving' : PL.transit === 'transit' ? 'transit' : 'walking';
+  function plTransitDirHref(from, to, forceWalk) {
+    const mode = forceWalk ? 'walking' : PL.transit === 'drive' ? 'driving' : PL.transit === 'transit' ? 'transit' : 'walking';
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
   }
+  // Walking time from straight-line miles: ~3 mph plus a grid-detour factor.
+  function plWalkMins(mi) { return Math.round(mi * 24); }
   function plLegLabel(mi) {
+    const walkMins = plWalkMins(mi);
     if (PL.transit === 'walk') {
-      const mins = Math.round(mi * 20);
-      return mins <= 1 ? '< 1 min walk' : `~${mins} min walk`;
+      return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
     }
     if (PL.transit === 'drive') {
-      const mins = Math.round(mi / 25 * 60);
+      const mins = Math.round(mi / 22 * 60); // ~22 mph city driving incl. lights
       return mins <= 1 ? '< 1 min drive' : `~${mins} min drive`;
     }
-    const mins = Math.round(mi / 12 * 60);
-    return mins <= 2 ? '< 5 min transit' : `~${mins} min transit`;
+    // Transit: ~10 min fixed overhead (walk to stop + wait + walk from stop) plus
+    // in-vehicle time (~12 mph straight-line). For short hops, walking wins — say so.
+    const transitMins = Math.round(10 + mi * 5);
+    if (walkMins <= transitMins) {
+      return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
+    }
+    return `~${transitMins} min transit`;
   }
   const PL_TIME_OPTS = [
     { hr: 9, label: '9 AM' }, { hr: 10, label: '10 AM' }, { hr: 11, label: '11 AM' },
@@ -4724,8 +4731,8 @@
       : '(none scheduled this day)';
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
-    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg must be reachable in 20 minutes or less with NO transfers.';
-    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'drive' ? 10 : 20;
+    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
+    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'drive' ? 10 : 18;
 
     const prompt = `You are a sharp, opinionated Philadelphia local planning a great outing. Think it through carefully before answering: consider the occasion, what's actually worth doing, how the stops flow together into ONE coherent experience, and which real Goings-On events make the night special. Then return ONLY a raw JSON object — no prose, no markdown fences.
 
@@ -5011,9 +5018,12 @@ Valid types: "meal", "activity", "dessert"`;
       if (next) {
         if (s.coords && next.coords) {
           const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
-          const dir = plTransitDirHref(s.coords, next.coords);
-          const modeEmoji = (PL_TRANSIT_MODES.find(m => m.id === PL.transit) || {}).emoji || '🚶';
-          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${plLegLabel(mi)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+          const label = plLegLabel(mi);
+          // Emoji + directions follow the actual leg mode (a short transit hop may say "walk").
+          const isWalkLeg = /walk/.test(label);
+          const dir = plTransitDirHref(s.coords, next.coords, isWalkLeg);
+          const modeEmoji = isWalkLeg ? '🚶' : /drive/.test(label) ? '🚗' : '🚇';
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${label}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
