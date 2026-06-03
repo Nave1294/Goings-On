@@ -1322,6 +1322,82 @@
     .eat-wizard-done:hover { filter: brightness(1.06); }
     .eat-wizard-done:active { transform: scale(0.98); }
     .eat-wizard-progress { font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; }
+    /* Recommendation result overlay */
+    .eat-rec-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 85;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: sheetUp 0.3s ease;
+    }
+    .eat-rec-overlay[hidden] { display: none; }
+    .eat-rec-header {
+      padding: 1rem 1.25rem 1.1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--divider);
+      flex-shrink: 0;
+    }
+    .eat-rec-back {
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 0 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s ease;
+    }
+    .eat-rec-back:hover { color: var(--accent); }
+    .eat-rec-eyebrow {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    .eat-rec-headline {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 0.55rem;
+    }
+    .eat-rec-also {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .eat-rec-also-chip {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+    }
+    .eat-rec-also-chip.nope {
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--divider);
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .eat-rec-count {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-top: 0.35rem;
+    }
+    .eat-rec-list { flex: 1; overflow-y: auto; padding: 0.5rem 0 3rem; }
     @keyframes spinPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
     .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
@@ -1510,6 +1586,17 @@
   </div>
 </div>
 
+<!-- Recommendation result view -->
+<div class="eat-rec-overlay" id="eatRecOverlay" hidden>
+  <div class="eat-rec-header">
+    <button class="eat-rec-back" id="eatRecBack" type="button">← Back</button>
+    <div class="eat-rec-eyebrow">Tonight's vibe</div>
+    <div class="eat-rec-headline" id="eatRecHeadline"></div>
+    <div class="eat-rec-also" id="eatRecAlso"></div>
+    <div class="eat-rec-count" id="eatRecCount"></div>
+  </div>
+  <div class="eat-rec-list" id="eatRecList"></div>
+</div>
 
 <script>
   const CALENDAR_ID    = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
@@ -3766,15 +3853,101 @@
       };
 
       const applyWizard = () => {
+        // Build yes/nope sets from what the user answered
+        const yesCuisines = new Set();
+        const nopeCuisines = new Set(wizardExcluded);
+        for (const gi of present) {
+          const label = CUISINE_GROUPS[gi].label;
+          if (!wizardExcluded.has(label)) yesCuisines.add(label);
+        }
+
+        // Apply exclusions globally so the normal tab list also updates
         excludedCuisines.clear();
         for (const g of wizardExcluded) excludedCuisines.add(g);
         syncFab();
         renderSheetTags();
         if (currentEatCat) renderEatCategory(currentEatCat);
+
+        // Reset wizard panel for next time
         document.getElementById('eatSheetDefault').hidden = false;
         document.getElementById('eatSheetWizard').hidden = true;
         closeSheet();
+
+        // Show the recommendation view
+        showRecView(yesCuisines, nopeCuisines);
       };
+
+      const showRecView = (yesCuisines, nopeCuisines) => {
+        const overlay = document.getElementById('eatRecOverlay');
+        if (!overlay) return;
+
+        // Restaurants that match: in a yes-cuisine AND passes neighborhood filter
+        const pool = yesCuisines.size
+          ? RESTAURANTS.filter(r => yesCuisines.has(cuisineGroupLabel(r)) && matchesNeighborhood(r))
+          : RESTAURANTS.filter(r => matchesNeighborhood(r));
+
+        // Group by cuisine label (sorted by restaurant count desc)
+        const byCuisine = new Map();
+        for (const r of pool) {
+          const g = cuisineGroupLabel(r);
+          if (!byCuisine.has(g)) byCuisine.set(g, []);
+          byCuisine.get(g).push(r);
+        }
+        const sortedCuisines = [...byCuisine.keys()]
+          .sort((a, b) => byCuisine.get(b).length - byCuisine.get(a).length);
+        const featured = sortedCuisines[0];
+
+        // Headline
+        let headline;
+        if (!yesCuisines.size) {
+          headline = "Tough crowd tonight 😅";
+        } else if (yesCuisines.size <= 2) {
+          headline = `You're feeling ${featured}`;
+        } else if (yesCuisines.size <= 5) {
+          headline = `You're in the mood for ${featured}`;
+        } else {
+          headline = `You're up for pretty much anything`;
+        }
+        document.getElementById('eatRecHeadline').textContent = headline;
+
+        // "Also open to" chips (yes-cuisines after the featured one, up to 6)
+        const alsoYes = sortedCuisines.slice(1, 7);
+        const nopeArr = [...nopeCuisines].slice(0, 4);
+        const alsoEl = document.getElementById('eatRecAlso');
+        alsoEl.innerHTML = [
+          ...alsoYes.map(g => `<span class="eat-rec-also-chip">${escapeHtml(g)}</span>`),
+          ...nopeArr.map(g => `<span class="eat-rec-also-chip nope">${escapeHtml(g)}</span>`),
+        ].join('');
+
+        // Count line
+        const total = pool.length;
+        const skipped = nopeCuisines.size;
+        document.getElementById('eatRecCount').textContent =
+          `${total} spot${total !== 1 ? 's' : ''} available` +
+          (skipped ? ` · skipping ${skipped} cuisine type${skipped !== 1 ? 's' : ''}` : '');
+
+        // Restaurant list grouped by cuisine (most-options first)
+        const listEl = document.getElementById('eatRecList');
+        if (!pool.length) {
+          listEl.innerHTML = `<div class="eat-content eat-empty">
+            <div class="eat-empty-icon">🍽️</div>
+            <div class="eat-empty-text">No spots match your current filters. Try a different neighborhood.</div>
+          </div>`;
+        } else {
+          listEl.innerHTML = `<div class="eat-content">${sortedCuisines.map(g => `
+            <div class="eat-section-header">${escapeHtml(g)}</div>
+            ${byCuisine.get(g).map(restoTileHTML).join('')}
+          `).join('')}</div>`;
+        }
+
+        overlay.removeAttribute('hidden');
+        loadRestoImages(listEl);
+      };
+
+      document.getElementById('eatRecBack').addEventListener('click', () => {
+        document.getElementById('eatRecOverlay').setAttribute('hidden', '');
+      });
+      document.getElementById('eatRecList').addEventListener('click', onRestoMainClick);
 
       document.getElementById('eatMoodWizardBtn').addEventListener('click', () => {
         wizardQueue = [...present].sort(() => Math.random() - 0.5);
