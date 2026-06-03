@@ -1188,44 +1188,28 @@
     .eat-sheet-mood-btn:hover { filter: brightness(0.94); }
     .eat-sheet-mood-btn:active { transform: scale(0.98); }
     /* Post-quiz buttons (replace mood button after quiz is taken) */
-    .eat-sheet-post-quiz { display: flex; flex-direction: column; gap: 0.5rem; }
-    .eat-sheet-view-btn {
+    .eat-sheet-post-quiz { display: flex; flex-direction: row; gap: 0.5rem; }
+    .eat-sheet-view-btn, .eat-sheet-restart-btn {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      width: 100%;
       font: inherit;
-      font-size: 0.9rem;
+      font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: -0.01em;
-      color: #fff;
-      background: var(--accent);
       border: none;
       border-radius: 14px;
-      padding: 0.82rem 1rem;
+      padding: 0.82rem 0.5rem;
       cursor: pointer;
       transition: filter 0.15s ease, transform 0.12s ease;
+      text-align: center;
+      line-height: 1.2;
     }
+    .eat-sheet-view-btn { color: #fff; background: var(--accent); }
     .eat-sheet-view-btn:hover { filter: brightness(1.06); }
     .eat-sheet-view-btn:active { transform: scale(0.98); }
-    .eat-sheet-restart-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-      font: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: none;
-      border-radius: 14px;
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      transition: filter 0.15s ease, transform 0.12s ease;
-    }
+    .eat-sheet-restart-btn { color: var(--accent); background: var(--accent-soft); }
     .eat-sheet-restart-btn:hover { filter: brightness(0.94); }
     .eat-sheet-restart-btn:active { transform: scale(0.98); }
     /* Wizard */
@@ -1518,8 +1502,8 @@
       <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
       <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
-        <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">View my recommendations →</button>
-        <button class="eat-sheet-restart-btn" id="eatRestartBtn" type="button">↩ Retake the quiz</button>
+        <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">📋 View picks</button>
+        <button class="eat-sheet-restart-btn" id="eatRestartBtn" type="button">↩ Retake quiz</button>
       </div>
     </div>
     <!-- Wizard state -->
