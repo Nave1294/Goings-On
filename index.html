@@ -4586,11 +4586,22 @@
   }
 
   function plStopCardHTML(s, i) {
+    let timeRange = '';
+    if (s.hour != null) {
+      timeRange = plHourLabel(s.hour);
+      if (s.duration) {
+        const endMins = s.hour * 60 + s.duration;
+        const endH = Math.floor(endMins / 60) % 24;
+        const endM = endMins % 60;
+        const endLabel = endM === 0 ? plHourLabel(endH) : (endH % 12 || 12) + ':' + String(endM).padStart(2, '0') + (endH < 12 ? ' AM' : ' PM');
+        timeRange += ' – ' + endLabel;
+      }
+    }
     return `<div class="dn-pair-card pl-stop">
         <div class="pl-stop-head">
           <span class="pl-stop-num">${i + 1}</span>
           <div>
-            <div class="dn-pair-eyebrow">${s.emoji} ${escapeHtml(s.eyebrow)}${s.hour != null ? ` · ${plHourLabel(s.hour)}` : ''}</div>
+            <div class="dn-pair-eyebrow">${s.emoji} ${escapeHtml(s.eyebrow)}${timeRange ? ` · ${timeRange}` : ''}</div>
             <div class="dn-pair-title">${escapeHtml(s.title)}</div>
           </div>
         </div>
@@ -4688,6 +4699,7 @@
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
     const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg must be reachable in 20 minutes or less with NO transfers.';
+    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'drive' ? 10 : 20;
 
     const prompt = `You are planning a Philadelphia evening/outing. Return ONLY a raw JSON object — no prose, no markdown fences.
 
@@ -4715,9 +4727,17 @@ RULES:
 5. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
 6. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
 7. Name restaurants, ideas, and events EXACTLY as listed. "hour" is the 24-hour start hour as an integer.
+8. SCHEDULE WITH REALISTIC DURATIONS AND TRAVEL TIME. Each stop takes time — plan "hour" values so nothing overlaps:
+   - Meal: ~90 minutes (1.5 h)
+   - Dessert or drinks: ~45 minutes (0.75 h)
+   - Activity / event: use the event's listed time; if unknown assume ~90 minutes
+   - Travel between consecutive stops: add ${transitMinutes} minutes on top of each stop's duration before the next one starts
+   - Formula: next_stop_hour >= current_stop_hour + current_stop_duration_hours + ${(transitMinutes / 60).toFixed(2)}
+   - All stops must START and END within the ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)} window
+   - If the window is too tight for all stops, reduce the number of stops to fit rather than squeezing them together
 
-Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array:
-{"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18},{"type":"activity","name":"Exact Name","hour":20,"isCalendarEvent":false}]}
+Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array. Include "duration" (minutes) for each stop so timing is explicit:
+{"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18,"duration":90},{"type":"activity","name":"Exact Name","hour":20,"duration":90,"isCalendarEvent":false}]}
 
 Valid types: "meal", "activity", "dessert"`;
 
@@ -4753,8 +4773,14 @@ Valid types: "meal", "activity", "dessert"`;
           const c = eventCoords(ev);
           const eh = plEventHour(ev);
           const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
+          // Compute actual event duration from calendar data when possible
+          let evDuration = pick.duration || 90;
+          if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
+            const ms = new Date(ev.end.dateTime) - new Date(ev.start.dateTime);
+            if (ms > 0) evDuration = Math.round(ms / 60000);
+          }
           stops.push({
-            kind: 'activity', hour: (eh != null ? eh : pick.hour),
+            kind: 'activity', hour: (eh != null ? eh : pick.hour), duration: evDuration,
             emoji: '🎟️', eyebrow: 'Activity',
             title: ev.summary || pick.name,
             meta: [when && ('🕒 ' + when), ev.location && ('📍 ' + ev.location.split(',')[0])].filter(Boolean),
@@ -4772,7 +4798,7 @@ Valid types: "meal", "activity", "dessert"`;
         if (idea) {
           await plEnsureIdeaCoords(idea);
           stops.push({
-            kind: 'activity', hour: pick.hour,
+            kind: 'activity', hour: pick.hour, duration: pick.duration || 90,
             emoji: '✨', eyebrow: 'Idea',
             title: idea.title,
             meta: [idea.nbhd && ('📍 ' + idea.nbhd)].filter(Boolean),
@@ -4792,7 +4818,7 @@ Valid types: "meal", "activity", "dessert"`;
           const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.location ? r.name + ', ' + r.location : r.name);
           stops.push({
             kind: pick.type === 'dessert' ? 'dessert' : 'meal',
-            hour: pick.hour,
+            hour: pick.hour, duration: pick.duration || (pick.type === 'dessert' ? 45 : 90),
             emoji: pick.type === 'dessert' ? '🍦' : '🍴',
             eyebrow: pick.type === 'dessert' ? 'Dessert / drinks' : (mt ? plCap(mt) : 'Bite to eat'),
             title: r.name,
