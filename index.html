@@ -4277,17 +4277,9 @@
   }
 
   function dnStaticMapUrl(rCoords, eCoords) {
-    const base = 'https://maps.googleapis.com/maps/api/staticmap';
-    const params = new URLSearchParams({
-      size: '600x200',
-      scale: '2',
-      maptype: 'roadmap',
-      style: 'feature:poi|visibility:simplified',
-      key: PLACES_API_KEY,
-    });
-    params.append('markers', `color:0x2d6a4f|label:R|${rCoords.lat},${rCoords.lon}`);
-    params.append('markers', `color:0x6d4b8f|label:E|${eCoords.lat},${eCoords.lon}`);
-    return `${base}?${params.toString()}`;
+    const rPin = encodeURIComponent(`color:green|label:R|${rCoords.lat},${rCoords.lon}`);
+    const ePin = encodeURIComponent(`color:purple|label:E|${eCoords.lat},${eCoords.lon}`);
+    return `https://maps.googleapis.com/maps/api/staticmap?size=600x200&scale=2&maptype=roadmap&markers=${rPin}&markers=${ePin}&key=${PLACES_API_KEY}`;
   }
 
   // Pre-geocode top candidate restaurants + event, then rank by actual walking distance.
@@ -4466,7 +4458,7 @@
       const staticSrc = dnStaticMapUrl(rCoords, eCoords);
       mapHTML = `
         <div class="dn-map-wrap">
-          <img class="dn-map-img" src="${escapeAttr(staticSrc)}" alt="Map showing restaurant and event locations" loading="lazy">
+          <img class="dn-map-img" src="${escapeAttr(staticSrc)}" alt="Map showing restaurant and event locations" loading="lazy" onerror="this.style.display='none'">
           <div class="dn-map-footer">
             ${walkLabel ? `<span class="dn-walk-badge">🚶 ${escapeHtml(walkLabel)}</span>` : ''}
             <a class="dn-map-link" href="${escapeAttr(dirHref)}" target="_blank" rel="noopener">Walking directions →</a>
