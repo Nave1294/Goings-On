@@ -4925,22 +4925,24 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   // For a 429, work out when the quota should be back and a friendly message.
-  // The API's retryDelay is authoritative — Google sometimes labels a short
-  // rate-limit window with a "PerDay" quota name, so we never assume "midnight"
-  // when it hands us a concrete (usually <1 min) retry delay.
+  // The free key is shared across everyone using the site and Google's signals
+  // are inconsistent — it labels even a tight limit "PerDay" (limit 20) yet
+  // returns a short, unreliable retryDelay. So we show the short delay as a
+  // first guess but warn that it may actually be the daily pool running dry.
   function plRateLimitInfo(err) {
     if (!err || err.status !== 429) return null;
     const now = new Date();
     const clock = t => t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    // A concrete delay gives a best-guess countdown; the second line hedges in
+    // case it's really the shared daily quota (which won't clear until midnight).
     if (err.retryDelaySec != null) {
-      // Add a small cushion so we don't retry a hair too early.
       const retryAt = new Date(now.getTime() + (err.retryDelaySec + 2) * 1000);
+      const mid = plNextPacificMidnight();
       return {
         retryAt,
-        message: `The shared free AI key is briefly over its rate limit. It should be ready again in a moment — hang tight.`,
+        message: `The free AI key is shared by everyone using the site and it's over its limit right now. Try again shortly. <br><span style="opacity:0.75;font-size:0.92em">If it keeps failing, the small daily pool is used up — it resets at midnight Pacific (about ${clock(mid)} your time).</span>`,
       };
     }
-    // No concrete delay given. If it's clearly a daily cap, point at midnight PT.
     if (err.quotaScope === 'day') {
       const retryAt = plNextPacificMidnight();
       return {
@@ -4948,10 +4950,9 @@ Valid types: "meal", "activity", "dessert"`;
         message: `The shared free AI key has hit its <strong>daily</strong> limit. Google resets it at midnight Pacific — about <strong>${clock(retryAt)}</strong> your time. Try again then.`,
       };
     }
-    // Unknown — assume a short window.
     return {
       retryAt: new Date(now.getTime() + 60000),
-      message: `The shared free AI key is briefly rate-limited. Try again in a moment.`,
+      message: `The shared free AI key is rate-limited right now. Try again in a moment.`,
     };
   }
 
