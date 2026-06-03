@@ -815,6 +815,19 @@
     }
     .eat-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
     .eat-empty-text { font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); }
+    .fm-season-pill {
+      display: inline-block; margin-top: 0.35rem;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+      border-radius: 999px; padding: 0.18rem 0.6rem;
+    }
+    .fm-yearround { background: #e6f4ec; color: #2d6a4f; }
+    .fm-seasonal  { background: #fff4e0; color: #8a5a00; }
+    .fm-days-row { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.6rem 0 0.3rem; }
+    .fm-day-badge {
+      font-size: 0.72rem; font-weight: 700;
+      background: var(--accent-soft); color: var(--accent);
+      border-radius: 999px; padding: 0.2rem 0.6rem;
+    }
 
     .back-btn {
       grid-column: 3;
@@ -1685,6 +1698,30 @@
   </div>
 </div>
 
+<div class="container view" id="view-farmers-markets">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Farmers Markets</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="fmDayTabs"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="fm" type="button" title="Sort by distance from you">📍 Near me</button>
+  </div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow" id="fmEyebrow">Farmers Markets</div>
+        <div class="day-title" id="fmTitle">All Markets</div>
+        <div class="day-subtitle" id="fmSubtitle">25 markets across Philly &amp; the region</div>
+      </div>
+    </div>
+    <div id="fmList"></div>
+  </div>
+</div>
 
 <button class="to-top-btn" id="toTopBtn" type="button" aria-label="Back to top">
   <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3500,6 +3537,35 @@
 
   // EAT-PLACES-END
 
+  // ── Farmers Market data ─────────────────────────────────────────
+  const FARMERS_MARKETS = [
+    { name: '4th & Lehigh Farmers Market', location: '412 W. Huntingdon St., Philadelphia', neighborhood: 'North Philadelphia', desc: 'A block away from El Centro de Oro, this seasonal farm stand offers fresh fruit and vegetables from Hayday Farms in Bucks County, like plump peaches and crates of juicy strawberries.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/4th-lehigh-farmers-market/', days: ['Tuesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
+    { name: '52nd and Haverford Farmers Market', location: '5200 Haverford Ave., Philadelphia', neighborhood: 'West Philadelphia', desc: "The seasonal farm stand on 52nd and Haverford Streets is a favorite for longtime residents of Haddington. Bucks County's Hayday Farms bring fruits, veggies, and flowers.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/52nd-haverford/', days: ['Wednesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
+    { name: 'Bryn Mawr Farmers Market', location: '7 N. Bryn Mawr Ave., Bryn Mawr', neighborhood: 'Montgomery County', desc: 'In Bryn Mawr, shoppers at this year-round Saturday market can buy gluten-free whoopie pies from Amaranth Bakery, buckwheat ales from Deer Creek Malthouse, and more. Located at Bryn Mawr Station.', website: 'https://www.lmfarmersmarkets.org/brynmawr', days: ['Saturday'], hours: 'Jan–Mar: 10 AM – 12 PM (1st, 3rd & 5th Sat); Apr–Dec: 9 AM – 1 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Castor & Hellerman Farmers Market', location: '6501 Castor Ave., Philadelphia', neighborhood: 'Northeast Philadelphia', desc: 'Find fresh seasonal vegetables and fruits from Wyncote Farms — think tomatoes, eggplant, okra, kale, and potatoes.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/castor_hellerman/', days: ['Wednesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
+    { name: 'Chestnut Hill Farmers Market', location: '7673 Germantown Ave., Philadelphia', neighborhood: 'Chestnut Hill', desc: 'Chat with produce and meat vendors from farms in Malvern to Shoemakersville on Saturdays in front of The Mermaid Inn. Rotating vendors include Taproot Farms, Canter Hill Farm meats, Pasta Lab, Milk Jawn ice cream, and Market Day Canele pastries.', website: 'https://egreenevents.com/chestnut-hill-fm', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Christ Church Neighborhood Farmers Market', location: '20 N. American St., Philadelphia', neighborhood: 'Old City', desc: 'With a cup of Old City Coffee in hand, walk around the fresh greens, berries, cheeses, and artisan breads on offer.', website: 'https://neighborhood-house.com/farmers-market/', days: ['Wednesday'], hours: '3 PM – 6 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'Clark Park Farmers Market', location: '4300 Baltimore Ave., Philadelphia', neighborhood: 'West Philadelphia', desc: 'Year-round farmers market run by the Food Trust, featuring Valley Milkhouse for artisanal cheese, Manna Bakery for pastries, and Nilaa Coffee. Unofficial vendors offering clothes, jewelry, and books fill the park too.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/clark-park/', days: ['Saturday'], hours: '10 AM – 2 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Collingswood Farmers Market', location: '713 North Atlantic Ave., Collingswood, NJ', neighborhood: 'Camden County, NJ', desc: 'Just over the Ben Franklin Bridge, a robust group of South Jersey farm and restaurant vendors set up under the PATCO High Speedline. Many farms offer preorders for pickup and home delivery.', website: 'https://www.collingswoodmarket.com/#/', days: ['Saturday'], hours: '8 AM – 12 PM', seasonal: true, season: 'May – Thanksgiving' },
+    { name: 'Dickinson Square Farmers Market', location: '1600 E Moyamensing Ave., Philadelphia', neighborhood: 'South Philadelphia', desc: "Stop by Anna Bee's Honey for raw honey and beeswax candles, Lost Bread Co. for a sourdough loaf, and Taste of Puebla for salsa and guacamole — all the ingredients for a picnic in the park.", website: 'https://egreenevents.com/dickinson-square-park', days: ['Sunday'], hours: '10 AM – 1 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Downtown Wildwood Farmers Market', location: '3400 Pacific Ave., Wildwood, NJ', neighborhood: 'Cape May County, NJ', desc: "Over 100 vendors in its 13th season — produce, baked goods, hot sauces, jerkies, spice mixes, wines, sea glass art, and more. Grab an iced coffee or cold-pressed juice and get lost.", website: 'https://www.dooww.com/farmersmarket', days: ['Saturday'], hours: '8 AM – 12:30 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'East Falls Farmers Market', location: '4100 Ridge Ave., Philadelphia', neighborhood: 'East Falls', desc: "Food, produce, and craft vendors rain or shine under the Twin Bridges in Fairmount Park. Features Brophy's Spring Hollow Farms meats and eggs, and cult-favorite Ursa Bakery sourdough.", website: 'https://www.eastfallsfarmersmarket.com/', days: ['Saturday'], hours: 'May–Nov: 10 AM – 1 PM; Dec–Apr: 11 AM – 1 PM', seasonal: false, season: 'Year-round' },
+    { name: 'East Passyunk Farmers Market', location: '1430 Passyunk Ave., Philadelphia', neighborhood: 'East Passyunk', desc: "Chester County's Cherri Blossom Farm offers fresh eggs and dairy alongside Coal's Creek Cottage Bakery and Primordia Mushroom Farm. Sits in the driveway of the South Philadelphia Older Adult Center.", website: 'https://egreenevents.com/east-passyunk-market', days: ['Wednesday'], hours: '2 PM – 6 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Fairmount Farmers Market', location: '2200 Fairmount Ave., Philadelphia', neighborhood: 'Fairmount', desc: "Thursdays near Eastern State Penitentiary: vegan fruit tarts from Amira's Delites, cheese from Chester Springs, and organic veggies from Mount Joy, Pa.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/fairmount/', days: ['Thursday'], hours: '3 PM – 7 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Fitler Square Farmers Market', location: '2300 Pine St., Philadelphia', neighborhood: 'Center City', desc: 'Center City residents and visitors can spend Saturday mornings perusing fresh produce and herbs from Brogue Hydroponics in Brogue, Pa.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/fitler-square/', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Frankford Transportation Center Farmers Market', location: '5272 Frankford Ave., Philadelphia', neighborhood: 'Northeast Philadelphia', desc: 'Pick up fresh produce from Root Mass Farm at the bustling Frankford Transportation Center. Early summer offerings include beets, broccoli, strawberries, basil, thyme, and scallions.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/frankford-transportation-center/', days: ['Tuesday'], hours: '2 PM – 6 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'Headhouse Farmers Market', location: '200 Lombard St., Philadelphia', neighborhood: 'Society Hill', desc: "Society Hill's largest weekly market with 25+ rotating vendors: Griggstown Quail Farm fruit pies and quail eggs, High Street breads, and fresh produce. One of the Food Trust's flagship markets.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/headhouse/', days: ['Sunday'], hours: '10 AM – 2 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Jenkintown Farmers Market', location: '460 York Rd., Jenkintown', neighborhood: 'Montgomery County', desc: 'Thursday evening market with handmade stuffed cookies from MR. Big Stuff Cookie Co., fresh fruit and vegetables from Holtwood Farm, and pound cakes from Aunt Orphia\'s Delicious Homemade Pound Cake.', website: '', days: ['Thursday'], hours: '4 PM – 8 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'Kennett Square Farmers Market', location: '600 South Broad St., Kennett Square', neighborhood: 'Chester County', desc: 'Friday market near the Creamery. Swallow Hill Farm is a regular produce supplier, as is Casa Carmen Farm & Winery slightly further out in West Grove.', website: 'https://www.ksqfarmersmarket.com/', days: ['Friday'], hours: '3 PM – 6 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'Lancaster County Farmers Market', location: '389 W. Lancaster Ave., Wayne', neighborhood: 'Delaware County', desc: 'Year-round market in Wayne — hand-rolled soft pretzels from Country Twist, produce from Good Harvest Farms, beef and pork at Heebner Meats, and Philly-style sticky buns at D\'Innocenzo\'s Bakery.', website: 'https://www.lancastercountyfarmersmarket.com/', days: ['Wednesday', 'Friday', 'Saturday'], hours: '6 AM – 4 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Media Farmers Market', location: 'N. Edgemont St., Media', neighborhood: 'Delaware County', desc: 'Year-round market highlighting vendors within a 150-mile radius. Find produce from Sharrah Orchards, honey from New-Bee Ranch, bread from Wild Yeast Bakehouse, and olive oil from Byrsa Olive Oil.', website: 'https://mediafarmersmarket.com/', days: ['Sunday'], hours: '10 AM – 1 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Northern Liberties Farmers Market', location: '1099 Germantown Ave., Philadelphia', neighborhood: 'Northern Liberties', desc: 'Yearlong market adjacent to The Piazza with more than a dozen vendors. Frequent favorites: Lost Bread & Co., Grand Cru Farm, and Saint Rocco\'s Treats.', website: 'https://www.livepiazza.com/nolibs/northernlibertiesfarmersmarket', days: ['Saturday'], hours: '10 AM – 2 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Phoenixville Farmers Market', location: '200 Mill St., Phoenixville', neighborhood: 'Montgomery County', desc: "Under the Gay Street Bridge along the French Creek Trail. Handpicked berries, eggs, baked breads, produce, and meats — preorders from Birchrun Hills Farm, Deep Roots Valley Farm, and Neighbours Farmstead listed online.", website: 'https://www.phoenixvillefarmersmarket.org/', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: true, season: 'April – November' },
+    { name: 'Pretzel Park Farmers Market', location: '4300 Silverwood St., Philadelphia', neighborhood: 'Roxborough/Manayunk', desc: 'Honey, handmade candy, pastas, coffee, and more in Manayunk. Many vendors offer preorder for quick pickups — check the full vendor list online.', website: 'https://www.facebook.com/pretzelparkfarmersmarket/', days: ['Saturday'], hours: '10 AM – 2 PM', seasonal: true, season: 'May – mid-December' },
+    { name: 'Rittenhouse Farmers Market', location: '1800 Walnut St., Philadelphia', neighborhood: 'Rittenhouse', desc: 'Year-round in Rittenhouse Square Park with Sunny Acres, A-Frame Apiary, Rineer Family Farms, Lost Bread Co., and Second Daughter Baking Co.', website: 'https://www.farmtocitymarkets.com/markets2', days: ['Tuesday', 'Saturday'], hours: 'Tue 10 AM – 2 PM · Sat 9 AM – 2 PM', seasonal: false, season: 'Year-round' },
+    { name: 'Swarthmore Farmers Market', location: '121 Park Ave., Swarthmore', neighborhood: 'Delaware County', desc: 'Ciders, baskets of strawberries, Milk Jawn ice cream, Kismet Bagels, Trotter Hill Alpacas, plus local musicians and art booths.', website: 'https://swarthmoretowncenter.com/swarthmore-farmers-market', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: true, season: 'May – November' },
+  ];
+
   // BOOK-PLACES-START — managed by audit-places.js, do not edit markers
   // ── Bookstore data ──────────────────────────────────────────────
   const BOOKSTORES = [
@@ -3747,9 +3813,10 @@
 
   // Categories shown when the hamburger expands. Add more here as new views are built.
   const CATEGORIES = [
-    { view: 'home',           emoji: '📅', label: 'Goings On' },
-    { view: 'places-to-eat',  emoji: '🍽️', label: 'Places to Eat' },
-    { view: 'bookstores',     emoji: '📚', label: 'Bookstores' },
+    { view: 'home',            emoji: '📅', label: 'Goings On' },
+    { view: 'places-to-eat',   emoji: '🍽️', label: 'Places to Eat' },
+    { view: 'bookstores',      emoji: '📚', label: 'Bookstores' },
+    { view: 'farmers-markets', emoji: '🌽', label: 'Farmers Markets' },
   ];
 
   function showView(viewId) {
@@ -4870,6 +4937,98 @@
     loadRestoImages(list);
   }
 
+  // ── Farmers Markets ──────────────────────────────────────────────
+  const FM_DAY_TABS = ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  let currentFmDay = 'All';
+
+  function fmTileHTML(m) {
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(m.name + ', ' + m.location)}`;
+    return `
+      <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(m.name + ', ' + m.location)}">
+        <div class="resto-main">
+          <div class="resto-img-placeholder">🌽</div>
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(m.name)}</div>
+            <div class="resto-meta">
+              <span class="resto-meta-item">📍 ${escapeHtml(m.neighborhood)}</span>
+              <span class="resto-meta-item">🕒 ${escapeHtml(m.hours)}</span>
+            </div>
+            <div class="fm-season-pill ${m.seasonal ? 'fm-seasonal' : 'fm-yearround'}">${escapeHtml(m.season)}</div>
+            <div class="resto-dist"></div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${m.desc ? `<div class="resto-desc">${escapeHtml(m.desc)}</div>` : ''}
+            <div class="fm-days-row">${m.days.map(d => `<span class="fm-day-badge">${d}</span>`).join('')}</div>
+            <div class="resto-actions">
+              ${m.website ? `<a class="resto-action" href="${escapeAttr(m.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function renderFmDay(day) {
+    currentFmDay = day;
+    document.querySelectorAll('#fmDayTabs .sub-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.day === day));
+    const filtered = day === 'All' ? FARMERS_MARKETS : FARMERS_MARKETS.filter(m => m.days.includes(day));
+    const count = filtered.length;
+    document.getElementById('fmTitle').textContent = day === 'All' ? 'All Markets' : `${day}s`;
+    document.getElementById('fmSubtitle').textContent = count
+      ? `${count} market${count === 1 ? '' : 's'}${day === 'All' ? ' across Philly & the region' : ` open on ${day}s`}`
+      : `No markets open on ${day}s`;
+
+    const list = document.getElementById('fmList');
+    if (!filtered.length) {
+      list.innerHTML = `<div class="eat-content eat-empty"><div class="eat-empty-icon">🌽</div><div class="eat-empty-text">No markets on ${day}s — try another day!</div></div>`;
+      return;
+    }
+
+    if (proximityActive && userLoc) {
+      await Promise.all(filtered.map(ensurePlaceCoords));
+      const sorted = [...filtered].sort((a, b) => {
+        const da = (a._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, a._coords.lat, a._coords.lon) : Infinity;
+        const db = (b._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, b._coords.lat, b._coords.lon) : Infinity;
+        return da - db;
+      });
+      list.innerHTML = `<div class="eat-content"><div class="eat-section-header">📍 Nearest first</div>${sorted.map(fmTileHTML).join('')}</div>`;
+    } else {
+      // Group year-round vs seasonal
+      const yr = filtered.filter(m => !m.seasonal);
+      const seas = filtered.filter(m => m.seasonal);
+      let html = '<div class="eat-content">';
+      if (yr.length) html += `<div class="eat-section-header">🗓️ Year-round</div>${yr.map(fmTileHTML).join('')}`;
+      if (seas.length) html += `<div class="eat-section-header">🌸 Seasonal</div>${seas.map(fmTileHTML).join('')}`;
+      html += '</div>';
+      list.innerHTML = html;
+    }
+
+    list.querySelectorAll('.fm-tile').forEach(tile => {
+      // Enrich with coords once rendered
+      const m = FARMERS_MARKETS.find(x => x.name === tile.dataset.place);
+      if (m && m._coords) {
+        tile.dataset.lat = m._coords.lat;
+        tile.dataset.lon = m._coords.lon;
+        updateTileDistance(tile);
+      }
+    });
+    list.addEventListener('click', onRestoMainClick);
+  }
+
+  function setupFmTabs() {
+    const tabsEl = document.getElementById('fmDayTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = FM_DAY_TABS.map(d =>
+      `<button class="sub-tab${d === 'All' ? ' active' : ''}" data-day="${d}" type="button">${d}</button>`).join('');
+    tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => renderFmDay(tab.dataset.day));
+    });
+    renderFmDay('All');
+  }
+
   function setupBookTabs() {
     const tabsEl = document.getElementById('bookSubTabs');
     if (!tabsEl) return;
@@ -4903,6 +5062,7 @@
   function refreshForLocation() {
     if (currentEatCat) renderEatCategory(currentEatCat);
     if (currentBookCat) renderBookCategory(currentBookCat);
+    if (currentFmDay) renderFmDay(currentFmDay);
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
 
@@ -4948,6 +5108,7 @@
 
     setupEatTabs();
     setupBookTabs();
+    setupFmTabs();
   }
 
   // Translate vertical mouse-wheel into horizontal scroll over tab rows
