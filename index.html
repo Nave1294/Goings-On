@@ -4542,7 +4542,9 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.9, maxOutputTokens: 1200 },
+        // thinkingBudget 0 disables gemini-2.5-flash's internal reasoning, which
+        // otherwise consumes the entire output budget and truncates the JSON.
+        generationConfig: { temperature: 0.9, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
     if (!res.ok) throw new Error('Gemini ' + res.status);
@@ -4613,6 +4615,17 @@ Valid types: "meal", "activity", "dessert"`;
 
     const stops = [];
     for (const pick of picks) {
+      // Coerce hour to an integer in case the model returns "6:00 PM" or "18:00".
+      if (typeof pick.hour === 'string') {
+        const mm = pick.hour.match(/(\d{1,2})\s*(am|pm)?/i);
+        if (mm) {
+          let h = parseInt(mm[1], 10);
+          const ap = (mm[2] || '').toLowerCase();
+          if (ap === 'pm' && h < 12) h += 12;
+          if (ap === 'am' && h === 12) h = 0;
+          pick.hour = h;
+        } else { pick.hour = PL.startHour; }
+      }
       if (pick.type === 'activity') {
         if (pick.isCalendarEvent) {
           const ev = dayEvents.find(e => (e.summary || '').toLowerCase() === pick.name.toLowerCase())
