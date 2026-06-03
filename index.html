@@ -4655,14 +4655,18 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        // thinkingBudget 0 disables gemini-2.5-flash's internal reasoning, which
-        // otherwise consumes the entire output budget and truncates the JSON.
-        generationConfig: { temperature: 0.9, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
+        // Let the model actually reason: a generous thinking budget produces far
+        // smarter, less repetitive plans. maxOutputTokens must comfortably cover
+        // BOTH the thinking tokens and the JSON, or the response gets truncated.
+        generationConfig: { temperature: 1.0, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 4096 } },
       }),
     });
     if (!res.ok) throw new Error('Gemini ' + res.status);
     const data = await res.json();
-    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    // With thinking on, parts may include a "thought" segment; keep only real output.
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const text = parts.filter(p => p && p.text && !p.thought).map(p => p.text).join('').trim()
+      || (parts.map(p => p && p.text).filter(Boolean).join('').trim());
     const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     let raw = (fence ? fence[1] : text).trim();
     try { return JSON.parse(raw); } catch {}
@@ -4701,7 +4705,7 @@
     const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg must be reachable in 20 minutes or less with NO transfers.';
     const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'drive' ? 10 : 20;
 
-    const prompt = `You are planning a Philadelphia evening/outing. Return ONLY a raw JSON object — no prose, no markdown fences.
+    const prompt = `You are a sharp, opinionated Philadelphia local planning a great outing. Think it through carefully before answering: consider the occasion, what's actually worth doing, how the stops flow together into ONE coherent experience, and which real Goings-On events make the night special. Then return ONLY a raw JSON object — no prose, no markdown fences.
 
 OUTING:
 - Day: ${dayName}, ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)}
@@ -4735,6 +4739,11 @@ RULES:
    - Formula: next_stop_hour >= current_stop_hour + current_stop_duration_hours + ${(transitMinutes / 60).toFixed(2)}
    - All stops must START and END within the ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)} window
    - If the window is too tight for all stops, reduce the number of stops to fit rather than squeezing them together
+9. NO REDUNDANT OR LAZY PAIRINGS. Each stop must add something genuinely different:
+   - Never pair an event with a generic "walk through the same park/square" right after — that's redundant filler. If the event is AT or beside Rittenhouse Square, do NOT also add a Rittenhouse Square walk.
+   - Don't default to the same handful of ideas (e.g. "walk through Washington Square Park") every time. Pick what actually fits THIS occasion and these specific stops.
+   - Two stops should never be essentially the same activity or the same single location.
+10. BE SPECIFIC AND INTENTIONAL. Build a plan with a clear thread — a cuisine, a neighborhood character, a vibe — and make the summary explain the genuine reasoning, not a generic blurb. Favor a real Goings-On event over a generic idea whenever one reasonably fits the occasion and timing.
 
 Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array. Include "duration" (minutes) for each stop so timing is explicit:
 {"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18,"duration":90},{"type":"activity","name":"Exact Name","hour":20,"duration":90,"isCalendarEvent":false}]}
