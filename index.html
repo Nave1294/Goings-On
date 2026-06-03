@@ -3411,7 +3411,6 @@
     { name: 'Kouklet Brazilian Bakehouse', location: '1647 E Passyunk Ave, East Passyunk', cuisine: 'Brazilian Bakery', price: '$', website: '', desc: "Baker/owner Mardhory Cepedas's all-day bakery showcasing the diversity of Brazilian cuisine — bolos (cake rolls), sonhos, brigadeiros, and trifle pastries. Warm breakfast pastries in the morning, more elaborate sweets in the evening.", tags: ['dessert', 'breakfast'] },
     { name: 'Mango Mango Dessert', location: '1013 Cherry St, Chinatown', cuisine: 'Dessert Cafe', price: '$', website: '', desc: 'NYC-based chain best known for mango sago — a Southeast Asian take on tapioca topped with fresh mango and sweet jellies. Also serves oversized cream puffs, waffle ice cream sandwiches, and classic sundaes. Open until 11pm daily.', tags: ['dessert'] },
     { name: 'Matcha Cafe Maiko', location: '923 Race St, Chinatown', cuisine: 'Dessert Cafe', price: '$', website: '', desc: "Philly's first matcha-dedicated storefront — matcha soft serve coalesces into a perfect swirl atop shaved ice and chiffon cake parfaits, or sinks into rich floats. Open until 10pm weekends.", tags: ['dessert'] },
-    { name: 'Max Brenner', location: '1500 Walnut St, Center City', cuisine: 'Dessert Cafe', price: '$$', website: '', desc: 'One of 50 global outposts of this whimsical chocolate-focused mini-chain — chocolate pizza slathered in peanut butter, churro-centric fondue boards, and decadent hot chocolates. Great for groups and celebratory occasions. Open until 11pm Fri-Sat.', tags: ['dessert'] },
     { name: 'More Sugar', location: '125 N 11th St, Chinatown', cuisine: 'Dessert Cafe', price: '$', website: '', desc: 'A newer player on the dessert cafe scene serving large-portion sweets through the evening — frothy lattes and tall box cakes, those square slices layered with whipped cream and custard.', tags: ['dessert'] },
     { name: 'Prince Tea House', location: '203 N 9th St, Chinatown', cuisine: 'Dessert Cafe', price: '$', website: '', desc: 'A Queens, NY tea house transplant with a warm, refined vibe — high tea in rose and lavender milk teas, green tea-infused pastries, and nutty red bean ice cream. Open until 11pm on weekends.', tags: ['dessert'] },
     { name: 'Snow Ice & Hot Dessert', location: '1001 Arch St, Chinatown', cuisine: 'Dessert Cafe', price: '$', website: '', desc: 'A block from Reading Terminal, serving a cross-section of chilled Asian desserts — Korean bingsu (shaved ice with condensed milk, topped with cake or Oreos) and Japanese kakigori (a fluffier piragua).', tags: ['dessert'] },
@@ -4655,23 +4654,27 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        // Let the model actually reason: a generous thinking budget produces far
-        // smarter, less repetitive plans. maxOutputTokens must comfortably cover
-        // BOTH the thinking tokens and the JSON, or the response gets truncated.
-        generationConfig: { temperature: 1.0, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 4096 } },
+        // 1024-token thinking budget lets the model reason while leaving ample room
+        // for the JSON output. maxOutputTokens covers both thinking + response tokens,
+        // so it must be well above the thinking budget to avoid truncation.
+        generationConfig: { temperature: 1.0, maxOutputTokens: 16384, thinkingConfig: { thinkingBudget: 1024 } },
       }),
     });
     if (!res.ok) throw new Error('Gemini ' + res.status);
     const data = await res.json();
-    // With thinking on, parts may include a "thought" segment; keep only real output.
+    // Thinking parts carry thought:true — extract only the real output parts first.
     const parts = data.candidates?.[0]?.content?.parts || [];
-    const text = parts.filter(p => p && p.text && !p.thought).map(p => p.text).join('').trim()
-      || (parts.map(p => p && p.text).filter(Boolean).join('').trim());
-    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    let raw = (fence ? fence[1] : text).trim();
-    try { return JSON.parse(raw); } catch {}
-    const obj = raw.match(/\{[\s\S]*\}/); if (obj) { try { return JSON.parse(obj[0]); } catch {} }
-    const arr = raw.match(/\[[\s\S]*\]/); if (arr) return JSON.parse(arr[0]);
+    const outputParts = parts.filter(p => p && p.text && !p.thought);
+    const raw = (outputParts.length ? outputParts : parts).map(p => p && p.text).filter(Boolean).join('').trim();
+    const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    let body = (fence ? fence[1] : raw).trim();
+    try { return JSON.parse(body); } catch {}
+    // Find the last valid JSON object or array in the text (thinking may produce
+    // intermediate fragments; the real answer is always at the end).
+    const allObjs = [...body.matchAll(/\{[\s\S]*?\}/g)];
+    for (let i = allObjs.length - 1; i >= 0; i--) { try { return JSON.parse(allObjs[i][0]); } catch {} }
+    const allArrs = [...body.matchAll(/\[[\s\S]*?\]/g)];
+    for (let i = allArrs.length - 1; i >= 0; i--) { try { return JSON.parse(allArrs[i][0]); } catch {} }
     throw new Error('No parseable JSON from AI');
   }
 
