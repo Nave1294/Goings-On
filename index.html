@@ -1484,6 +1484,75 @@
     }
     .dn-export-btn:hover { filter: brightness(1.05); }
     .dn-export-btn:active { transform: scale(0.98); }
+    /* Planner wizard */
+    .pl-progress { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
+    .pl-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--divider); transition: background 0.2s ease; }
+    .pl-dot.done { background: #c4a8d8; }
+    .pl-dot.active { background: #6d4b8f; }
+    .pl-q { font-size: 0.95rem; font-weight: 600; color: var(--text); margin: 0.4rem 0 0.9rem; }
+    .pl-next {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; font: inherit; font-size: 0.92rem; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, #6d4b8f, #9b5fa0);
+      border: none; border-radius: 14px; padding: 0.85rem 1rem;
+      margin-top: 1.4rem; cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .pl-next:hover { filter: brightness(1.05); }
+    .pl-next:active { transform: scale(0.98); }
+    .pl-warn { font-size: 0.8rem; font-weight: 600; color: #b4452f; margin-top: 0.8rem; }
+    .pl-warn[hidden] { display: none; }
+    .pl-time-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .pl-time-chip {
+      font: inherit; font-size: 0.82rem; font-weight: 600;
+      color: var(--text-secondary); background: var(--surface);
+      border: 1px solid var(--divider); border-radius: 999px;
+      padding: 0.5rem 0.85rem; cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .pl-time-chip:hover { color: #6d4b8f; border-color: #6d4b8f; }
+    .pl-time-chip.active { color: #fff; background: #6d4b8f; border-color: #6d4b8f; }
+    .pl-stepper {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 0.2rem; border-bottom: 1px solid var(--divider);
+    }
+    .pl-stepper-label { font-size: 0.95rem; font-weight: 600; }
+    .pl-stepper-ctrls { display: flex; align-items: center; gap: 0.9rem; }
+    .pl-step-btn {
+      width: 34px; height: 34px; font-size: 1.2rem; font-weight: 700; line-height: 1;
+      color: #6d4b8f; background: #f0e6f6; border: none; border-radius: 50%;
+      cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .pl-step-btn:hover { filter: brightness(0.95); }
+    .pl-step-btn:active { transform: scale(0.9); }
+    .pl-step-val { min-width: 1.1rem; text-align: center; font-size: 1.05rem; font-weight: 700; }
+    .pl-chip-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .pl-chip {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      font: inherit; font-size: 0.88rem; font-weight: 600;
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--divider); border-radius: 14px;
+      padding: 0.7rem 1rem; cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .pl-chip:hover { border-color: #6d4b8f; }
+    .pl-chip.active { color: #fff; background: #6d4b8f; border-color: #6d4b8f; }
+    .pl-chip-emoji { font-size: 1.05rem; }
+    .pl-daystamp { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.9rem; }
+    .pl-timeline { display: flex; flex-direction: column; }
+    .pl-stop { margin-bottom: 0; }
+    .pl-stop-head { display: flex; align-items: flex-start; gap: 0.7rem; }
+    .pl-stop-num {
+      flex-shrink: 0; width: 26px; height: 26px; margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; font-weight: 700; color: #fff;
+      background: #6d4b8f; border-radius: 50%;
+    }
+    .pl-connector {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.55rem 0 0.55rem 0.9rem; margin-left: 0.55rem;
+      border-left: 2px dashed #c4a8d8;
+    }
+    .pl-then { font-size: 0.78rem; font-weight: 700; color: #9b5fa0; letter-spacing: 0.03em; }
     .dn-walk-pill {
       display: flex; align-items: center; justify-content: center;
       gap: 0.4rem; margin: -0.3rem 0 0.5rem;
@@ -1675,7 +1744,7 @@
     <!-- Default state -->
     <div id="eatSheetDefault">
       <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
-      <button class="eat-sheet-datenight-btn" id="eatDateNightBtn" type="button">🌃 Plan a date night</button>
+      <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ Plan an outing</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
       <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
         <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">📋 View picks</button>
@@ -1708,15 +1777,15 @@
   <div class="eat-rec-list" id="eatRecList"></div>
 </div>
 
-<!-- Date Night view -->
-<div class="eat-rec-overlay" id="dnOverlay" hidden>
+<!-- Planner view -->
+<div class="eat-rec-overlay" id="plOverlay" hidden>
   <div class="eat-rec-header">
-    <button class="eat-rec-back" id="dnBack" type="button">← Back</button>
-    <div class="eat-rec-eyebrow">Date Night</div>
-    <div class="eat-rec-headline" id="dnHeadline">Which day?</div>
-    <div class="dn-days" id="dnDays"></div>
+    <button class="eat-rec-back" id="plBack" type="button">← Back</button>
+    <div class="eat-rec-eyebrow">Planner</div>
+    <div class="eat-rec-headline" id="plHeadline">Plan an outing</div>
+    <div class="pl-progress" id="plProgress"></div>
   </div>
-  <div class="dn-body" id="dnBody"></div>
+  <div class="dn-body" id="plBody"></div>
 </div>
 
 <script>
@@ -4093,10 +4162,10 @@
         });
       }
 
-      // Date Night button inside sheet
-      const dnBtn = document.getElementById('eatDateNightBtn');
-      if (dnBtn) dnBtn.addEventListener('click', () => { closeSheet(); openDateNight(); });
-      setupDateNight();
+      // Planner button inside sheet
+      const dnBtn = document.getElementById('eatPlannerBtn');
+      if (dnBtn) dnBtn.addEventListener('click', () => { closeSheet(); openPlanner(); });
+      setupPlanner();
     }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
@@ -4105,10 +4174,10 @@
     renderEatCategory(firstPopulated.id);
   }
 
-  // ── Date Night Dice ─────────────────────────────────────────────
-  // Pairs a Goings On calendar event with a restaurant by proximity,
-  // time-of-day fit, and theme keywords. Falls back to a curated list
-  // of creative Philly date ideas when a day's calendar is thin.
+  // ── Planner: theme matching & idea fallbacks ────────────────────
+  // Shared scoring data used by the Planner to pair calendar events with
+  // restaurants by theme keywords, and a curated list of creative Philly
+  // ideas to weave in when a day's calendar is thin.
 
   // Theme keyword → the restaurant traits that pair well with it.
   // Each event/restaurant gets a set of "themes"; overlap scores points.
@@ -4179,427 +4248,581 @@
     { title: 'Night at the Mütter-adjacent quiet streets', nbhd: 'Center City', themes: ['art'], when: 'evening', line: r => `A curious, offbeat wander, then a memorable dinner at ${r}.` },
   ];
 
-  let dnSelectedDayIdx = 0;
-  let dnRestoSkip = 0;   // cycles through ranked restaurants on "different restaurant"
-  let dnActSkip = 0;     // cycles through ranked activities on "different activity"
-  let dnRankedRestos = null;  // cached geocoded+distance-ranked restaurants for current event
-  let dnRankedForEv = null;   // the event that dnRankedRestos was computed for
-  let dnStartHour = 18;       // earliest the night may start (6 PM floor; weekends ask)
-  let dnCurrentPlan = null;   // holds the rendered itinerary for sharing/export
+  // ── Planner ───────────────────────────────────────────────────
+  // A guided wizard — day → time window → what to include → occasion →
+  // food vibe — that builds a walkable, time-sequenced itinerary weaving
+  // Goings On calendar events together with restaurants, dessert & ideas.
 
-  function dnIsWeekend(idx) {
-    const d = dnDays()[idx];
-    return d && (d.getDay() === 0 || d.getDay() === 6);
-  }
+  const PL_STEPS = ['day', 'time', 'compose', 'occasion', 'food'];
+  const PL = {
+    step: 0,
+    dayIdx: 0,
+    startHour: 18,
+    endHour: 22,
+    comp: { meal: 1, activity: 1, dessert: 0 },
+    occasion: 'date',
+    food: 'any',
+    seed: 0,        // bumped on "Shuffle" to vary the picks
+    stops: [],
+    shareText: '',
+  };
 
-  function dnDays() {
-    return (lastRender && lastRender.days) || [];
-  }
-  function dnEventsForDay(idx) {
+  const PL_OCCASIONS = [
+    { id: 'date',        emoji: '💕', label: 'Date night' },
+    { id: 'friends',     emoji: '🥂', label: 'With friends' },
+    { id: 'solo',        emoji: '🧘', label: 'Solo / me-time' },
+    { id: 'celebration', emoji: '🎉', label: 'Celebration' },
+    { id: 'casual',      emoji: '😎', label: 'Just casual' },
+  ];
+  const PL_FOODS = [
+    { id: 'any',         emoji: '🍽️', label: 'No preference' },
+    { id: 'fancy',       emoji: '🥂', label: 'Upscale' },
+    { id: 'casual',      emoji: '🍔', label: 'Casual bites' },
+    { id: 'adventurous', emoji: '🌶️', label: 'Adventurous' },
+    { id: 'drinks',      emoji: '🍸', label: 'Drinks-forward' },
+  ];
+  const PL_TIME_OPTS = [
+    { hr: 9, label: '9 AM' }, { hr: 10, label: '10 AM' }, { hr: 11, label: '11 AM' },
+    { hr: 12, label: 'Noon' }, { hr: 13, label: '1 PM' }, { hr: 14, label: '2 PM' },
+    { hr: 15, label: '3 PM' }, { hr: 16, label: '4 PM' }, { hr: 17, label: '5 PM' },
+    { hr: 18, label: '6 PM' }, { hr: 19, label: '7 PM' }, { hr: 20, label: '8 PM' },
+    { hr: 21, label: '9 PM' }, { hr: 22, label: '10 PM' }, { hr: 23, label: '11 PM' },
+  ];
+  const PL_DESSERT_RE = /dessert|ice cream|gelato|bakery|pastry|patisserie|chocolate|cafe|coffee|donut|cookie|cake|custard|water ice|sweet|sorbet/i;
+
+  // ── data helpers ──
+  function plDays() { return (lastRender && lastRender.days) || []; }
+  function plEventsForDay(idx) {
     if (!lastRender) return [];
     const day = lastRender.days[idx];
     if (!day) return [];
     return (lastRender.byDay[dayKey(day)] || []).filter(ev => {
-      // Skip obvious obligations / non-date items
       const t = `${ev.summary || ''}`.toLowerCase();
       if (/\b(meeting|standup|stand-up|dentist|doctor|appt|appointment|deadline|due|pay|bill|class|work)\b/.test(t)) return false;
       return true;
     });
   }
-
-  function dnEventHour(ev) {
+  function plEventHour(ev) {
     if (ev.start && ev.start.dateTime) return new Date(ev.start.dateTime).getHours();
     return null; // all-day
   }
-
-  // Score how well a restaurant fits a given event.
-  function dnScorePair(ev, r) {
-    let score = 0;
-    const evN = placeNeighborhoods(ev.location || '');
-    const rN  = placeNeighborhoods(r.location || '');
-    // Proximity: shared neighborhood is the strongest signal
-    if (evN.length && rN.some(n => evN.includes(n))) score += 50;
-    // Theme overlap
-    const et = eventThemes(ev), rt = restaurantThemes(r);
-    for (const t of et) if (rt.has(t)) score += 12;
-    // Timing fit: evening events pair with dinner-tagged spots
-    const hr = dnEventHour(ev);
-    if (hr != null) {
-      if (hr >= 17 && hasTag(r, 'dinner')) score += 10;
-      else if (hr < 14 && (hasTag(r, 'breakfast') || hasTag(r, 'lunch'))) score += 8;
-    } else if (hasTag(r, 'dinner')) score += 4; // all-day → default to a dinner spot
-    // Gentle nudge toward date-appropriate spots
-    if (hasTag(r, 'date-night')) score += 6;
-    if (hasTag(r, 'unique')) score += 3;
-    return score;
-  }
-
-  // Rank events for a day by how "date-night" they feel.
-  function dnRankEvents(idx) {
-    const evs = dnEventsForDay(idx).filter(ev => {
-      // Honor the start-time floor: drop timed events earlier than dnStartHour.
-      const hr = dnEventHour(ev);
-      return hr == null || hr >= dnStartHour;   // all-day events stay (flexible)
-    });
-    return evs
-      .map(ev => {
-        let s = 0;
-        const themes = eventThemes(ev);
-        s += themes.size * 8;
-        const hr = dnEventHour(ev);
-        if (hr != null && hr >= 17) s += 15;       // evening = prime date time
-        else if (hr != null && hr >= 12) s += 6;   // afternoon
-        if (placeNeighborhoods(ev.location || '').length) s += 5;
-        return { ev, s };
-      })
-      .sort((a, b) => b.s - a.s)
-      .map(x => x.ev);
-  }
-
-  function dnBestRestoFor(ev, skip) {
-    const ranked = RESTAURANTS
-      .map(r => ({ r, s: dnScorePair(ev, r) }))
-      .sort((a, b) => b.s - a.s || Math.random() - 0.5);
-    // Keep a healthy pool even when scores tie at 0
-    const pool = ranked.filter(x => x.s > 0);
-    const list = (pool.length ? pool : ranked).map(x => x.r);
-    return list[skip % list.length];
-  }
-
-  function dnPickActivityIdea(skip, restoNbhds) {
-    // Prefer ideas that share a neighborhood; otherwise rotate through all.
-    const near = DN_FALLBACK_IDEAS.filter(i => i.nbhd && restoNbhds.includes(i.nbhd));
-    const list = near.length ? near : DN_FALLBACK_IDEAS;
-    return list[skip % list.length];
-  }
-
-  function dnStartLabel() {
-    const d = new Date(); d.setHours(dnStartHour, 0, 0, 0);
+  function plHourLabel(h) {
+    const d = new Date(); d.setHours(((h % 24) + 24) % 24, 0, 0, 0);
     return fmtTime(d.toISOString());
   }
-
-  function dnTimingLine(ev) {
-    const hr = dnEventHour(ev);
-    if (hr == null) return `Make a flexible evening of it — start with dinner around ${dnStartLabel()}.`;
-    const t = fmtTime(ev.start.dateTime);
-    // Dinner two hours ahead, but never before the night's start floor.
-    const dinner = new Date(ev.start.dateTime); dinner.setHours(dinner.getHours() - 2);
-    if (dinner.getHours() < dnStartHour) dinner.setHours(dnStartHour, 0, 0, 0);
-    return `Dinner around ${fmtTime(dinner.toISOString())}, then head over for ${t}.`;
+  // Standard meal windows — used to decide whether a plan can open with food.
+  function plMealTypeAt(h) {
+    if (h >= 6 && h <= 10) return 'breakfast';
+    if (h >= 11 && h <= 14) return 'lunch';
+    if (h >= 17 && h <= 21) return 'dinner';
+    return null; // not a normal meal time → lead with an activity instead
   }
-
-  function dnVibe(ev, r) {
-    const themes = [...eventThemes(ev)];
-    const n = (placeNeighborhoods(r.location || '')[0]) || (placeNeighborhoods(ev.location || '')[0]) || 'Philly';
-    const label = themes.includes('music') ? 'A live-music night'
-      : themes.includes('art') ? 'An artful evening'
-      : themes.includes('outdoor') ? 'An outdoorsy date'
-      : themes.includes('stage') ? 'Dinner & a show'
-      : themes.includes('drinks') ? 'A sip-and-savor night'
-      : themes.includes('film') ? 'A cinema date'
-      : themes.includes('literary') ? 'A quiet, bookish date'
-      : 'A classic night out';
-    return `${label} in ${n}`;
-  }
-
-  function dnWalkLabel(mi) {
-    const mins = Math.round(mi * 20);  // ~20 min/mile walking pace
+  function plWalkLabel(mi) {
+    const mins = Math.round(mi * 20); // ~20 min/mile walking pace
     if (mins <= 1) return '< 1 min walk';
     if (mins < 60) return `~${mins} min walk`;
     return `~${fmtMiles(mi)} walk`;
   }
-
-  function dnStaticMapUrl(rCoords, eCoords) {
-    const rPin = encodeURIComponent(`color:green|label:R|${rCoords.lat},${rCoords.lon}`);
-    const ePin = encodeURIComponent(`color:purple|label:E|${eCoords.lat},${eCoords.lon}`);
-    return `https://maps.googleapis.com/maps/api/staticmap?size=600x200&scale=2&maptype=roadmap&markers=${rPin}&markers=${ePin}&key=${PLACES_API_KEY}`;
+  function plDistBonus(mi) {
+    if (mi < 0.3) return 80;
+    if (mi < 0.5) return 60;
+    if (mi < 0.75) return 40;
+    if (mi < 1.0) return 20;
+    if (mi < 1.5) return 5;
+    return -30;
   }
+  function plCap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+  function plPriceLen(r) { return (r.price || '').replace(/[^$]/g, '').length; }
 
-  // Pre-geocode top candidate restaurants + event, then rank by actual walking distance.
-  // Returns sorted array of { r, distMi } (closest first).
-  async function dnGeoRankRestos(ev, baseScorePool) {
-    // Take top 12 by theme/neighborhood score as candidates to geocode
-    const candidates = baseScorePool.slice(0, 12);
-    await Promise.all([
-      ensureEventCoords(ev),
-      ...candidates.map(x => ensurePlaceCoords(x.r)),
-    ]);
-    const eCoords = eventCoords(ev);
-    return candidates.map(x => {
-      const rCoords = x.r._coords;
-      let distMi = null;
-      let distBonus = 0;
-      if (eCoords && rCoords) {
-        distMi = haversineMiles(eCoords.lat, eCoords.lon, rCoords.lat, rCoords.lon);
-        // Heavy bonus for being walkable; penalty for being far
-        if      (distMi < 0.3)  distBonus = 80;
-        else if (distMi < 0.5)  distBonus = 60;
-        else if (distMi < 0.75) distBonus = 40;
-        else if (distMi < 1.0)  distBonus = 20;
-        else if (distMi < 1.5)  distBonus = 5;
-        else                    distBonus = -30;
-      }
-      return { r: x.r, s: x.s + distBonus, distMi };
-    }).sort((a, b) => b.s - a.s || Math.random() - 0.5);
-  }
-
-  // ── Date Night rendering ──
-  function setupDateNight() {
-    const back = document.getElementById('dnBack');
-    if (back) back.addEventListener('click', () => {
-      document.getElementById('dnOverlay').setAttribute('hidden', '');
-    });
-  }
-
-  function openDateNight() {
-    const overlay = document.getElementById('dnOverlay');
-    if (!overlay) return;
-    const days = dnDays();
-    if (!days.length) {
-      document.getElementById('dnHeadline').textContent = 'One sec…';
-      document.getElementById('dnDays').innerHTML = '';
-      document.getElementById('dnBody').innerHTML =
-        `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>Calendar events are still loading — head to Goings On for a moment, then try again.</div>`;
-      overlay.removeAttribute('hidden');
-      return;
+  // ── scoring ──
+  function plFoodScore(r) {
+    const price = plPriceLen(r);
+    switch (PL.food) {
+      case 'fancy':       return price >= 3 ? 14 : (price === 2 ? 4 : -6);
+      case 'casual':      return hasTag(r, 'cheap-eats') ? 14 : (price <= 2 ? 6 : -6);
+      case 'adventurous': return hasTag(r, 'unique') ? 16 : 0;
+      case 'drinks':      return /bar|wine|beer|cocktail|byob|lounge|pub|tavern/i.test(`${r.cuisine} ${r.desc}`) ? 14 : 0;
+      default:            return 0;
     }
-    const chips = document.getElementById('dnDays');
-    chips.innerHTML = days.map((d, i) => {
-      const cnt = dnEventsForDay(i).length;
-      const lbl = i === 0 ? 'Today' : DAYS_SHORT[d.getDay()];
-      return `<button class="dn-day-chip" data-idx="${i}" type="button">
-        <div>${lbl}</div>
-        <div class="dn-day-num">${d.getDate()}</div>
-        <div class="dn-day-cnt">${cnt ? cnt + (cnt === 1 ? ' evt' : ' evts') : '—'}</div>
-      </button>`;
-    }).join('');
-    chips.querySelectorAll('.dn-day-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        dnSelectedDayIdx = +chip.dataset.idx;
-        dnRestoSkip = 0; dnActSkip = 0; dnRankedRestos = null;
-        chips.querySelectorAll('.dn-day-chip').forEach(c => c.classList.toggle('active', c === chip));
-        if (dnIsWeekend(dnSelectedDayIdx)) {
-          dnAskStartTime();          // weekends: let them pick when to start
-        } else {
-          dnStartHour = 18;          // weekdays: hold the 6 PM floor
-          renderDateNight();
+  }
+  function plOccasionScore(r) {
+    const txt = `${r.cuisine} ${r.desc}`;
+    switch (PL.occasion) {
+      case 'date':        return hasTag(r, 'date-night') ? 12 : 0;
+      case 'celebration': return (hasTag(r, 'date-night') || plPriceLen(r) >= 3) ? 12 : 0;
+      case 'friends':     return /bar|pub|tavern|izakaya|share|group|tapas|beer/i.test(txt) ? 8 : 0;
+      case 'casual':      return (hasTag(r, 'cheap-eats') || hasTag(r, 'neighborhood')) ? 8 : 0;
+      case 'solo':        return (hasTag(r, 'cheap-eats') || /counter|cafe|coffee|bar|noodle|ramen/i.test(txt)) ? 6 : 0;
+      default:            return 0;
+    }
+  }
+  function plRestoScore(r, mealType) {
+    let s = 0;
+    if (mealType && hasTag(r, mealType)) s += 10;
+    s += plFoodScore(r);
+    s += plOccasionScore(r);
+    if (hasTag(r, 'unique')) s += 2;
+    return s;
+  }
+  function plEventScore(ev, hour) {
+    let s = eventThemes(ev).size * 6;
+    const eh = plEventHour(ev);
+    if (eh != null) s += Math.max(0, 6 - Math.abs(eh - hour)); // closeness to the slot time
+    else s += 2;                                               // all-day = flexible
+    if (PL.occasion === 'date') s += 2;
+    return s;
+  }
+
+  // ── pools ──
+  function plMealPool(mealType) {
+    return RESTAURANTS.filter(r => mealType ? (hasTag(r, mealType) || hasTag(r, 'dinner')) : true);
+  }
+  function plDessertPool() {
+    const pool = RESTAURANTS.filter(r => hasTag(r, 'dessert') || PL_DESSERT_RE.test(`${r.cuisine} ${r.desc}`));
+    return pool.length ? pool : RESTAURANTS;
+  }
+  function plRankedEventsForDay() {
+    const evs = plEventsForDay(PL.dayIdx).filter(ev => {
+      const hr = plEventHour(ev);
+      return hr == null || (hr >= PL.startHour && hr <= PL.endHour + 1);
+    });
+    return evs
+      .map(ev => ({ ev, s: eventThemes(ev).size * 6 + (plEventHour(ev) != null ? 4 : 1) }))
+      .sort((a, b) => b.s - a.s)
+      .map(x => x.ev);
+  }
+
+  async function plEnsureIdeaCoords(idea) {
+    if (idea._coords !== undefined) return;
+    const info = await fetchPlaceInfo(`${idea.title} Philadelphia`);
+    idea._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+  }
+
+  // ── itinerary assembly ──
+  // Order the slots. Lead with food only if the start time is a meal time;
+  // otherwise lead with an activity. Dessert/drinks always lands last.
+  function plSlotOrder() {
+    let m = PL.comp.meal, a = PL.comp.activity, d = PL.comp.dessert;
+    const order = [];
+    const leadMeal = !!plMealTypeAt(PL.startHour) && m > 0;
+    let next = leadMeal ? 'meal' : (a > 0 ? 'activity' : 'meal');
+    while (m > 0 || a > 0) {
+      if (next === 'meal' && m > 0) { order.push('meal'); m--; next = 'activity'; }
+      else if (next === 'activity' && a > 0) { order.push('activity'); a--; next = 'meal'; }
+      else if (m > 0) { order.push('meal'); m--; }
+      else { order.push('activity'); a--; }
+    }
+    for (let i = 0; i < d; i++) order.push('dessert');
+    return order;
+  }
+  function plSlotTimes(n) {
+    const span = Math.max(1, PL.endHour - PL.startHour);
+    const step = n > 1 ? span / n : span;
+    const times = [];
+    for (let i = 0; i < n; i++) times.push(Math.round(PL.startHour + i * step));
+    return times;
+  }
+
+  async function plBuildItinerary() {
+    const order = plSlotOrder();
+    const times = plSlotTimes(order.length);
+    const dayEvents = plRankedEventsForDay();
+    const ctx = { usedR: new Set(), usedE: new Set(), usedIdea: new Set(), dayEvents, stops: [] };
+    let anchor = null;
+    for (let i = 0; i < order.length; i++) {
+      const stop = await plPickStop(order[i], times[i], anchor, ctx);
+      if (stop) { ctx.stops.push(stop); if (stop.coords) anchor = stop.coords; }
+    }
+    return ctx.stops;
+  }
+
+  async function plPickStop(type, hour, anchor, ctx) {
+    if (type === 'activity') return plActivityStop(hour, anchor, ctx);
+
+    const mealType = type === 'dessert' ? null : (plMealTypeAt(hour) || 'dinner');
+    const pool = (type === 'dessert' ? plDessertPool() : plMealPool(mealType))
+      .filter(r => !ctx.usedR.has(r.name));
+    if (!pool.length) return null;
+
+    let scored = pool
+      .map(r => ({
+        r,
+        s: (type === 'dessert' ? plFoodScore(r) + plOccasionScore(r) : plRestoScore(r, mealType))
+           + (PL.seed ? Math.random() * 6 : 0),
+        dist: null,
+      }))
+      .sort((a, b) => b.s - a.s || Math.random() - 0.5)
+      .slice(0, 12);
+
+    await Promise.all(scored.map(x => ensurePlaceCoords(x.r)));
+    if (anchor) {
+      scored.forEach(x => {
+        if (x.r._coords) {
+          x.dist = haversineMiles(anchor.lat, anchor.lon, x.r._coords.lat, x.r._coords.lon);
+          x.s += plDistBonus(x.dist);
         }
       });
-    });
-    document.getElementById('dnHeadline').textContent = 'Which day?';
-    document.getElementById('dnBody').innerHTML =
-      `<div class="dn-empty"><div class="dn-empty-icon">🌙</div>Pick a day above and I'll plan the night — a spot to eat paired with something to do.</div>`;
-    overlay.removeAttribute('hidden');
+      scored.sort((a, b) => b.s - a.s);
+    }
+    const pick = scored[0];
+    ctx.usedR.add(pick.r.name);
+    return plRestoStop(type, hour, pick.r, pick.dist);
   }
 
-  // Weekend flow: ask what time the date should start before planning.
-  const DN_TIME_OPTIONS = [
-    { hr: 12, label: 'Noon' },
-    { hr: 14, label: '2 PM' },
-    { hr: 16, label: '4 PM' },
-    { hr: 18, label: '6 PM' },
-    { hr: 20, label: '8 PM' },
-  ];
-  function dnAskStartTime() {
-    document.getElementById('dnHeadline').textContent = 'What time?';
-    const body = document.getElementById('dnBody');
-    body.innerHTML = `
-      <div class="dn-time-prompt">When should the date kick off?</div>
-      <div class="dn-time-grid">
-        ${DN_TIME_OPTIONS.map(o => `<button class="dn-time-chip" data-hr="${o.hr}" type="button">${o.label}</button>`).join('')}
-      </div>`;
-    body.querySelectorAll('.dn-time-chip').forEach(btn => {
-      btn.addEventListener('click', () => {
-        dnStartHour = +btn.dataset.hr;
-        dnRankedRestos = null;
-        renderDateNight();
-      });
-    });
+  function plRestoStop(type, hour, r, dist) {
+    const mt = plMealTypeAt(hour);
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location ? `${r.name}, ${r.location}` : r.name)}`;
+    return {
+      kind: type,
+      hour,
+      emoji: type === 'dessert' ? '🍦' : '🍴',
+      eyebrow: type === 'dessert' ? 'Dessert / drinks' : (mt ? plCap(mt) : 'Bite to eat'),
+      title: r.name,
+      meta: [r.cuisine && `🍴 ${r.cuisine}`, r.location && `📍 ${r.location.split(',')[0]}`, r.price].filter(Boolean),
+      desc: r.desc || '',
+      actions: [
+        r.website && { label: '🌐 Website', href: r.website },
+        r.reservation && { label: '📅 Reserve', href: r.reservation },
+        { label: '🗺️ Map', href: mapHref },
+      ].filter(Boolean),
+      coords: r._coords || null,
+      dist,
+      r,
+    };
   }
 
-  async function renderDateNight() {
-    const body = document.getElementById('dnBody');
-    const rankedEvents = dnRankEvents(dnSelectedDayIdx);
-    const useCalendar = rankedEvents.length > 0;
+  async function plActivityStop(hour, anchor, ctx) {
+    // Prefer a real, unused calendar event that fits the slot.
+    let best = null, bestScore = -1;
+    for (const ev of ctx.dayEvents) {
+      if (ctx.usedE.has(ev)) continue;
+      const eh = plEventHour(ev);
+      if (eh != null && eh < PL.startHour) continue;
+      const sc = plEventScore(ev, hour);
+      if (sc > bestScore) { bestScore = sc; best = ev; }
+    }
+    if (best) {
+      ctx.usedE.add(best);
+      await ensureEventCoords(best);
+      const c = eventCoords(best);
+      const when = best.start && best.start.dateTime ? fmtTime(best.start.dateTime) : 'All day';
+      return {
+        kind: 'activity',
+        hour,
+        emoji: '🎟️',
+        eyebrow: 'Activity',
+        title: best.summary || '(untitled event)',
+        meta: [when && `🕒 ${when}`, best.location && `📍 ${best.location.split(',')[0]}`].filter(Boolean),
+        desc: best.description ? stripTags(best.description).slice(0, 200) : '',
+        actions: [
+          best.htmlLink && { label: '📅 Details', href: best.htmlLink },
+          best.location && { label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(best.location)}` },
+        ].filter(Boolean),
+        coords: c || null,
+        ev: best,
+      };
+    }
 
-    let restaurant, distMi = null, activityHTML, timingText, vibeText, ev;
-    let actTitle = '', actWhen = '', actLoc = '';
-
-    if (useCalendar) {
-      ev = rankedEvents[dnActSkip % rankedEvents.length];
-
-      // Geocode + distance-rank restaurants if we haven't for this event yet
-      if (dnRankedForEv !== ev || !dnRankedRestos) {
-        body.innerHTML = `<div class="dn-loading">🌙 Finding the best spots nearby…</div>`;
-        const basePool = RESTAURANTS
-          .map(r => ({ r, s: dnScorePair(ev, r) }))
-          .sort((a, b) => b.s - a.s || Math.random() - 0.5);
-        dnRankedRestos = await dnGeoRankRestos(ev, basePool);
-        dnRankedForEv = ev;
+    // Fall back to a curated Philly idea, nearest to the anchor when possible.
+    const ideas = DN_FALLBACK_IDEAS.filter(i => !ctx.usedIdea.has(i.title));
+    const pool = ideas.length ? ideas : DN_FALLBACK_IDEAS;
+    const windowed = PL.seed ? pool.slice().sort(() => Math.random() - 0.5) : pool.slice();
+    const cand = windowed.slice(0, 6);
+    await Promise.all(cand.map(plEnsureIdeaCoords));
+    let pick = cand[0], dist = null;
+    if (anchor) {
+      let bd = Infinity;
+      for (const i of cand) {
+        if (i._coords) {
+          const mi = haversineMiles(anchor.lat, anchor.lon, i._coords.lat, i._coords.lon);
+          if (mi < bd) { bd = mi; pick = i; }
+        }
       }
-
-      const pick = dnRankedRestos[dnRestoSkip % dnRankedRestos.length];
-      restaurant = pick.r;
-      distMi = pick.distMi;
-
-      vibeText = dnVibe(ev, restaurant);
-      timingText = dnTimingLine(ev);
-      const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
-      actTitle = ev.summary || '(untitled event)';
-      actWhen = when;
-      actLoc = ev.location ? ev.location.split(',')[0] : '';
-      const evLink = ev.htmlLink ? `<a class="dn-pair-action" href="${escapeAttr(ev.htmlLink)}" target="_blank" rel="noopener">📅 Event details</a>` : '';
-      const evMap = ev.location ? `<a class="dn-pair-action" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">🗺️ Map</a>` : '';
-      activityHTML = `
-        <div class="dn-pair-card">
-          <div class="dn-pair-eyebrow">🎟️ The plan</div>
-          <div class="dn-pair-title">${escapeHtml(ev.summary || '(untitled event)')}</div>
-          <div class="dn-pair-meta">
-            <span>🕒 ${when}</span>
-            ${ev.location ? `<span>📍 ${escapeHtml(ev.location.split(',')[0])}</span>` : ''}
-          </div>
-          ${ev.description ? `<div class="dn-pair-desc">${escapeHtml(stripTags(ev.description)).slice(0, 200)}</div>` : ''}
-          <div class="dn-pair-actions">${evLink}${evMap}</div>
-        </div>`;
-    } else {
-      // Fallback: creative idea + restaurant
-      const tempResto = RESTAURANTS[(dnRestoSkip + dnActSkip) % RESTAURANTS.length];
-      const restoNbhds = placeNeighborhoods(tempResto.location || '');
-      const idea = dnPickActivityIdea(dnActSkip, restoNbhds);
-      const better = RESTAURANTS
-        .map(r => {
-          let s = 0;
-          const rN = placeNeighborhoods(r.location || '');
-          if (idea.nbhd && rN.includes(idea.nbhd)) s += 40;
-          const rt = restaurantThemes(r);
-          for (const t of idea.themes) if (rt.has(t)) s += 12;
-          if (hasTag(r, 'date-night')) s += 5;
-          return { r, s };
-        })
-        .sort((a, b) => b.s - a.s || Math.random() - 0.5);
-      const pool = better.filter(x => x.s > 0);
-      restaurant = (pool.length ? pool : better)[dnRestoSkip % (pool.length || better.length)].r;
-      vibeText = 'A do-it-yourself date';
-      actTitle = idea.title;
-      actLoc = idea.nbhd || '';
-      timingText = idea.when === 'day'
-        ? 'Best as an afternoon plan — slide into dinner right after.'
-        : idea.when === 'evening'
-          ? 'An evening plan — eat first or bring food along.'
-          : 'Works anytime — build the meal around it.';
-      activityHTML = `
-        <div class="dn-pair-card">
-          <div class="dn-pair-eyebrow">✨ The idea</div>
-          <div class="dn-pair-title">${escapeHtml(idea.title)}</div>
-          ${idea.nbhd ? `<div class="dn-pair-meta"><span>📍 ${escapeHtml(idea.nbhd)}</span></div>` : ''}
-          <div class="dn-pair-desc">${escapeHtml(idea.line(restaurant.name))}</div>
-        </div>`;
+      if (bd !== Infinity) dist = bd;
     }
+    ctx.usedIdea.add(pick.title);
+    const mealName = (ctx.stops.find(s => s.kind === 'meal' || s.kind === 'dessert') || {}).title || 'a spot nearby';
+    return {
+      kind: 'activity',
+      hour,
+      emoji: '✨',
+      eyebrow: 'Idea',
+      title: pick.title,
+      meta: [pick.nbhd && `📍 ${pick.nbhd}`].filter(Boolean),
+      desc: pick.line(mealName),
+      actions: [{ label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pick.title + ' Philadelphia')}` }],
+      coords: pick._coords || null,
+      dist,
+      idea: pick,
+    };
+  }
 
-    document.getElementById('dnHeadline').textContent = vibeText;
+  // ── rendering ──
+  function plVibeLabel() {
+    const occ = (PL_OCCASIONS.find(o => o.id === PL.occasion) || {}).label || 'A plan';
+    const nb = PL.stops.map(s => (s.r && s.r.location) || (s.ev && s.ev.location) || (s.idea && s.idea.nbhd))
+      .filter(Boolean)
+      .map(l => placeNeighborhoods(l)[0] || (typeof l === 'string' ? null : l))
+      .filter(Boolean)[0] || 'Philly';
+    return `${occ} in ${nb}`;
+  }
 
-    const r = restaurant;
-    const rMapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location ? `${r.name}, ${r.location}` : r.name)}`;
-    const restoHTML = `
-      <div class="dn-pair-card">
-        <div class="dn-pair-eyebrow">🍴 Where to eat</div>
-        <div class="dn-pair-title">${escapeHtml(r.name)}</div>
-        <div class="dn-pair-meta">
-          ${r.cuisine ? `<span>🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
-          ${r.location ? `<span>📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
-          ${r.price ? `<span>${escapeHtml(r.price)}</span>` : ''}
-        </div>
-        ${r.desc ? `<div class="dn-pair-desc">${escapeHtml(r.desc)}</div>` : ''}
-        <div class="dn-pair-actions">
-          ${r.website ? `<a class="dn-pair-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
-          ${r.reservation ? `<a class="dn-pair-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
-          <a class="dn-pair-action" href="${escapeAttr(rMapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
-        </div>
-      </div>`;
-
-    // Build walk pill + map block if we have coords for both
-    let mapHTML = '';
-    const rCoords = r._coords;
-    const eCoords = useCalendar && ev ? eventCoords(ev) : null;
-    if (rCoords && eCoords) {
-      const walkLabel = distMi != null ? dnWalkLabel(distMi) : '';
-      const dirHref = `https://www.google.com/maps/dir/?api=1&origin=${rCoords.lat},${rCoords.lon}&destination=${eCoords.lat},${eCoords.lon}&travelmode=walking`;
-      const staticSrc = dnStaticMapUrl(rCoords, eCoords);
-      mapHTML = `
-        <div class="dn-map-wrap">
-          <img class="dn-map-img" src="${escapeAttr(staticSrc)}" alt="Map showing restaurant and event locations" loading="lazy" onerror="this.style.display='none'">
-          <div class="dn-map-footer">
-            ${walkLabel ? `<span class="dn-walk-badge">🚶 ${escapeHtml(walkLabel)}</span>` : ''}
-            <a class="dn-map-link" href="${escapeAttr(dirHref)}" target="_blank" rel="noopener">Walking directions →</a>
-          </div>
-        </div>`;
-    }
-
-    // Assemble a shareable itinerary from the current pairing.
-    const dayDate = dnDays()[dnSelectedDayIdx];
-    const dayLabel = dayDate
-      ? `${DAYS_LONG[dayDate.getDay()]}, ${MONTHS[dayDate.getMonth()].slice(0, 3)} ${dayDate.getDate()}`
+  function plStaticMapUrl(located) {
+    const markers = located.map((s, i) =>
+      `markers=${encodeURIComponent(`color:0x6d4b8f|label:${i + 1}|${s.coords.lat},${s.coords.lon}`)}`).join('&');
+    const path = located.length > 1
+      ? `&path=${encodeURIComponent('color:0x9b5fa0cc|weight:4|' + located.map(s => `${s.coords.lat},${s.coords.lon}`).join('|'))}`
       : '';
-    const walkStr = distMi != null ? dnWalkLabel(distMi) : '';
-    dnCurrentPlan = [
-      `🌃 Date Night${dayLabel ? ` — ${dayLabel}` : ''}`,
-      `“${vibeText}”`,
-      ``,
-      `${useCalendar ? '🎟️ THE PLAN' : '✨ THE IDEA'}`,
-      `${actTitle}`,
-      `${[actWhen && `🕒 ${actWhen}`, actLoc && `📍 ${actLoc}`].filter(Boolean).join('   ')}`,
-      ``,
-      `🍴 WHERE TO EAT`,
-      `${r.name}`,
-      `${[r.cuisine && `🍴 ${r.cuisine}`, r.location && `📍 ${r.location.split(',')[0]}`, r.price].filter(Boolean).join('   ')}`,
-      walkStr ? `🚶 ${walkStr} between the two` : '',
-      r.website ? `🌐 ${r.website}` : '',
-      ``,
-      `🕒 ${timingText}`,
-      ``,
-      `Planned with Goings-On`,
-    ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n');
-
-    body.innerHTML = `
-      ${activityHTML}
-      ${mapHTML ? `<div class="dn-connector">＋ paired with ＋</div>${mapHTML}` : `<div class="dn-connector">＋ paired with ＋</div>`}
-      ${restoHTML}
-      <div class="dn-timing"><span>🕒</span><span>${escapeHtml(timingText)}</span></div>
-      <button class="dn-export-btn" id="dnExport" type="button">📤 Share itinerary</button>
-      <div class="dn-feedback">
-        <button class="dn-feedback-btn" id="dnDiffResto" type="button">↩ Different spot</button>
-        <button class="dn-feedback-btn" id="dnDiffAct" type="button">↩ Different ${useCalendar ? 'event' : 'idea'}</button>
-      </div>`;
-
-    document.getElementById('dnExport').addEventListener('click', dnShareItinerary);
-    document.getElementById('dnDiffResto').addEventListener('click', () => { dnRestoSkip++; renderDateNight(); });
-    document.getElementById('dnDiffAct').addEventListener('click', () => { dnActSkip++; dnRestoSkip = 0; dnRankedRestos = null; renderDateNight(); });
+    return `https://maps.googleapis.com/maps/api/staticmap?size=640x280&scale=2&maptype=roadmap&${markers}${path}&key=${PLACES_API_KEY}`;
   }
 
-  // Share the current itinerary via the native share sheet (Messages, email, etc.),
-  // falling back to clipboard copy with a toast.
-  async function dnShareItinerary() {
-    if (!dnCurrentPlan) return;
-    const btn = document.getElementById('dnExport');
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Date Night', text: dnCurrentPlan });
-        return;
-      } catch (e) {
-        if (e && e.name === 'AbortError') return; // user dismissed the sheet
+  function plStopCardHTML(s, i) {
+    return `<div class="dn-pair-card pl-stop">
+        <div class="pl-stop-head">
+          <span class="pl-stop-num">${i + 1}</span>
+          <div>
+            <div class="dn-pair-eyebrow">${s.emoji} ${escapeHtml(s.eyebrow)}${s.hour != null ? ` · ${plHourLabel(s.hour)}` : ''}</div>
+            <div class="dn-pair-title">${escapeHtml(s.title)}</div>
+          </div>
+        </div>
+        ${s.meta && s.meta.length ? `<div class="dn-pair-meta">${s.meta.map(m => `<span>${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+        ${s.desc ? `<div class="dn-pair-desc">${escapeHtml(s.desc)}</div>` : ''}
+        ${s.actions && s.actions.length ? `<div class="dn-pair-actions">${s.actions.map(a => `<a class="dn-pair-action" href="${escapeAttr(a.href)}" target="_blank" rel="noopener">${escapeHtml(a.label)}</a>`).join('')}</div>` : ''}
+      </div>`;
+  }
+
+  function plShareText(dayLabel) {
+    const lines = [`🗓️ ${plVibeLabel()}`, dayLabel ? `${dayLabel} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}` : '', ''];
+    PL.stops.forEach((s, i) => {
+      lines.push(`${i + 1}. ${s.emoji} ${s.eyebrow}${s.hour != null ? ` (${plHourLabel(s.hour)})` : ''}`);
+      lines.push(`   ${s.title}`);
+      if (s.meta && s.meta.length) lines.push(`   ${s.meta.join('  ')}`);
+      const link = (s.actions || []).find(a => /Website|Details/.test(a.label));
+      if (link) lines.push(`   ${link.href}`);
+      const next = PL.stops[i + 1];
+      if (next && s.coords && next.coords) {
+        lines.push(`   ↓ ${plWalkLabel(haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon))}`);
       }
+      lines.push('');
+    });
+    lines.push('Planned with Goings-On');
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n');
+  }
+
+  async function plShare() {
+    if (!PL.shareText) return;
+    const btn = document.getElementById('plExport');
+    if (navigator.share) {
+      try { await navigator.share({ title: 'My Goings-On plan', text: PL.shareText }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try {
-      await navigator.clipboard.writeText(dnCurrentPlan);
+      await navigator.clipboard.writeText(PL.shareText);
       if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied to clipboard'; setTimeout(() => { btn.textContent = o; }, 1800); }
     } catch {
-      // Last-resort fallback for older browsers
       const ta = document.createElement('textarea');
-      ta.value = dnCurrentPlan; document.body.appendChild(ta); ta.select();
+      ta.value = PL.shareText; document.body.appendChild(ta); ta.select();
       try { document.execCommand('copy'); } catch {}
       document.body.removeChild(ta);
       if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = o; }, 1800); }
     }
+  }
+
+  async function plBuildAndRender() {
+    const body = document.getElementById('plBody');
+    document.getElementById('plHeadline').textContent = 'Building your plan…';
+    document.getElementById('plProgress').innerHTML = '';
+    body.innerHTML = `<div class="dn-loading">✨ Pulling together a walkable plan…</div>`;
+    PL.stops = await plBuildItinerary();
+    plRenderItinerary();
+  }
+
+  function plRenderItinerary() {
+    const body = document.getElementById('plBody');
+    const dayDate = plDays()[PL.dayIdx];
+    const dayLabel = dayDate ? `${DAYS_LONG[dayDate.getDay()]}, ${MONTHS[dayDate.getMonth()].slice(0, 3)} ${dayDate.getDate()}` : '';
+    document.getElementById('plProgress').innerHTML = '';
+
+    if (!PL.stops.length) {
+      document.getElementById('plHeadline').textContent = 'Hmm…';
+      body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">🤔</div>Couldn’t build a plan with those settings — try fewer stops or a different time window.</div>
+        <button class="pl-next" id="plEdit" type="button">← Edit answers</button>`;
+      document.getElementById('plEdit').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
+      return;
+    }
+
+    document.getElementById('plHeadline').textContent = plVibeLabel();
+
+    const located = PL.stops.filter(s => s.coords);
+    const mapHTML = located.length
+      ? `<div class="dn-map-wrap"><img class="dn-map-img" src="${escapeAttr(plStaticMapUrl(located))}" alt="Map of your itinerary stops" loading="lazy" onerror="this.style.display='none'"></div>`
+      : '';
+
+    const timeline = PL.stops.map((s, i) => {
+      const next = PL.stops[i + 1];
+      let connector = '';
+      if (next) {
+        if (s.coords && next.coords) {
+          const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
+          const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=walking`;
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">🚶 ${plWalkLabel(mi)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+        } else {
+          connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
+        }
+      }
+      return plStopCardHTML(s, i) + connector;
+    }).join('');
+
+    body.innerHTML = `
+      ${dayLabel ? `<div class="pl-daystamp">${escapeHtml(dayLabel)} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}</div>` : ''}
+      ${mapHTML}
+      <div class="pl-timeline">${timeline}</div>
+      <button class="dn-export-btn" id="plExport" type="button">📤 Share itinerary</button>
+      <div class="dn-feedback">
+        <button class="dn-feedback-btn" id="plShuffle" type="button">🔀 Shuffle picks</button>
+        <button class="dn-feedback-btn" id="plEdit" type="button">✏️ Edit answers</button>
+      </div>`;
+
+    PL.shareText = plShareText(dayLabel);
+    document.getElementById('plExport').addEventListener('click', plShare);
+    document.getElementById('plShuffle').addEventListener('click', () => { PL.seed++; plBuildAndRender(); });
+    document.getElementById('plEdit').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
+  }
+
+  // ── wizard ──
+  function plRenderProgress() {
+    const el = document.getElementById('plProgress');
+    el.innerHTML = PL_STEPS.map((_, i) =>
+      `<span class="pl-dot${i === PL.step ? ' active' : ''}${i < PL.step ? ' done' : ''}"></span>`).join('');
+  }
+  function plAdvance() {
+    if (PL.step < PL_STEPS.length - 1) { PL.step++; plRenderStep(); }
+    else plBuildAndRender();
+  }
+  function plRenderStep() {
+    const body = document.getElementById('plBody');
+    plRenderProgress();
+    const key = PL_STEPS[PL.step];
+    if (key === 'day') plStepDay(body);
+    else if (key === 'time') plStepTime(body);
+    else if (key === 'compose') plStepCompose(body);
+    else if (key === 'occasion') plStepChips(body, 'occasion', PL_OCCASIONS, 'What’s the occasion?', 'Tune the vibe of the picks.');
+    else if (key === 'food') plStepChips(body, 'food', PL_FOODS, 'Any food vibe?', 'We’ll steer the food choices to match.');
+  }
+
+  function plStepDay(body) {
+    document.getElementById('plHeadline').textContent = 'Which day?';
+    const days = plDays();
+    body.innerHTML = `
+      <div class="pl-q">Pick a day in the week ahead.</div>
+      <div class="dn-days">
+        ${days.map((d, i) => {
+          const cnt = plEventsForDay(i).length;
+          const lbl = i === 0 ? 'Today' : DAYS_SHORT[d.getDay()];
+          return `<button class="dn-day-chip${i === PL.dayIdx ? ' active' : ''}" data-idx="${i}" type="button">
+            <div>${lbl}</div><div class="dn-day-num">${d.getDate()}</div>
+            <div class="dn-day-cnt">${cnt ? cnt + (cnt === 1 ? ' evt' : ' evts') : '—'}</div></button>`;
+        }).join('')}
+      </div>
+      <button class="pl-next" id="plNext" type="button">Next →</button>`;
+    body.querySelectorAll('.dn-day-chip').forEach(c => c.addEventListener('click', () => {
+      PL.dayIdx = +c.dataset.idx;
+      body.querySelectorAll('.dn-day-chip').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('plNext').addEventListener('click', plAdvance);
+  }
+
+  function plStepTime(body) {
+    document.getElementById('plHeadline').textContent = 'Start & end time';
+    const row = (sel, val) => PL_TIME_OPTS.map(o =>
+      `<button class="pl-time-chip${o.hr === val ? ' active' : ''}" data-sel="${sel}" data-hr="${o.hr}" type="button">${o.label}</button>`).join('');
+    body.innerHTML = `
+      <div class="pl-q">When does it start?</div>
+      <div class="pl-time-grid">${row('start', PL.startHour)}</div>
+      <div class="pl-q" style="margin-top:1.1rem;">And roughly when should it wrap up?</div>
+      <div class="pl-time-grid">${row('end', PL.endHour)}</div>
+      <div class="pl-warn" id="plTimeWarn" hidden>End time should be after the start.</div>
+      <button class="pl-next" id="plNext" type="button">Next →</button>`;
+    body.querySelectorAll('.pl-time-chip').forEach(c => c.addEventListener('click', () => {
+      const sel = c.dataset.sel, hr = +c.dataset.hr;
+      if (sel === 'start') PL.startHour = hr; else PL.endHour = hr;
+      body.querySelectorAll(`.pl-time-chip[data-sel="${sel}"]`).forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('plNext').addEventListener('click', () => {
+      if (PL.endHour <= PL.startHour) { document.getElementById('plTimeWarn').hidden = false; return; }
+      plAdvance();
+    });
+  }
+
+  function plStepCompose(body) {
+    document.getElementById('plHeadline').textContent = 'What should it include?';
+    const lim = { meal: [0, 2], activity: [0, 3], dessert: [0, 1] };
+    const stepper = (key, emoji, label) => `
+      <div class="pl-stepper">
+        <div class="pl-stepper-label">${emoji} ${label}</div>
+        <div class="pl-stepper-ctrls">
+          <button class="pl-step-btn" data-key="${key}" data-d="-1" type="button">−</button>
+          <span class="pl-step-val" id="plVal-${key}">${PL.comp[key]}</span>
+          <button class="pl-step-btn" data-key="${key}" data-d="1" type="button">+</button>
+        </div>
+      </div>`;
+    body.innerHTML = `
+      <div class="pl-q">How many stops, and of what kind?</div>
+      ${stepper('meal', '🍽️', 'Meals')}
+      ${stepper('activity', '🎭', 'Activities')}
+      ${stepper('dessert', '🍦', 'Dessert / drinks')}
+      <div class="pl-warn" id="plCompWarn" hidden>Pick at least one stop.</div>
+      <button class="pl-next" id="plNext" type="button">Next →</button>`;
+    body.querySelectorAll('.pl-step-btn').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.key, d = +b.dataset.d, [mn, mx] = lim[k];
+      PL.comp[k] = Math.max(mn, Math.min(mx, PL.comp[k] + d));
+      document.getElementById('plVal-' + k).textContent = PL.comp[k];
+    }));
+    document.getElementById('plNext').addEventListener('click', () => {
+      if (PL.comp.meal + PL.comp.activity + PL.comp.dessert === 0) { document.getElementById('plCompWarn').hidden = false; return; }
+      plAdvance();
+    });
+  }
+
+  function plStepChips(body, field, opts, headline, sub) {
+    document.getElementById('plHeadline').textContent = headline;
+    const last = PL.step === PL_STEPS.length - 1;
+    body.innerHTML = `
+      <div class="pl-q">${sub}</div>
+      <div class="pl-chip-grid">
+        ${opts.map(o => `<button class="pl-chip${PL[field] === o.id ? ' active' : ''}" data-id="${o.id}" type="button"><span class="pl-chip-emoji">${o.emoji}</span>${o.label}</button>`).join('')}
+      </div>
+      <button class="pl-next" id="plNext" type="button">${last ? '✨ Plan it' : 'Next →'}</button>`;
+    body.querySelectorAll('.pl-chip').forEach(c => c.addEventListener('click', () => {
+      PL[field] = c.dataset.id;
+      body.querySelectorAll('.pl-chip').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('plNext').addEventListener('click', plAdvance);
+  }
+
+  function setupPlanner() {
+    const back = document.getElementById('plBack');
+    if (back) back.addEventListener('click', () => {
+      if (PL.step > 0) { PL.step--; plRenderStep(); }
+      else document.getElementById('plOverlay').setAttribute('hidden', '');
+    });
+  }
+
+  function openPlanner() {
+    const overlay = document.getElementById('plOverlay');
+    if (!overlay) return;
+    if (!plDays().length) {
+      document.getElementById('plHeadline').textContent = 'One sec…';
+      document.getElementById('plProgress').innerHTML = '';
+      document.getElementById('plBody').innerHTML =
+        `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>Calendar events are still loading — open Goings On for a moment, then try again.</div>`;
+      overlay.removeAttribute('hidden');
+      return;
+    }
+    PL.step = 0;
+    PL.seed = 0;
+    overlay.removeAttribute('hidden');
+    plRenderStep();
   }
 
   // ── Bookstores: sub-category tabs ──
