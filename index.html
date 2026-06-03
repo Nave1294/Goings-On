@@ -4703,9 +4703,13 @@
 
     const ideaList = DN_FALLBACK_IDEAS.map(i => '"' + i.title + '" | ' + (i.nbhd || 'Philadelphia')).join('\n');
 
+    const activitySlots = order.filter(t => t === 'activity').length;
     const eventList = dayEvents.length
-      ? dayEvents.slice(0, 6).map(e => '"' + (e.summary || 'Event') + '" at ' + (e.location || 'TBD') + (e.start && e.start.dateTime ? ' (' + fmtTime(e.start.dateTime) + ')' : '')).join('\n')
-      : 'No events on calendar.';
+      ? dayEvents.slice(0, 8).map(e => {
+          const when = (e.start && e.start.dateTime) ? fmtTime(e.start.dateTime) : 'all day (flexible time)';
+          return '- "' + (e.summary || 'Event') + '" starts at ' + when + (e.location ? ', ' + e.location : '');
+        }).join('\n')
+      : '(none scheduled this day)';
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
     const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg must be reachable in 20 minutes or less with NO transfers.';
@@ -4729,13 +4733,13 @@ ACTIVITY IDEAS (use if no calendar event fits):
 ${ideaList}
 
 RULES:
-1. Pick stops that pair well thematically — cohesive vibe, same part of the city.
-2. DISTANCE IS A HARD CONSTRAINT: ${transitNote} Use the neighborhoods to keep every consecutive pair close enough. Do not pick stops on opposite sides of the city.
-3. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
-4. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
-5. Use a REAL calendar event for activity slots when one exists and fits the time; otherwise use an idea.
-6. Name restaurants EXACTLY as listed. Name ideas/events EXACTLY as listed.
-7. "hour" is the 24h start hour as an integer.
+1. PRIORITIZE THE GOINGS-ON CALENDAR EVENTS. ${dayEvents.length && activitySlots ? `There are ${dayEvents.length} calendar event(s) this day and ${activitySlots} activity slot(s). Fill the activity slots with the listed calendar events FIRST — set "isCalendarEvent": true and copy the event name exactly. Only use an Activity Idea if you run out of calendar events.` : 'If a calendar event is listed, use it for an activity slot (set "isCalendarEvent": true); otherwise use an Activity Idea (set "isCalendarEvent": false).'}
+2. EVENT TIMES ARE FIXED. When you use a calendar event, set its "hour" to the actual start time shown in CALENDAR EVENTS above — NEVER move it to a different time. Schedule the meals and dessert into the gaps around that real event time.
+3. ORDER ALL STOPS CHRONOLOGICALLY by hour, earliest first.
+4. DISTANCE IS A HARD CONSTRAINT: ${transitNote} Use the neighborhoods to keep every consecutive pair close enough. Do not pick stops on opposite sides of the city.
+5. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
+6. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
+7. Name restaurants, ideas, and events EXACTLY as listed. "hour" is the 24-hour start hour as an integer.
 
 Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array:
 {"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18},{"type":"activity","name":"Exact Name","hour":20,"isCalendarEvent":false}]}
@@ -4748,6 +4752,7 @@ Valid types: "meal", "activity", "dessert"`;
     if (!picks.length) throw new Error('Empty plan from AI');
 
     const stops = [];
+    const usedEv = new Set();
     for (const pick of picks) {
       // Coerce hour to an integer in case the model returns "6:00 PM" or "18:00".
       if (typeof pick.hour === 'string') {
@@ -4761,39 +4766,43 @@ Valid types: "meal", "activity", "dessert"`;
         } else { pick.hour = PL.startHour; }
       }
       if (pick.type === 'activity') {
-        if (pick.isCalendarEvent) {
-          const ev = dayEvents.find(e => (e.summary || '').toLowerCase() === pick.name.toLowerCase())
-            || dayEvents.find(e => (e.summary || '').toLowerCase().includes((pick.name || '').slice(0, 12).toLowerCase()));
-          if (ev) {
-            await ensureEventCoords(ev);
-            const c = eventCoords(ev);
-            const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
-            stops.push({
-              kind: 'activity', hour: pick.hour,
-              emoji: '🎟️', eyebrow: 'Activity',
-              title: ev.summary || pick.name,
-              meta: [when && ('🕒 ' + when), ev.location && ('📍 ' + ev.location.split(',')[0])].filter(Boolean),
-              desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
-              actions: [
-                ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
-                ev.location && { label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location) },
-              ].filter(Boolean),
-              coords: c || null,
-            });
-            continue;
-          }
+        // Always try to match a real Goings-On calendar event first — even if the
+        // model forgot the flag — and pin the stop to the event's ACTUAL start time.
+        const nm = (pick.name || '').toLowerCase();
+        const ev = dayEvents.find(e => !usedEv.has(e) && (e.summary || '').toLowerCase() === nm)
+          || dayEvents.find(e => !usedEv.has(e) && nm.length >= 6 && (e.summary || '').toLowerCase().includes(nm.slice(0, 16)))
+          || dayEvents.find(e => !usedEv.has(e) && (e.summary || '').length >= 6 && nm.includes((e.summary || '').toLowerCase().slice(0, 16)));
+        if (ev) {
+          usedEv.add(ev);
+          await ensureEventCoords(ev);
+          const c = eventCoords(ev);
+          const eh = plEventHour(ev);
+          const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
+          stops.push({
+            kind: 'activity', hour: (eh != null ? eh : pick.hour),
+            emoji: '🎟️', eyebrow: 'Activity',
+            title: ev.summary || pick.name,
+            meta: [when && ('🕒 ' + when), ev.location && ('📍 ' + ev.location.split(',')[0])].filter(Boolean),
+            desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
+            actions: [
+              ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
+              ev.location && { label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location) },
+            ].filter(Boolean),
+            coords: c || null,
+          });
+          continue;
         }
-        const idea = DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase() === (pick.name || '').toLowerCase())
-          || DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase().includes((pick.name || '').slice(0, 14).toLowerCase()));
+        const idea = DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase() === nm)
+          || DN_FALLBACK_IDEAS.find(i => i.title.toLowerCase().includes(nm.slice(0, 14)));
         if (idea) {
           await plEnsureIdeaCoords(idea);
-          const mealTitle = (stops.find(s => s.kind === 'meal') || {}).title || 'a spot nearby';
           stops.push({
             kind: 'activity', hour: pick.hour,
             emoji: '✨', eyebrow: 'Idea',
             title: idea.title,
             meta: [idea.nbhd && ('📍 ' + idea.nbhd)].filter(Boolean),
-            desc: idea.line(mealTitle),
+            desc: '',          // filled in after sorting so it references the right meal
+            _idea: idea,
             actions: [{ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(idea.title + ' Philadelphia') }],
             coords: idea._coords || null,
           });
@@ -4828,6 +4837,16 @@ Valid types: "meal", "activity", "dessert"`;
     }
 
     if (!stops.length) throw new Error('No usable stops from AI');
+
+    // Put everything in chronological order so calendar events land at their real
+    // time and the timeline / descriptions read in the right sequence.
+    stops.sort((a, b) => (a.hour ?? 99) - (b.hour ?? 99));
+
+    // Fill curated-idea blurbs now that the meal (if any) and ordering are known.
+    const mealName = (stops.find(s => s.kind === 'meal') || {}).title || 'a spot nearby';
+    for (const s of stops) {
+      if (s._idea) { s.desc = s._idea.line(mealName); delete s._idea; }
+    }
     return stops;
   }
 
