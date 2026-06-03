@@ -1554,6 +1554,7 @@
     .pl-chip.active { color: #fff; background: #6d4b8f; border-color: #6d4b8f; }
     .pl-chip-emoji { font-size: 1.05rem; }
     .pl-daystamp { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.9rem; }
+    .pl-summary { font-size: 0.92rem; line-height: 1.5; color: var(--text1); background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
     .pl-timeline { display: flex; flex-direction: column; }
     .pl-stop { margin-bottom: 0; }
     .pl-stop-head { display: flex; align-items: flex-start; gap: 0.7rem; }
@@ -4339,6 +4340,7 @@
     food: 'any',
     seed: 0,        // bumped on "Shuffle" to vary the picks
     stops: [],
+    summary: '',    // AI's short rationale for the picks
     shareText: '',
   };
 
@@ -4357,8 +4359,8 @@
     { id: 'drinks',      emoji: '🍸', label: 'Drinks-forward' },
   ];
   const PL_TRANSIT_MODES = [
-    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~25 min on foot' },
-    { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~30 min, direct service' },
+    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~15 min on foot' },
+    { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~20 min, direct service' },
     { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
   function plTransitDirHref(from, to) {
@@ -4499,7 +4501,7 @@
   }
 
   function plShareText(dayLabel) {
-    const lines = [`🗓️ ${plVibeLabel()}`, dayLabel ? `${dayLabel} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}` : '', ''];
+    const lines = [`🗓️ ${plVibeLabel()}`, dayLabel ? `${dayLabel} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}` : '', PL.summary ? `💡 ${PL.summary}` : '', ''];
     PL.stops.forEach((s, i) => {
       lines.push(`${i + 1}. ${s.emoji} ${s.eyebrow}${s.hour != null ? ` (${plHourLabel(s.hour)})` : ''}`);
       lines.push(`   ${s.title}`);
@@ -4550,8 +4552,12 @@
     if (!res.ok) throw new Error('Gemini ' + res.status);
     const data = await res.json();
     const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-    const m = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/(\[[\s\S]*\])/);
-    return JSON.parse(m ? m[1] : text);
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    let raw = (fence ? fence[1] : text).trim();
+    try { return JSON.parse(raw); } catch {}
+    const obj = raw.match(/\{[\s\S]*\}/); if (obj) { try { return JSON.parse(obj[0]); } catch {} }
+    const arr = raw.match(/\[[\s\S]*\]/); if (arr) return JSON.parse(arr[0]);
+    throw new Error('No parseable JSON from AI');
   }
 
   async function plBuildItineraryAI() {
@@ -4577,9 +4583,9 @@
       : 'No events on calendar.';
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
-    const transitNote = PL.transit === 'walk' ? 'Walking only — stops should be in the same or adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — stops within about 10 min drive.' : 'Public transit — reachable with no transfers.';
+    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg must be reachable in 20 minutes or less with NO transfers.';
 
-    const prompt = `You are planning a Philadelphia evening/outing. Return ONLY a raw JSON array — no prose, no markdown fences.
+    const prompt = `You are planning a Philadelphia evening/outing. Return ONLY a raw JSON object — no prose, no markdown fences.
 
 OUTING:
 - Day: ${dayName}, ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)}
@@ -4591,27 +4597,30 @@ OUTING:
 CALENDAR EVENTS:
 ${eventList}
 
-RESTAURANTS (pick from these by exact name):
+RESTAURANTS (pick from these by exact name; neighborhood shown after cuisine):
 ${restaurantList}
 
 ACTIVITY IDEAS (use if no calendar event fits):
 ${ideaList}
 
 RULES:
-1. Pick stops that pair well thematically — cohesive vibe, same part of the city if walking.
-2. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
-3. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
-4. Use a REAL calendar event for activity slots when one exists and fits the time; otherwise use an idea.
-5. Name restaurants EXACTLY as listed. Name ideas/events EXACTLY as listed.
-6. "hour" is the 24h start hour as an integer.
+1. Pick stops that pair well thematically — cohesive vibe, same part of the city.
+2. DISTANCE IS A HARD CONSTRAINT: ${transitNote} Use the neighborhoods to keep every consecutive pair close enough. Do not pick stops on opposite sides of the city.
+3. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
+4. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
+5. Use a REAL calendar event for activity slots when one exists and fits the time; otherwise use an idea.
+6. Name restaurants EXACTLY as listed. Name ideas/events EXACTLY as listed.
+7. "hour" is the 24h start hour as an integer.
 
-Return JSON array only:
-[{"type":"meal","name":"Exact Name","hour":18},{"type":"activity","name":"Exact Name","hour":20,"isCalendarEvent":false}]
+Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array:
+{"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18},{"type":"activity","name":"Exact Name","hour":20,"isCalendarEvent":false}]}
 
 Valid types: "meal", "activity", "dessert"`;
 
-    const picks = await plCallGemini(prompt);
-    if (!Array.isArray(picks) || !picks.length) throw new Error('Empty plan from AI');
+    const result = await plCallGemini(prompt);
+    const picks = Array.isArray(result) ? result : (result && Array.isArray(result.stops) ? result.stops : []);
+    PL.summary = (result && !Array.isArray(result) && typeof result.summary === 'string') ? result.summary : '';
+    if (!picks.length) throw new Error('Empty plan from AI');
 
     const stops = [];
     for (const pick of picks) {
@@ -4777,6 +4786,7 @@ Valid types: "meal", "activity", "dessert"`;
 
     body.innerHTML = `
       ${dayLabel ? `<div class="pl-daystamp">${escapeHtml(dayLabel)} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}</div>` : ''}
+      ${PL.summary ? `<div class="pl-summary">💡 ${escapeHtml(PL.summary)}</div>` : ''}
       ${mapHTML}
       <div class="pl-timeline">${timeline}</div>
       <button class="dn-export-btn" id="plExport" type="button">📤 Share itinerary</button>
