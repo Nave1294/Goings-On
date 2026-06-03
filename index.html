@@ -4660,7 +4660,26 @@
         generationConfig: { temperature: 1.0, maxOutputTokens: 16384, thinkingConfig: { thinkingBudget: 1024 } },
       }),
     });
-    if (!res.ok) throw new Error('Gemini ' + res.status);
+    if (!res.ok) {
+      let detail = null;
+      try { detail = await res.json(); } catch {}
+      const err = new Error('Gemini ' + res.status);
+      err.status = res.status;
+      if (res.status === 429 && detail && detail.error) {
+        const details = detail.error.details || [];
+        const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
+        if (retryInfo && retryInfo.retryDelay) {
+          const m = String(retryInfo.retryDelay).match(/([\d.]+)s/);
+          if (m) err.retryDelaySec = Math.ceil(parseFloat(m[1]));
+        }
+        const quota = details.find(d => (d['@type'] || '').includes('QuotaFailure'));
+        const ids = ((quota && quota.violations) || [])
+          .map(v => (v.quotaId || '') + ' ' + (v.quotaMetric || '')).join(' ');
+        if (/per_?day/i.test(ids)) err.quotaScope = 'day';
+        else if (/per_?minute/i.test(ids)) err.quotaScope = 'minute';
+      }
+      throw err;
+    }
     const data = await res.json();
     // Thinking parts carry thought:true — extract only the real output parts first.
     const parts = data.candidates?.[0]?.content?.parts || [];
@@ -4880,7 +4899,49 @@ Valid types: "meal", "activity", "dessert"`;
     });
   }
 
+  // Free-tier quotas reset at midnight Pacific; compute the next one in the
+  // visitor's own clock so we can tell them exactly when to come back.
+  function plNextPacificMidnight() {
+    const now = new Date();
+    const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const mid = new Date(la); mid.setHours(24, 0, 0, 0);
+    return new Date(now.getTime() + (mid - la));
+  }
+
+  function plCountdownLabel(ms) {
+    const total = Math.max(0, Math.ceil(ms / 1000));
+    if (total < 60) return total + 's';
+    const m = Math.floor(total / 60), s = total % 60;
+    if (m < 60) return m + ':' + String(s).padStart(2, '0');
+    const h = Math.floor(m / 60), mm = m % 60;
+    return h + 'h ' + String(mm).padStart(2, '0') + 'm';
+  }
+
+  // For a 429, work out when the quota should be back and a friendly message.
+  function plRateLimitInfo(err) {
+    if (!err || err.status !== 429) return null;
+    const now = new Date();
+    const clock = t => t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (err.quotaScope === 'day') {
+      const retryAt = plNextPacificMidnight();
+      return {
+        retryAt,
+        message: `You've used up the free <strong>daily</strong> AI quota (it ran out just now). Google resets it at midnight Pacific — about <strong>${clock(retryAt)}</strong> your time. Try again then.`,
+      };
+    }
+    // Per-minute (or unspecified): use the API's retryDelay, default ~60s.
+    const secs = err.retryDelaySec || 60;
+    const retryAt = new Date(now.getTime() + secs * 1000);
+    return {
+      retryAt,
+      message: `The AI is briefly rate-limited — the free tier allows only a few plans per minute. It should be ready again in a moment.`,
+    };
+  }
+
+  let plRetryTimer = null;
+
   async function plDoBuild() {
+    if (plRetryTimer) { clearInterval(plRetryTimer); plRetryTimer = null; }
     const body = document.getElementById('plBody');
     document.getElementById('plHeadline').textContent = 'Building your plan…';
     document.getElementById('plProgress').innerHTML = '';
@@ -4891,10 +4952,29 @@ Valid types: "meal", "activity", "dessert"`;
     } catch (e) {
       console.warn('Planner AI failed:', e);
       document.getElementById('plHeadline').textContent = 'Sorry!';
-      body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">😔</div>Sorry, the planner is unavailable right now. Please try again later.</div>
-        <button class="pl-next" id="plRetry" type="button">↻ Try again</button>
-        <button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plEditAns" type="button">✏️ Edit answers</button>`;
-      document.getElementById('plRetry').addEventListener('click', plDoBuild);
+      const rl = plRateLimitInfo(e);
+      const editBtn = `<button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plEditAns" type="button">✏️ Edit answers</button>`;
+      if (rl) {
+        body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>${rl.message}</div>
+          <button class="pl-next" id="plRetry" type="button" disabled>↻ Try again</button>
+          ${editBtn}`;
+        const btn = document.getElementById('plRetry');
+        const tick = () => {
+          const ms = rl.retryAt - new Date();
+          if (ms <= 0) {
+            btn.disabled = false; btn.textContent = '↻ Try again';
+            clearInterval(plRetryTimer); plRetryTimer = null; return;
+          }
+          btn.textContent = `↻ Try again in ${plCountdownLabel(ms)}`;
+        };
+        plRetryTimer = setInterval(tick, 1000); tick();
+        btn.addEventListener('click', () => { if (!btn.disabled) plDoBuild(); });
+      } else {
+        body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">😔</div>Sorry, the planner is unavailable right now. Please try again later.</div>
+          <button class="pl-next" id="plRetry" type="button">↻ Try again</button>
+          ${editBtn}`;
+        document.getElementById('plRetry').addEventListener('click', plDoBuild);
+      }
       document.getElementById('plEditAns').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
     }
   }
