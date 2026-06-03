@@ -100,29 +100,6 @@
     .today-btn:hover { transform: translateY(-1px); }
     .today-btn:active { transform: scale(0.96); }
 
-    .explore-btn {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 1.5rem;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: var(--surface);
-      color: var(--accent);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      z-index: 50;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .explore-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.08);
-    }
-
     .to-top-btn {
       position: fixed;
       bottom: 1.5rem;
@@ -151,46 +128,6 @@
     }
     .to-top-btn:active { transform: scale(0.94); }
     .to-top-btn svg { width: 22px; height: 22px; stroke: var(--accent); stroke-width: 2.5; fill: none; }
-
-    .explore-btn svg { width: 28px; height: 28px; stroke: var(--accent); stroke-width: 2; }
-
-    .explore-tooltip {
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: 0;
-      background: var(--text);
-      color: var(--surface);
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: -0.005em;
-      line-height: 1.35;
-      padding: 0.6rem 0.85rem;
-      border-radius: 12px;
-      width: 220px;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(6px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-    }
-
-    .explore-tooltip::after {
-      content: '';
-      position: absolute;
-      bottom: -5px;
-      left: 18px;
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 6px solid var(--text);
-    }
-
-    .explore-btn:hover .explore-tooltip,
-    .explore-btn:focus .explore-tooltip {
-      opacity: 1;
-      transform: translateY(0);
-    }
 
     .add-btn {
       position: fixed;
@@ -721,10 +658,7 @@
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
-      .explore-btn { bottom: 1rem; left: 1rem; width: 52px; height: 52px; }
-      .explore-btn svg { width: 22px; height: 22px; }
       .to-top-btn { bottom: 1rem; right: 1rem; width: 44px; height: 44px; }
-      .explore-tooltip { width: 200px; font-size: 0.74rem; }
       .add-btn {
         bottom: 1rem;
         right: 1rem;
@@ -1501,15 +1435,6 @@
   </div>
 </div>
 
-<a class="explore-btn" href="https://nave1294.github.io/Philly-Things-to-Watch/" target="_blank" rel="noopener" aria-label="Explore Philly project developments">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M3 21h18"/>
-    <path d="M5 21V11l3-2v12"/>
-    <path d="M10 21V7l4-3v17"/>
-    <path d="M16 21v-9l4 2v7"/>
-  </svg>
-  <span class="explore-tooltip">Explore the major Philly project developments to look forward to →</span>
-</a>
 
 <button class="to-top-btn" id="toTopBtn" type="button" aria-label="Back to top">
   <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
