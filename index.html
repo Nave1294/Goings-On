@@ -1068,12 +1068,12 @@
     }
     .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
     .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
-    /* Discover FAB (bottom-left, visible only on the eat view) */
+    /* Discover FAB (bottom-left, visible on every view) */
     .eat-fab {
       position: fixed;
       bottom: 1.5rem;
       left: 1.5rem;
-      display: none;
+      display: inline-flex;
       align-items: center;
       gap: 5px;
       font: inherit;
@@ -1091,7 +1091,6 @@
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       white-space: nowrap;
     }
-    body[data-view="places-to-eat"] .eat-fab { display: inline-flex; }
     .eat-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(45, 106, 79, 0.4), 0 2px 4px rgba(0,0,0,0.1); }
     .eat-fab:active { transform: scale(0.95); }
     .eat-fab-badge {
