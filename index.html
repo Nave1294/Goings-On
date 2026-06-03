@@ -1187,25 +1187,47 @@
     }
     .eat-sheet-mood-btn:hover { filter: brightness(0.94); }
     .eat-sheet-mood-btn:active { transform: scale(0.98); }
-    /* Excluded cuisine tags shown below the mood button */
-    .eat-sheet-tags { display: flex; flex-wrap: wrap; gap: 0.38rem; min-height: 0; padding-bottom: 0.2rem; }
-    .eat-sheet-tag {
-      display: inline-flex;
+    /* Post-quiz buttons (replace mood button after quiz is taken) */
+    .eat-sheet-post-quiz { display: flex; flex-direction: column; gap: 0.5rem; }
+    .eat-sheet-view-btn {
+      display: flex;
       align-items: center;
-      gap: 3px;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
       font: inherit;
-      font-size: 0.72rem;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: #fff;
-      background: #b5524a;
+      background: var(--accent);
       border: none;
-      border-radius: 999px;
-      padding: 0.22rem 0.55rem 0.22rem 0.65rem;
+      border-radius: 14px;
+      padding: 0.82rem 1rem;
       cursor: pointer;
-      transition: filter 0.15s ease;
+      transition: filter 0.15s ease, transform 0.12s ease;
     }
-    .eat-sheet-tag:hover { filter: brightness(0.88); }
-    .eat-sheet-tag-x { font-size: 0.6rem; opacity: 0.72; }
+    .eat-sheet-view-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-view-btn:active { transform: scale(0.98); }
+    .eat-sheet-restart-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      border-radius: 14px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-sheet-restart-btn:hover { filter: brightness(0.94); }
+    .eat-sheet-restart-btn:active { transform: scale(0.98); }
     /* Wizard */
     .eat-wizard { text-align: center; padding: 0.8rem 0 0.5rem; }
     .eat-wizard-prompt { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
@@ -1482,7 +1504,7 @@
 
 <!-- Places to Eat: Discover FAB + bottom sheet -->
 <button class="eat-fab" id="eatFab" type="button" aria-label="Discover restaurants" aria-haspopup="dialog">
-  🎲 Discover<span class="eat-fab-badge" hidden></span>
+  🎲 Discover
 </button>
 <div class="eat-sheet-overlay" id="eatSheetOverlay" hidden role="dialog" aria-modal="true" aria-label="Discover restaurants">
   <div class="eat-sheet" id="eatSheet">
@@ -1495,7 +1517,10 @@
     <div id="eatSheetDefault">
       <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
-      <div class="eat-sheet-tags" id="eatSheetTags"></div>
+      <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
+        <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">View my recommendations →</button>
+        <button class="eat-sheet-restart-btn" id="eatRestartBtn" type="button">↩ Retake the quiz</button>
+      </div>
     </div>
     <!-- Wizard state -->
     <div class="eat-wizard" id="eatSheetWizard" hidden>
@@ -3723,7 +3748,6 @@
     }
     // Discover FAB + bottom sheet: cuisine exclusions + random spin
     const fab = document.getElementById('eatFab');
-    const fabBadge = fab && fab.querySelector('.eat-fab-badge');
     const sheetOverlay = document.getElementById('eatSheetOverlay');
     const sheet = document.getElementById('eatSheet');
     if (fab && sheetOverlay) {
@@ -3742,32 +3766,19 @@
       }
       present.sort((a, b) => a - b);
 
-      const syncFab = () => {
-        const n = excludedCuisines.size;
-        if (fabBadge) { fabBadge.textContent = n; fabBadge.hidden = n === 0; }
-      };
-
-      const renderSheetTags = () => {
-        const container = document.getElementById('eatSheetTags');
-        if (!container) return;
-        if (!excludedCuisines.size) { container.innerHTML = ''; return; }
-        container.innerHTML = [...excludedCuisines].map(g =>
-          `<button class="eat-sheet-tag" type="button" data-group="${escapeAttr(g)}">${escapeHtml(g)}<span class="eat-sheet-tag-x" aria-hidden="true"> ✕</span></button>`
-        ).join('');
-        container.querySelectorAll('.eat-sheet-tag').forEach(tag => {
-          tag.addEventListener('click', () => {
-            excludedCuisines.delete(tag.dataset.group);
-            tag.remove();
-            if (!excludedCuisines.size) container.innerHTML = '';
-            syncFab();
-            if (currentEatCat) renderEatCategory(currentEatCat);
-          });
-        });
-      };
-
-      // Wizard state
+      // Wizard state (results only affect the rec view, not the main list)
       let wizardQueue = [], wizardIdx = 0;
       const wizardExcluded = new Set();
+      let lastWizardYes = null, lastWizardNope = null;
+
+      const startWizard = () => {
+        wizardQueue = [...present].sort(() => Math.random() - 0.5);
+        wizardIdx = 0;
+        wizardExcluded.clear();
+        document.getElementById('eatSheetDefault').hidden = true;
+        document.getElementById('eatSheetWizard').hidden = false;
+        showWizardStep();
+      };
 
       const showWizardStep = () => {
         if (wizardIdx >= wizardQueue.length) { applyWizard(); return; }
@@ -3778,27 +3789,24 @@
       };
 
       const applyWizard = () => {
-        // Build yes/nope sets from what the user answered
+        // Build yes/nope sets — these stay local to the rec view only
         const yesCuisines = new Set();
         const nopeCuisines = new Set(wizardExcluded);
         for (const gi of present) {
           const label = CUISINE_GROUPS[gi].label;
           if (!wizardExcluded.has(label)) yesCuisines.add(label);
         }
+        lastWizardYes = yesCuisines;
+        lastWizardNope = nopeCuisines;
 
-        // Apply exclusions globally so the normal tab list also updates
-        excludedCuisines.clear();
-        for (const g of wizardExcluded) excludedCuisines.add(g);
-        syncFab();
-        renderSheetTags();
-        if (currentEatCat) renderEatCategory(currentEatCat);
-
-        // Reset wizard panel for next time
+        // Return to default sheet panel, show post-quiz buttons
         document.getElementById('eatSheetDefault').hidden = false;
         document.getElementById('eatSheetWizard').hidden = true;
+        document.getElementById('eatMoodWizardBtn').hidden = true;
+        document.getElementById('eatPostQuiz').hidden = false;
         closeSheet();
 
-        // Show the recommendation view
+        // Open rec view immediately
         showRecView(yesCuisines, nopeCuisines);
       };
 
@@ -3874,14 +3882,19 @@
       });
       document.getElementById('eatRecList').addEventListener('click', onRestoMainClick);
 
-      document.getElementById('eatMoodWizardBtn').addEventListener('click', () => {
-        wizardQueue = [...present].sort(() => Math.random() - 0.5);
-        wizardIdx = 0;
-        wizardExcluded.clear();
-        for (const g of excludedCuisines) wizardExcluded.add(g); // carry over previous choices
-        document.getElementById('eatSheetDefault').hidden = true;
-        document.getElementById('eatSheetWizard').hidden = false;
-        showWizardStep();
+      document.getElementById('eatMoodWizardBtn').addEventListener('click', startWizard);
+
+      document.getElementById('eatRestartBtn').addEventListener('click', () => {
+        // Reset to pre-quiz look, then immediately start the wizard
+        document.getElementById('eatMoodWizardBtn').hidden = false;
+        document.getElementById('eatPostQuiz').hidden = true;
+        lastWizardYes = null;
+        lastWizardNope = null;
+        startWizard();
+      });
+
+      document.getElementById('eatViewPicksBtn').addEventListener('click', () => {
+        if (lastWizardYes) { closeSheet(); showRecView(lastWizardYes, lastWizardNope); }
       });
 
       document.getElementById('eatWizardNope').addEventListener('click', () => {
