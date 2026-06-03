@@ -1465,6 +1465,25 @@
     .dn-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); }
     .dn-empty-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
     .dn-loading { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+    .dn-time-prompt { text-align: center; font-size: 0.92rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 1rem; }
+    .dn-time-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    .dn-time-chip {
+      font: inherit; font-size: 0.9rem; font-weight: 700;
+      color: #6d4b8f; background: #f0e6f6;
+      border: none; border-radius: 999px; padding: 0.7rem 1.3rem;
+      cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .dn-time-chip:hover { filter: brightness(0.96); }
+    .dn-time-chip:active { transform: scale(0.96); }
+    .dn-export-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; font: inherit; font-size: 0.85rem; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, #6d4b8f, #9b5fa0);
+      border: none; border-radius: 14px; padding: 0.8rem 1rem;
+      margin-bottom: 0.7rem; cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .dn-export-btn:hover { filter: brightness(1.05); }
+    .dn-export-btn:active { transform: scale(0.98); }
     .dn-walk-pill {
       display: flex; align-items: center; justify-content: center;
       gap: 0.4rem; margin: -0.3rem 0 0.5rem;
@@ -4165,6 +4184,13 @@
   let dnActSkip = 0;     // cycles through ranked activities on "different activity"
   let dnRankedRestos = null;  // cached geocoded+distance-ranked restaurants for current event
   let dnRankedForEv = null;   // the event that dnRankedRestos was computed for
+  let dnStartHour = 18;       // earliest the night may start (6 PM floor; weekends ask)
+  let dnCurrentPlan = null;   // holds the rendered itinerary for sharing/export
+
+  function dnIsWeekend(idx) {
+    const d = dnDays()[idx];
+    return d && (d.getDay() === 0 || d.getDay() === 6);
+  }
 
   function dnDays() {
     return (lastRender && lastRender.days) || [];
@@ -4210,7 +4236,11 @@
 
   // Rank events for a day by how "date-night" they feel.
   function dnRankEvents(idx) {
-    const evs = dnEventsForDay(idx);
+    const evs = dnEventsForDay(idx).filter(ev => {
+      // Honor the start-time floor: drop timed events earlier than dnStartHour.
+      const hr = dnEventHour(ev);
+      return hr == null || hr >= dnStartHour;   // all-day events stay (flexible)
+    });
     return evs
       .map(ev => {
         let s = 0;
@@ -4243,16 +4273,19 @@
     return list[skip % list.length];
   }
 
+  function dnStartLabel() {
+    const d = new Date(); d.setHours(dnStartHour, 0, 0, 0);
+    return fmtTime(d.toISOString());
+  }
+
   function dnTimingLine(ev) {
     const hr = dnEventHour(ev);
-    if (hr == null) return 'Make a flexible afternoon-into-evening of it — dinner whenever you wrap up exploring.';
+    if (hr == null) return `Make a flexible evening of it — start with dinner around ${dnStartLabel()}.`;
     const t = fmtTime(ev.start.dateTime);
-    if (hr >= 17) {
-      const dinner = new Date(ev.start.dateTime); dinner.setHours(dinner.getHours() - 2);
-      return `Dinner around ${fmtTime(dinner.toISOString())}, then head over for ${t}.`;
-    }
-    if (hr >= 12) return `Catch it at ${t}, then roll into an early dinner right after.`;
-    return `Morning plans at ${t} — make it brunch, then keep the day going.`;
+    // Dinner two hours ahead, but never before the night's start floor.
+    const dinner = new Date(ev.start.dateTime); dinner.setHours(dinner.getHours() - 2);
+    if (dinner.getHours() < dnStartHour) dinner.setHours(dnStartHour, 0, 0, 0);
+    return `Dinner around ${fmtTime(dinner.toISOString())}, then head over for ${t}.`;
   }
 
   function dnVibe(ev, r) {
@@ -4345,7 +4378,12 @@
         dnSelectedDayIdx = +chip.dataset.idx;
         dnRestoSkip = 0; dnActSkip = 0; dnRankedRestos = null;
         chips.querySelectorAll('.dn-day-chip').forEach(c => c.classList.toggle('active', c === chip));
-        renderDateNight();
+        if (dnIsWeekend(dnSelectedDayIdx)) {
+          dnAskStartTime();          // weekends: let them pick when to start
+        } else {
+          dnStartHour = 18;          // weekdays: hold the 6 PM floor
+          renderDateNight();
+        }
       });
     });
     document.getElementById('dnHeadline').textContent = 'Which day?';
@@ -4354,12 +4392,38 @@
     overlay.removeAttribute('hidden');
   }
 
+  // Weekend flow: ask what time the date should start before planning.
+  const DN_TIME_OPTIONS = [
+    { hr: 12, label: 'Noon' },
+    { hr: 14, label: '2 PM' },
+    { hr: 16, label: '4 PM' },
+    { hr: 18, label: '6 PM' },
+    { hr: 20, label: '8 PM' },
+  ];
+  function dnAskStartTime() {
+    document.getElementById('dnHeadline').textContent = 'What time?';
+    const body = document.getElementById('dnBody');
+    body.innerHTML = `
+      <div class="dn-time-prompt">When should the date kick off?</div>
+      <div class="dn-time-grid">
+        ${DN_TIME_OPTIONS.map(o => `<button class="dn-time-chip" data-hr="${o.hr}" type="button">${o.label}</button>`).join('')}
+      </div>`;
+    body.querySelectorAll('.dn-time-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dnStartHour = +btn.dataset.hr;
+        dnRankedRestos = null;
+        renderDateNight();
+      });
+    });
+  }
+
   async function renderDateNight() {
     const body = document.getElementById('dnBody');
     const rankedEvents = dnRankEvents(dnSelectedDayIdx);
     const useCalendar = rankedEvents.length > 0;
 
     let restaurant, distMi = null, activityHTML, timingText, vibeText, ev;
+    let actTitle = '', actWhen = '', actLoc = '';
 
     if (useCalendar) {
       ev = rankedEvents[dnActSkip % rankedEvents.length];
@@ -4381,6 +4445,9 @@
       vibeText = dnVibe(ev, restaurant);
       timingText = dnTimingLine(ev);
       const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
+      actTitle = ev.summary || '(untitled event)';
+      actWhen = when;
+      actLoc = ev.location ? ev.location.split(',')[0] : '';
       const evLink = ev.htmlLink ? `<a class="dn-pair-action" href="${escapeAttr(ev.htmlLink)}" target="_blank" rel="noopener">📅 Event details</a>` : '';
       const evMap = ev.location ? `<a class="dn-pair-action" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">🗺️ Map</a>` : '';
       activityHTML = `
@@ -4413,6 +4480,8 @@
       const pool = better.filter(x => x.s > 0);
       restaurant = (pool.length ? pool : better)[dnRestoSkip % (pool.length || better.length)].r;
       vibeText = 'A do-it-yourself date';
+      actTitle = idea.title;
+      actLoc = idea.nbhd || '';
       timingText = idea.when === 'day'
         ? 'Best as an afternoon plan — slide into dinner right after.'
         : idea.when === 'evening'
@@ -4466,18 +4535,71 @@
         </div>`;
     }
 
+    // Assemble a shareable itinerary from the current pairing.
+    const dayDate = dnDays()[dnSelectedDayIdx];
+    const dayLabel = dayDate
+      ? `${DAYS_LONG[dayDate.getDay()]}, ${MONTHS[dayDate.getMonth()].slice(0, 3)} ${dayDate.getDate()}`
+      : '';
+    const walkStr = distMi != null ? dnWalkLabel(distMi) : '';
+    dnCurrentPlan = [
+      `🌃 Date Night${dayLabel ? ` — ${dayLabel}` : ''}`,
+      `“${vibeText}”`,
+      ``,
+      `${useCalendar ? '🎟️ THE PLAN' : '✨ THE IDEA'}`,
+      `${actTitle}`,
+      `${[actWhen && `🕒 ${actWhen}`, actLoc && `📍 ${actLoc}`].filter(Boolean).join('   ')}`,
+      ``,
+      `🍴 WHERE TO EAT`,
+      `${r.name}`,
+      `${[r.cuisine && `🍴 ${r.cuisine}`, r.location && `📍 ${r.location.split(',')[0]}`, r.price].filter(Boolean).join('   ')}`,
+      walkStr ? `🚶 ${walkStr} between the two` : '',
+      r.website ? `🌐 ${r.website}` : '',
+      ``,
+      `🕒 ${timingText}`,
+      ``,
+      `Planned with Goings-On`,
+    ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n');
+
     body.innerHTML = `
       ${activityHTML}
       ${mapHTML ? `<div class="dn-connector">＋ paired with ＋</div>${mapHTML}` : `<div class="dn-connector">＋ paired with ＋</div>`}
       ${restoHTML}
       <div class="dn-timing"><span>🕒</span><span>${escapeHtml(timingText)}</span></div>
+      <button class="dn-export-btn" id="dnExport" type="button">📤 Share itinerary</button>
       <div class="dn-feedback">
         <button class="dn-feedback-btn" id="dnDiffResto" type="button">↩ Different spot</button>
         <button class="dn-feedback-btn" id="dnDiffAct" type="button">↩ Different ${useCalendar ? 'event' : 'idea'}</button>
       </div>`;
 
+    document.getElementById('dnExport').addEventListener('click', dnShareItinerary);
     document.getElementById('dnDiffResto').addEventListener('click', () => { dnRestoSkip++; renderDateNight(); });
     document.getElementById('dnDiffAct').addEventListener('click', () => { dnActSkip++; dnRestoSkip = 0; dnRankedRestos = null; renderDateNight(); });
+  }
+
+  // Share the current itinerary via the native share sheet (Messages, email, etc.),
+  // falling back to clipboard copy with a toast.
+  async function dnShareItinerary() {
+    if (!dnCurrentPlan) return;
+    const btn = document.getElementById('dnExport');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Date Night', text: dnCurrentPlan });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // user dismissed the sheet
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(dnCurrentPlan);
+      if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied to clipboard'; setTimeout(() => { btn.textContent = o; }, 1800); }
+    } catch {
+      // Last-resort fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = dnCurrentPlan; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(ta);
+      if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = o; }, 1800); }
+    }
   }
 
   // ── Bookstores: sub-category tabs ──
