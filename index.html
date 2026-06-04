@@ -1682,6 +1682,19 @@
     .indec-action:active { transform: scale(0.96); }
     .indec-action.indec-love { color: #fff; background: var(--accent); }
     .indec-action.indec-reshuffle { color: #fff; background: linear-gradient(135deg, #b5742a, #d49a3c); }
+
+    /* ── Discover scope step (citywide vs neighborhood) ── */
+    .eat-scope { animation: spinPop 0.25s ease; }
+    .eat-scope-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.3rem; }
+    .eat-scope-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem; }
+    .eat-scope-select { width: 100%; margin-bottom: 1rem; }
+    .eat-scope-go { margin-bottom: 0.6rem; }
+    .eat-scope-back {
+      display: block; width: 100%; font: inherit; font-size: 0.88rem; font-weight: 600;
+      color: var(--text-secondary); background: none; border: none; padding: 0.5rem;
+      cursor: pointer; transition: color 0.15s ease;
+    }
+    .eat-scope-back:hover { color: var(--text); }
   </style>
 </head>
 <body data-view="home">
@@ -1852,6 +1865,16 @@
         <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">📋 View picks</button>
         <button class="eat-sheet-restart-btn" id="eatRestartBtn" type="button">↩ Retake quiz</button>
       </div>
+    </div>
+    <!-- Scope step: ask citywide vs. a neighborhood before running a Discover action -->
+    <div class="eat-scope" id="eatScopePanel" hidden>
+      <div class="eat-scope-title" id="eatScopeTitle">Where should I look?</div>
+      <div class="eat-scope-sub">Search all of Philly, or narrow to one neighborhood.</div>
+      <select class="nbhd-select eat-scope-select" id="eatScopeNbhd" aria-label="Choose neighborhood">
+        <option value="">🌆 Anywhere in the city</option>
+      </select>
+      <button class="eat-sheet-spin-btn eat-scope-go" id="eatScopeGo" type="button">Let’s go →</button>
+      <button class="eat-scope-back" id="eatScopeBack" type="button">← Back</button>
     </div>
     <!-- Wizard state -->
     <div class="eat-wizard" id="eatSheetWizard" hidden>
@@ -4112,11 +4135,22 @@
   // A place is shown only if it clears every active filter.
   function passesEatFilters(p) { return matchesNeighborhood(p) && matchesMood(p); }
 
+  // ── Discover scope: citywide master list, optionally narrowed to one hood ──
+  // Set by the scope step before each Discover action. '' = anywhere in the city.
+  let discoverScope = '';
+  // The full master list of eat spots (every tab but Trending), deduped.
+  function discoverMasterPlaces() { return dedupeByName(sectionsForAll().flatMap(s => s.places)); }
+  // The pool Discover actions draw from: the master list, scoped to a hood if chosen.
+  function discoverPool() {
+    const all = discoverMasterPlaces();
+    return discoverScope ? all.filter(r => placeNeighborhoods(r.location).includes(discoverScope)) : all;
+  }
+  function inDiscoverScope(r) { return !discoverScope || placeNeighborhoods(r.location).includes(discoverScope); }
+
   // ── Random chooser ("Spin") ──
-  // The pool is whatever the current tab shows after filters (deduped).
+  // Draws from the Discover pool (citywide or the chosen neighborhood).
   function currentEatPool() {
-    const cat = PLACES_TO_EAT.find(c => c.id === currentEatCat) || PLACES_TO_EAT[0];
-    return dedupeByName(cat.sections.flatMap(s => s.places).filter(passesEatFilters));
+    return discoverPool();
   }
   function spinCardHTML(r) {
     const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
@@ -4379,11 +4413,67 @@
     const sheetOverlay = document.getElementById('eatSheetOverlay');
     const sheet = document.getElementById('eatSheet');
     if (fab && sheetOverlay) {
-      const openSheet = () => sheetOverlay.removeAttribute('hidden');
+      const openSheet = () => {
+        // Always reopen on the main menu, never mid-scope or mid-wizard.
+        const sp = document.getElementById('eatScopePanel');
+        if (sp) sp.hidden = true;
+        document.getElementById('eatSheetWizard').hidden = true;
+        document.getElementById('eatSheetDefault').hidden = false;
+        sheetOverlay.removeAttribute('hidden');
+      };
       const closeSheet = () => sheetOverlay.setAttribute('hidden', '');
       fab.addEventListener('click', openSheet);
       document.getElementById('eatSheetClose').addEventListener('click', closeSheet);
       sheetOverlay.addEventListener('click', e => { if (!sheet.contains(e.target)) closeSheet(); });
+
+      // ── Discover scope step ──
+      // Every Discover action (spin, Indecision, planner, not-in-the-mood) first
+      // asks: search citywide, or narrow to one neighborhood? Filtering is then
+      // always an explicit choice, never a hidden carry-over.
+      const scopePanel = document.getElementById('eatScopePanel');
+      const scopeNbhd  = document.getElementById('eatScopeNbhd');
+      const scopeTitle = document.getElementById('eatScopeTitle');
+      let pendingDiscover = null;
+      if (scopeNbhd) {
+        const sCounts = new Map();
+        for (const r of discoverMasterPlaces())
+          for (const n of placeNeighborhoods(r.location))
+            sCounts.set(n, (sCounts.get(n) || 0) + 1);
+        [...sCounts.keys()].sort((a, b) => a.localeCompare(b)).forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n; opt.textContent = `${n} (${sCounts.get(n)})`;
+          scopeNbhd.appendChild(opt);
+        });
+      }
+      const DISCOVER_TITLES = {
+        spin: '🎲 Random pick — where?',
+        indec: '🃏 Indecision — where?',
+        planner: '🗓️ Plan an outing — where?',
+        mood: '🙅 Not in the mood — where?',
+      };
+      const showScopeStep = (action) => {
+        pendingDiscover = action;
+        if (scopeTitle) scopeTitle.textContent = DISCOVER_TITLES[action] || 'Where should I look?';
+        document.getElementById('eatSheetDefault').hidden = true;
+        document.getElementById('eatSheetWizard').hidden = true;
+        if (scopePanel) scopePanel.hidden = false;
+      };
+      const hideScopeStep = () => {
+        if (scopePanel) scopePanel.hidden = true;
+        document.getElementById('eatSheetDefault').hidden = false;
+      };
+      const runPendingDiscover = () => {
+        discoverScope = scopeNbhd ? scopeNbhd.value : '';
+        const action = pendingDiscover;
+        if (action === 'mood') { hideScopeStep(); startWizard(); return; } // wizard stays in-sheet
+        hideScopeStep();
+        closeSheet();
+        if (action === 'spin') spinRandomEat();
+        else if (action === 'indec') openIndecision();
+        else if (action === 'planner') openPlanner();
+      };
+      document.getElementById('eatScopeGo').addEventListener('click', runPendingDiscover);
+      document.getElementById('eatScopeBack').addEventListener('click', hideScopeStep);
 
       // Collect cuisine groups present in the data (for the mood wizard)
       const present = [];
@@ -4442,10 +4532,10 @@
         const overlay = document.getElementById('eatRecOverlay');
         if (!overlay) return;
 
-        // Restaurants that match: in a yes-cuisine AND passes neighborhood filter
+        // Restaurants that match: in a yes-cuisine AND inside the chosen scope
         const pool = yesCuisines.size
-          ? RESTAURANTS.filter(r => yesCuisines.has(cuisineGroupLabel(r)) && matchesNeighborhood(r))
-          : RESTAURANTS.filter(r => matchesNeighborhood(r));
+          ? RESTAURANTS.filter(r => yesCuisines.has(cuisineGroupLabel(r)) && inDiscoverScope(r))
+          : RESTAURANTS.filter(r => inDiscoverScope(r));
 
         // Group by cuisine label (sorted by restaurant count desc)
         const byCuisine = new Map();
@@ -4510,7 +4600,7 @@
       });
       document.getElementById('eatRecList').addEventListener('click', onRestoMainClick);
 
-      document.getElementById('eatMoodWizardBtn').addEventListener('click', startWizard);
+      document.getElementById('eatMoodWizardBtn').addEventListener('click', () => showScopeStep('mood'));
 
       document.getElementById('eatRestartBtn').addEventListener('click', () => {
         // Reset to pre-quiz look, then immediately start the wizard
@@ -4543,7 +4633,7 @@
       const spinBtn = document.getElementById('eatSpinBtn');
       const spinOverlay = document.getElementById('spinOverlay');
       if (spinBtn && spinOverlay) {
-        spinBtn.addEventListener('click', () => { closeSheet(); spinRandomEat(); });
+        spinBtn.addEventListener('click', () => showScopeStep('spin'));
         spinOverlay.addEventListener('click', e => {
           if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
           else if (e.target.closest('[data-spin-again]')) spinRandomEat();
@@ -4554,7 +4644,7 @@
       const indecBtn = document.getElementById('eatIndecisionBtn');
       const indecOverlay = document.getElementById('indecOverlay');
       if (indecBtn && indecOverlay) {
-        indecBtn.addEventListener('click', () => { closeSheet(); openIndecision(); });
+        indecBtn.addEventListener('click', () => showScopeStep('indec'));
         indecOverlay.addEventListener('click', e => {
           if (e.target === indecOverlay || e.target.closest('[data-indec-close]')) { indecOverlay.classList.remove('open'); return; }
           if (e.target.closest('[data-indec-reshuffle]')) { indecDeal(indec.chosen); return; }
@@ -4565,7 +4655,7 @@
 
       // Planner button inside sheet
       const dnBtn = document.getElementById('eatPlannerBtn');
-      if (dnBtn) dnBtn.addEventListener('click', () => { closeSheet(); openPlanner(); });
+      if (dnBtn) dnBtn.addEventListener('click', () => showScopeStep('planner'));
       setupPlanner();
     }
     // Click a tile to expand its description + map
@@ -4952,7 +5042,9 @@
 
     const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]
       // Drop day-restricted spots (e.g. Sunday-only dim sum) when planning another day.
-      .filter(r => !Array.isArray(r.days) || r.days.includes(dayName));
+      .filter(r => !Array.isArray(r.days) || r.days.includes(dayName))
+      // Honor the Discover scope (citywide, or one chosen neighborhood).
+      .filter(inDiscoverScope);
     const restaurantList = allR.map(r =>
       '"' + r.name + '" | ' + (r.cuisine || '') + ' | ' + (r.location ? r.location.split(',').slice(-1)[0].trim() : 'Philly') + ' | ' + (r.price || '') + ' | tags:' + (r.tags || []).join(',') + ' | ' + (r.desc || '').slice(0, 70)
     ).join('\n');
