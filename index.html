@@ -1626,6 +1626,62 @@
     .spin-action.spin-again { color: #fff; background: var(--accent); }
     @keyframes spinFlicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
     .spin-rolling { color: var(--text-secondary); animation: spinFlicker 0.26s linear infinite; }
+
+    /* ── Indecision: pick-a-card game ── */
+    .eat-sheet-indec-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
+      letter-spacing: -0.01em; color: #fff;
+      background: linear-gradient(135deg, #b5742a, #d49a3c);
+      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
+      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-sheet-indec-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-indec-btn:active { transform: scale(0.98); }
+    .indec-prompt { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; }
+    .indec-grid { display: flex; align-items: flex-start; gap: 0.6rem; justify-content: center; margin-bottom: 1rem; }
+    .indec-card {
+      flex: 1 1 0; min-width: 0; aspect-ratio: 3 / 4.2; perspective: 900px;
+      background: none; border: none; padding: 0; cursor: pointer; font: inherit;
+    }
+    .indec-card-inner {
+      display: block; position: relative; width: 100%; height: 100%;
+      transition: transform 0.55s cubic-bezier(0.4, 0.15, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .indec-card.flipped .indec-card-inner { transform: rotateY(180deg); }
+    .indec-card.dimmed { opacity: 0.32; pointer-events: none; transition: opacity 0.4s ease; }
+    .indec-card:not(.flipped):not(.dimmed) .indec-card-inner:hover { transform: translateY(-4px); }
+    .indec-face {
+      position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 14px; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 0.55rem; text-align: center; overflow: hidden;
+    }
+    .indec-front {
+      background: linear-gradient(150deg, #2d6a4f, #45926c);
+      color: rgba(255,255,255,0.92); font-size: 1.7rem;
+      box-shadow: 0 6px 16px rgba(45,106,79,0.28);
+      border: 1.5px solid rgba(255,255,255,0.18);
+    }
+    .indec-back {
+      background: var(--surface); transform: rotateY(180deg);
+      border: 1.5px solid var(--accent-soft); box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+    .indec-back-name { font-size: 0.86rem; font-weight: 700; line-height: 1.15; color: var(--text); margin-bottom: 0.3rem; }
+    .indec-back-meta { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.3; }
+    .indec-detail { min-height: 0; }
+    .indec-detail-desc { font-size: 0.92rem; line-height: 1.45; color: var(--text-secondary); text-align: center; margin-bottom: 1rem; animation: spinPop 0.3s ease; }
+    .indec-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+    .indec-action {
+      font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text);
+      background: var(--accent-soft); border: none; border-radius: 999px;
+      padding: 0.55rem 1rem; cursor: pointer; text-decoration: none;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .indec-action:hover { filter: brightness(0.96); }
+    .indec-action:active { transform: scale(0.96); }
+    .indec-action.indec-love { color: #fff; background: var(--accent); }
+    .indec-action.indec-reshuffle { color: #fff; background: linear-gradient(135deg, #b5742a, #d49a3c); }
   </style>
 </head>
 <body data-view="home">
@@ -1771,6 +1827,10 @@
   <div class="add-card" id="spinCard"></div>
 </div>
 
+<div class="add-overlay" id="indecOverlay" role="dialog" aria-modal="true" aria-label="Indecision">
+  <div class="add-card" id="indecCard"></div>
+</div>
+
 <!-- Places to Eat: Discover FAB + bottom sheet -->
 <button class="eat-fab" id="eatFab" type="button" aria-label="Discover restaurants" aria-haspopup="dialog">
   🎲 Discover
@@ -1785,6 +1845,7 @@
     <!-- Default state -->
     <div id="eatSheetDefault">
       <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
+      <button class="eat-sheet-indec-btn" id="eatIndecisionBtn" type="button">🃏 Indecision — pick a card</button>
       <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ Plan an outing</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
       <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
@@ -4123,6 +4184,108 @@
     step();
   }
 
+  // ── "Indecision" — pick-a-card game ──
+  // Three face-down cards; flip one to reveal a spot. Don't like it? Reshuffle
+  // into three more that lean away from what you just turned down.
+  const indec = { pool: [], trio: [], chosen: null, seen: new Set() };
+
+  // Pick 3 spots, biased to differ from `avoid` (the just-rejected pick) and to
+  // span distinct cuisine groups so the three cards feel meaningfully different.
+  function indecPickTrio(avoid) {
+    const pool = indec.pool;
+    const avoidGroup = avoid ? cuisineGroupLabel(avoid) : null;
+    const avoidName = avoid ? avoid.name : null;
+    // Prefer spots that aren't the rejected one, weren't shown recently, and are
+    // a different cuisine group than the one turned down.
+    let cand = pool.filter(r => r.name !== avoidName && !indec.seen.has(r.name) &&
+      (!avoidGroup || cuisineGroupLabel(r) !== avoidGroup));
+    if (cand.length < 3) cand = pool.filter(r => r.name !== avoidName &&
+      (!avoidGroup || cuisineGroupLabel(r) !== avoidGroup));
+    if (cand.length < 3) cand = pool.filter(r => r.name !== avoidName);
+    if (cand.length < 3) cand = [...pool];
+    // Shuffle, then take up to 3 favoring distinct cuisine groups among them.
+    const shuffled = [...cand].sort(() => Math.random() - 0.5);
+    const trio = [], usedGroups = new Set();
+    for (const r of shuffled) {
+      const g = cuisineGroupLabel(r);
+      if (!usedGroups.has(g)) { trio.push(r); usedGroups.add(g); }
+      if (trio.length === 3) break;
+    }
+    for (const r of shuffled) { // backfill if we couldn't get 3 distinct groups
+      if (trio.length === 3) break;
+      if (!trio.includes(r)) trio.push(r);
+    }
+    trio.forEach(r => indec.seen.add(r.name));
+    if (indec.seen.size > pool.length - 3) indec.seen.clear(); // let spots recur once nearly exhausted
+    return trio;
+  }
+
+  function indecCardFaceHTML(r, idx) {
+    const hood = r.location ? r.location.split(',').pop().trim() : 'Philly';
+    return `
+      <button class="indec-card" data-indec-idx="${idx}" type="button" aria-label="Flip card ${idx + 1}">
+        <span class="indec-card-inner">
+          <span class="indec-face indec-front">🎴</span>
+          <span class="indec-face indec-back">
+            <span class="indec-back-name">${escapeHtml(r.name)}</span>
+            <span class="indec-back-meta">${r.cuisine ? escapeHtml(r.cuisine) + '<br>' : ''}📍 ${escapeHtml(hood)}${r.price ? ' · ' + escapeHtml(r.price) : ''}</span>
+          </span>
+        </span>
+      </button>`;
+  }
+
+  function indecDeal(avoid) {
+    const card = document.getElementById('indecCard');
+    const overlay = document.getElementById('indecOverlay');
+    if (!card || !overlay) return;
+    overlay.classList.add('open');
+    indec.chosen = null;
+
+    if (!indec.pool.length) {
+      card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
+        <div class="spin-eyebrow">🃏 Indecision</div>
+        <div class="spin-name">Nothing to pick</div>
+        <div class="indec-prompt">No spots match your current filters. Clear a filter or switch tabs, then try again.</div>
+        <div class="indec-actions"><button class="indec-action" data-indec-close type="button">Got it</button></div>`;
+      return;
+    }
+
+    indec.trio = indecPickTrio(avoid);
+    card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
+      <div class="spin-eyebrow">🃏 Indecision</div>
+      <div class="indec-prompt">${avoid ? "Alright — three fresh ones. Pick a card." : 'Pick a card, any card.'}</div>
+      <div class="indec-grid">${indec.trio.map((r, i) => indecCardFaceHTML(r, i)).join('')}</div>
+      <div class="indec-detail"></div>`;
+  }
+
+  function indecReveal(idx) {
+    const card = document.getElementById('indecCard');
+    const r = indec.trio[idx];
+    if (!card || !r) return;
+    indec.chosen = r;
+    const cards = card.querySelectorAll('.indec-card');
+    cards.forEach((c, i) => {
+      if (i === idx) c.classList.add('flipped');
+      else c.classList.add('dimmed');
+    });
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    const detail = card.querySelector('.indec-detail');
+    detail.innerHTML = `
+      ${r.desc ? `<div class="indec-detail-desc">${escapeHtml(r.desc)}</div>` : '<div class="indec-detail-desc"></div>'}
+      <div class="indec-actions">
+        <a class="indec-action indec-love" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">❤️ Love it — map it</a>
+        ${r.website ? `<a class="indec-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
+        ${r.reservation ? `<a class="indec-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+        <button class="indec-action indec-reshuffle" data-indec-reshuffle type="button">🔀 Not quite — 3 more</button>
+      </div>`;
+  }
+
+  function openIndecision() {
+    indec.pool = currentEatPool();
+    indec.seen = new Set();
+    indecDeal(null);
+  }
+
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
     currentEatCat = cat.id;
@@ -4384,6 +4547,19 @@
         spinOverlay.addEventListener('click', e => {
           if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
           else if (e.target.closest('[data-spin-again]')) spinRandomEat();
+        });
+      }
+
+      // Indecision (pick-a-card) button inside sheet
+      const indecBtn = document.getElementById('eatIndecisionBtn');
+      const indecOverlay = document.getElementById('indecOverlay');
+      if (indecBtn && indecOverlay) {
+        indecBtn.addEventListener('click', () => { closeSheet(); openIndecision(); });
+        indecOverlay.addEventListener('click', e => {
+          if (e.target === indecOverlay || e.target.closest('[data-indec-close]')) { indecOverlay.classList.remove('open'); return; }
+          if (e.target.closest('[data-indec-reshuffle]')) { indecDeal(indec.chosen); return; }
+          const cardBtn = e.target.closest('[data-indec-idx]');
+          if (cardBtn && indec.chosen === null) indecReveal(parseInt(cardBtn.dataset.indecIdx, 10));
         });
       }
 
