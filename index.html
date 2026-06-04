@@ -4302,11 +4302,13 @@
     }
     if (view === 'home') {
       const now = Date.now();
-      const evs = [];
-      if (lastRender && lastRender.byDay)
-        for (const k of Object.keys(lastRender.byDay))
-          for (const ev of lastRender.byDay[k])
-            if (eventEndMs(ev) >= now) evs.push(ev); // only current or upcoming
+      // Only the currently selected day's events, and only ones not yet over.
+      let evs = [];
+      if (lastRender && lastRender.byDay && lastRender.days) {
+        const activeDay = lastRender.days[lastRender.activeIdx];
+        const dayEvs = (activeDay && lastRender.byDay[dayKey(activeDay)]) || [];
+        evs = dayEvs.filter(ev => eventEndMs(ev) >= now);
+      }
       return {
         label: 'Goings On',
         pool: evs,
@@ -4521,6 +4523,18 @@
         if (sp) sp.hidden = true;
         document.getElementById('eatSheetWizard').hidden = true;
         document.getElementById('eatSheetDefault').hidden = false;
+        // "Not in the mood" is about cuisines, so it only belongs on Places to Eat.
+        const isEat = document.body.dataset.view === 'places-to-eat';
+        const moodBtn = document.getElementById('eatMoodWizardBtn');
+        const postQuiz = document.getElementById('eatPostQuiz');
+        if (!isEat) {
+          if (moodBtn) moodBtn.hidden = true;
+          if (postQuiz) postQuiz.hidden = true;
+        } else {
+          const tookQuiz = !!lastWizardYes;
+          if (moodBtn) moodBtn.hidden = tookQuiz;
+          if (postQuiz) postQuiz.hidden = !tookQuiz;
+        }
         sheetOverlay.removeAttribute('hidden');
       };
       const closeSheet = () => sheetOverlay.setAttribute('hidden', '');
