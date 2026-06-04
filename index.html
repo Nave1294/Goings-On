@@ -3392,7 +3392,7 @@
     { name: 'Paffuto', location: '1009 S 8th St, Bella Vista', cuisine: 'Italian Café', price: '$', website: '', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['lunch', 'cheap-eats'] },
     { name: "Schlesinger's", location: '1521 Locust St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.', tags: ['lunch'] },
     { name: 'Huda', location: '32 S 18th St, Center City', cuisine: 'Sandwiches', price: '$', website: '', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.', tags: ['lunch', 'cheap-eats'] },
-    { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum every day of the week. Count us in.', tags: ['lunch', 'dinner'] },
+    { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum, served at lunchtime. Count us in.', tags: ['lunch'] },
     { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: 'A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. One of the best work-from-cafe setups in the city.', tags: ['lunch', 'cheap-eats'] },
     { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "An even bigger staple than before in its new spot. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong.", tags: ['lunch', 'dinner'] },
     { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth it. Lunch salads here are definitively better than ones you'd make at home.", tags: ['lunch'] },
@@ -3779,7 +3779,7 @@
   const placeInfoCache = {};
 
   // --- localStorage coord cache (persists across page reloads) -------
-  const COORD_LS_KEY = 'goings_on_coords_v1';
+  const COORD_LS_KEY = 'goings_on_coords_v2';
   let _lsCoords = null;
   function lsCoordGet(key) {
     if (!_lsCoords) { try { _lsCoords = JSON.parse(localStorage.getItem(COORD_LS_KEY) || '{}'); } catch { _lsCoords = {}; } }
@@ -3789,6 +3789,12 @@
     if (!_lsCoords) lsCoordGet(key);
     _lsCoords[key] = val;
     try { localStorage.setItem(COORD_LS_KEY, JSON.stringify(_lsCoords)); } catch {}
+  }
+  // The free geocoder is a city/place-name database — it can fuzzy-match venue
+  // names to far-off cities (e.g. a Philly spot landing in New York). Everything
+  // in this app is greater-Philadelphia, so reject any result that isn't close.
+  function nearPhilly(lat, lon) {
+    return lat != null && lon != null && haversineMiles(PHILLY_LAT, PHILLY_LON, lat, lon) <= 60;
   }
 
   // Returns { photoUrl, lat, lon, address } for a text query (cached).
@@ -3973,15 +3979,17 @@
     // 1. Check persistent coord cache
     const cached = lsCoordGet(q);
     if (cached !== undefined) { r._coords = cached; return; }
-    // 2. Free geocoder: try neighborhood (reliably geocodes), then full query
-    const geoQuery = r.location ? `${r.location}, Philadelphia` : `${r.name} Philadelphia`;
-    const free = await geocode(geoQuery);
-    if (free) {
+    // 2. Free geocoder by neighborhood — only trusted if it lands near Philly.
+    //    (Approximate neighborhood coords are fine for proximity sorting.)
+    const hood = r.location ? r.location.split(',').pop().trim() : r.name;
+    const free = await geocode(`${hood}, Philadelphia, Pennsylvania`);
+    if (free && nearPhilly(free.lat, free.lon)) {
       r._coords = { lat: free.lat, lon: free.lon };
       lsCoordSet(q, r._coords);
       return;
     }
-    // 3. Fall back to Places API (no free quota used unless free geocoder fails)
+    // 3. Fall back to Places API (accurate) when the free result is missing or
+    //    not near Philadelphia. Result cached so it's only ever fetched once.
     const info = await fetchPlaceInfo(q);
     r._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
     lsCoordSet(q, r._coords);
@@ -4588,10 +4596,12 @@
     const q = `${idea.title} Philadelphia`;
     const cached = lsCoordGet(q);
     if (cached !== undefined) { idea._coords = cached; return; }
-    const free = await geocode(q);
-    if (free) { idea._coords = { lat: free.lat, lon: free.lon }; lsCoordSet(q, idea._coords); return; }
+    // Planner pins are drawn on a map, so they must be exact — use Places
+    // (accurate venue geocoding). Volume is tiny (a few stops per plan) and the
+    // result is cached, so this stays far inside the free tier.
     const info = await fetchPlaceInfo(q);
-    idea._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+    idea._coords = (info && info.lat != null && nearPhilly(info.lat, info.lon))
+      ? { lat: info.lat, lon: info.lon } : null;
     lsCoordSet(q, idea._coords);
   }
 
@@ -4822,6 +4832,7 @@ RULES:
    - Don't default to the same handful of ideas (e.g. "walk through Washington Square Park") every time. Pick what actually fits THIS occasion and these specific stops.
    - Two stops should never be essentially the same activity or the same single location.
 10. BE SPECIFIC AND INTENTIONAL. Build a plan with a clear thread — a cuisine, a neighborhood character, a vibe — and make the summary explain the genuine reasoning, not a generic blurb. Favor a real Goings-On event over a generic idea whenever one reasonably fits the occasion and timing.
+11. MATCH MEAL TAGS TO THE TIME OF DAY. A restaurant's "tags" list which meals it actually serves. Only use a restaurant for a meal slot whose time matches one of its tags: a morning meal (before 11am) needs tag "breakfast", a midday meal (11am-3pm) needs tag "lunch", and an evening meal (5pm or later) needs tag "dinner". Never schedule a lunch-only spot for dinner or vice versa.
 
 Return a JSON object with a short "summary" (1-2 sentences, friendly, explaining the logic behind these picks — the theme, vibe, and why they fit together / are close by) and a "stops" array. Include "duration" (minutes) for each stop so timing is explicit:
 {"summary":"...","stops":[{"type":"meal","name":"Exact Name","hour":18,"duration":90},{"type":"activity","name":"Exact Name","hour":20,"duration":90,"isCalendarEvent":false}]}
