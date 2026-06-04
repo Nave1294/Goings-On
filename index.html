@@ -1914,6 +1914,12 @@
 </div>
 
 <script>
+  // Register the photo-cache service worker so Places photos load once per
+  // device, then come from on-device cache (no repeat API calls).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+
   const CALENDAR_ID    = '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
   // Single domain-restricted key (Calendar + Places + Static Maps), locked to
   // nave1294.github.io via HTTP referrer in the Google Cloud console.
@@ -4260,6 +4266,16 @@
   function indecItemDesc(it) { return it.desc || stripTags(it.description || '') || ''; }
   function indecMapQuery(it) { return indecItemName(it) + ' ' + (it.location || 'Philadelphia'); }
 
+  // When an event ends, in ms — used to drop past events from recommendations.
+  // Falls back sensibly for timed, all-day, and open-ended events.
+  function eventEndMs(ev) {
+    if (ev.end && ev.end.dateTime) return new Date(ev.end.dateTime).getTime();
+    if (ev.start && ev.start.dateTime) return new Date(ev.start.dateTime).getTime() + 2 * 3600 * 1000; // assume ~2h
+    if (ev.end && ev.end.date) return new Date(ev.end.date + 'T23:59:59').getTime();
+    if (ev.start && ev.start.date) return new Date(ev.start.date + 'T23:59:59').getTime(); // all-day: end of that day
+    return Infinity; // unknown timing → keep it
+  }
+
   // Per-view context: label for the title suffix, the pool to draw from, the
   // meta line under each card name, and how to group items for "make it different".
   function indecContext() {
@@ -4281,10 +4297,12 @@
       };
     }
     if (view === 'home') {
+      const now = Date.now();
       const evs = [];
       if (lastRender && lastRender.byDay)
         for (const k of Object.keys(lastRender.byDay))
-          for (const ev of lastRender.byDay[k]) evs.push(ev);
+          for (const ev of lastRender.byDay[k])
+            if (eventEndMs(ev) >= now) evs.push(ev); // only current or upcoming
       return {
         label: 'Goings On',
         pool: evs,
