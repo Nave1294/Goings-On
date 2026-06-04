@@ -1648,6 +1648,71 @@
     }
     .eat-sheet-indec-btn:hover { filter: brightness(1.06); }
     .eat-sheet-indec-btn:active { transform: scale(0.98); }
+    /* Outing Builder button in Discover sheet */
+    .eat-sheet-ob-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
+      letter-spacing: -0.01em; color: #fff;
+      background: linear-gradient(135deg, #1a7a6e, #2aa89a);
+      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
+      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-sheet-ob-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-ob-btn:active { transform: scale(0.98); }
+    /* Outing Builder: category grid */
+    .ob-cat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+    .ob-cat-btn {
+      flex: 1 1 calc(33% - 0.35rem); min-width: calc(33% - 0.35rem);
+      display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+      padding: 0.8rem 0.4rem;
+      background: var(--surface); border: 1.5px solid var(--divider);
+      border-radius: 14px; cursor: pointer; font: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ob-cat-btn:hover, .ob-cat-btn:active { border-color: #2aa89a; background: rgba(42,168,154,0.07); }
+    .ob-cat-emoji { font-size: 1.45rem; }
+    .ob-cat-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .ob-cat-desc { font-size: 0.68rem; color: var(--text-secondary); text-align: center; }
+    /* Outing Builder: equation / stop cards */
+    .ob-add-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 1rem 0 0.4rem; }
+    .ob-equation { margin: 0.25rem 0 0.25rem; }
+    .ob-stop-card {
+      background: var(--surface); border: 1.5px solid var(--divider);
+      border-radius: 14px; padding: 0.7rem 1rem; margin-bottom: 0.3rem;
+    }
+    .ob-stop-card-head { display: flex; align-items: center; gap: 0.5rem; }
+    .ob-stop-num {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      background: #1a7a6e; color: #fff; font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ob-stop-name { font-size: 0.88rem; font-weight: 700; color: var(--text); flex: 1 1 0; min-width: 0; }
+    .ob-stop-dist { font-size: 0.68rem; font-weight: 600; background: #d8f4f1; color: #1a7a6e; border-radius: 8px; padding: 0.12rem 0.45rem; white-space: nowrap; flex-shrink: 0; }
+    .ob-stop-rm {
+      font: inherit; font-size: 0.75rem; color: var(--text-secondary); background: none;
+      border: none; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 6px; flex-shrink: 0;
+      opacity: 0.6; transition: opacity 0.15s ease;
+    }
+    .ob-stop-rm:hover { opacity: 1; }
+    .ob-stop-meta { font-size: 0.73rem; color: var(--text-secondary); margin: 0.15rem 0 0 2rem; }
+    .ob-connector { text-align: center; padding: 0.15rem 0; font-size: 1rem; color: var(--text-secondary); font-weight: 700; }
+    /* Outing Builder: pick item list */
+    .ob-pick-list { margin-top: 0.25rem; }
+    .ob-pick-item {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      padding: 0.75rem 0.85rem; border-radius: 12px;
+      background: var(--surface); border: 1.5px solid var(--divider);
+      margin-bottom: 0.4rem; cursor: pointer; width: 100%; font: inherit; text-align: left;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ob-pick-item:hover, .ob-pick-item:active { border-color: #2aa89a; background: rgba(42,168,154,0.07); }
+    .ob-pick-emoji { font-size: 1.35rem; flex-shrink: 0; margin-top: 1px; }
+    .ob-pick-info { flex: 1 1 0; min-width: 0; }
+    .ob-pick-name { font-size: 0.87rem; font-weight: 700; color: var(--text); }
+    .ob-pick-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.12rem; }
+    .ob-pick-dist { font-size: 0.68rem; font-weight: 600; background: #d8f4f1; color: #1a7a6e; border-radius: 8px; padding: 0.12rem 0.45rem; margin-left: auto; flex-shrink: 0; white-space: nowrap; align-self: flex-start; }
+    .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
+    .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
     .indec-prompt { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; }
     .indec-grid { display: flex; align-items: flex-start; gap: 0.6rem; justify-content: center; margin-bottom: 1rem; }
     .indec-card {
@@ -1869,7 +1934,8 @@
     <div id="eatSheetDefault">
       <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
       <button class="eat-sheet-indec-btn" id="eatIndecisionBtn" type="button">🃏 Indecision — pick a card</button>
-      <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ Plan an outing</button>
+      <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ AI Outing Planner</button>
+      <button class="eat-sheet-ob-btn" id="eatOutingBuilderBtn" type="button">🧱 Outing Builder</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
       <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
         <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">📋 View picks</button>
@@ -1921,6 +1987,16 @@
     <div class="pl-progress" id="plProgress"></div>
   </div>
   <div class="dn-body" id="plBody"></div>
+</div>
+
+<!-- Outing Builder view -->
+<div class="eat-rec-overlay" id="obOverlay" hidden>
+  <div class="eat-rec-header">
+    <button class="eat-rec-back" id="obBack" type="button">← Back</button>
+    <div class="eat-rec-eyebrow">Outing Builder</div>
+    <div class="eat-rec-headline" id="obHeadline">Build your outing</div>
+  </div>
+  <div class="dn-body" id="obBody"></div>
 </div>
 
 <script>
@@ -4575,7 +4651,7 @@
       const DISCOVER_TITLES = {
         spin: '🎲 Random pick — where?',
         indec: '🃏 Indecision — where?',
-        planner: '🗓️ Plan an outing — where?',
+        planner: '🗓️ AI Outing Planner — where?',
         mood: '🙅 Not in the mood — where?',
       };
       const showScopeStep = (action) => {
@@ -4793,6 +4869,10 @@
       const dnBtn = document.getElementById('eatPlannerBtn');
       if (dnBtn) dnBtn.addEventListener('click', () => showScopeStep('planner'));
       setupPlanner();
+      setupOutingBuilder();
+
+      const obBtn = document.getElementById('eatOutingBuilderBtn');
+      if (obBtn) obBtn.addEventListener('click', () => { closeSheet(); openOutingBuilder(); });
     }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
@@ -5998,6 +6078,480 @@ Valid types: "meal", "activity", "dessert"`;
     btn.addEventListener('click', () =>
       window.scrollTo({ top: 0, behavior: 'smooth' }));
     onScroll();
+  }
+
+  // ── Outing Builder ──────────────────────────────────────────────────
+
+  const OB_CATS = [
+    { id: 'event',      emoji: '📅', label: 'Event',      desc: 'Goings On calendar' },
+    { id: 'restaurant', emoji: '🍽️', label: 'Restaurant', desc: 'Dining & drinks' },
+    { id: 'bookstore',  emoji: '📚', label: 'Bookstore',  desc: 'Indie bookshops' },
+    { id: 'market',     emoji: '🛒', label: 'Market',     desc: 'Farmers markets' },
+    { id: 'dessert',    emoji: '🍦', label: 'Dessert',    desc: 'Ice cream & sweets' },
+  ];
+
+  const OB = {
+    transitMode: 'walk',
+    stops: [],        // [{ type, emoji, label, sublabel, item, coords }]
+    step: 'transit',  // transit | first-category | pick-item | equation | generating | result
+    pendingCat: null,
+    result: null,
+    shareText: '',
+  };
+
+  function obRadiusMiles() {
+    return OB.transitMode === 'bike' ? 3.0
+      : OB.transitMode === 'transit' ? 5.0
+      : OB.transitMode === 'drive' ? 3.0
+      : 1.0;
+  }
+
+  function obTravelLabel(miles) {
+    if (OB.transitMode === 'walk') {
+      const m = Math.round(miles * 24); return m <= 1 ? '< 1 min walk' : `~${m} min walk`;
+    }
+    if (OB.transitMode === 'bike') {
+      const m = Math.round(miles * 7); return m <= 1 ? '< 1 min bike' : `~${m} min bike`;
+    }
+    if (OB.transitMode === 'drive') {
+      const m = Math.round(miles / 22 * 60); return m <= 1 ? '< 1 min drive' : `~${m} min drive`;
+    }
+    const wm = Math.round(miles * 24), tm = Math.round(10 + miles * 5);
+    if (wm <= tm) return wm <= 1 ? '< 1 min walk' : `~${wm} min walk`;
+    return `~${tm} min transit`;
+  }
+
+  function obActiveDayIdx() { return lastRender ? lastRender.activeIdx : 0; }
+  function obActiveDay()    { return lastRender ? lastRender.days[lastRender.activeIdx] : null; }
+
+  function obRawPool(catId) {
+    if (catId === 'event') {
+      return plEventsForDay(obActiveDayIdx()).map(ev => ({
+        type: 'event', emoji: '📅', label: ev.summary || 'Event',
+        sublabel: ev.location || '', item: ev, coords: undefined,
+      }));
+    }
+    const allR = discoverMasterPlaces();
+    if (catId === 'dessert') {
+      return allR.filter(r => PL_DESSERT_RE.test(r.cuisine || '') || PL_DESSERT_RE.test(r.name || '') || PL_DESSERT_RE.test((r.tags || []).join(' ')))
+        .map(r => ({ type: 'dessert', emoji: '🍦', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
+    }
+    if (catId === 'restaurant') {
+      return allR.map(r => ({ type: 'restaurant', emoji: '🍽️', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
+    }
+    if (catId === 'bookstore') {
+      const seen = new Set();
+      return BOOKSTORES.flatMap(cat => cat.sections.flatMap(s => s.places))
+        .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
+        .map(p => ({ type: 'bookstore', emoji: '📚', label: p.name, sublabel: p.location || '', item: p, coords: undefined }));
+    }
+    if (catId === 'market') {
+      return FARMERS_MARKETS.map(m => ({ type: 'market', emoji: '🛒', label: m.name, sublabel: m.location || '', item: m, coords: undefined }));
+    }
+    return [];
+  }
+
+  async function obLoadItemCoords(p) {
+    if (p.coords !== undefined) return p.coords;
+    let coords = null;
+    try {
+      if (p.type === 'event') {
+        const ev = p.item;
+        if (!ev.location) { p.coords = null; return null; }
+        const key = 'acc:ev:' + ev.location;
+        const cached = lsCoordGet(key);
+        if (cached !== undefined) { p.coords = cached; return cached; }
+        const info = await fetchPlaceInfo(ev.location);
+        coords = (info && info.lat != null && nearPhilly(info.lat, info.lon)) ? { lat: info.lat, lon: info.lon } : null;
+        lsCoordSet(key, coords);
+      } else {
+        coords = await plEnsureRestoCoords(p.item);
+      }
+    } catch { coords = null; }
+    p.coords = coords;
+    return coords;
+  }
+
+  function openOutingBuilder() {
+    const overlay = document.getElementById('obOverlay');
+    if (!overlay) return;
+    OB.stops = []; OB.step = 'transit'; OB.transitMode = 'walk';
+    OB.pendingCat = null; OB.result = null; OB.shareText = '';
+    overlay.removeAttribute('hidden');
+    obRender();
+  }
+
+  function obRender() {
+    const body = document.getElementById('obBody');
+    const hl   = document.getElementById('obHeadline');
+    if (!body || !hl) return;
+    if (OB.step === 'transit') {
+      hl.textContent = 'Outing Builder';
+      obRenderTransit(body);
+    } else if (OB.step === 'first-category') {
+      hl.textContent = 'Pick your first stop';
+      obRenderCategory(body, true);
+    } else if (OB.step === 'pick-item') {
+      const cat = OB_CATS.find(c => c.id === OB.pendingCat) || OB_CATS[0];
+      hl.textContent = `Add ${cat.emoji} ${cat.label}`;
+      obRenderPickAsync(body, OB.pendingCat);
+    } else if (OB.step === 'equation') {
+      hl.textContent = OB.stops.length >= 2 ? `${OB.stops.length} stops` : 'Build your outing';
+      obRenderEquation(body);
+    } else if (OB.step === 'generating') {
+      hl.textContent = 'Building…';
+      body.innerHTML = `<div class="dn-loading">✨ Building your itinerary…</div>`;
+    } else if (OB.step === 'result') {
+      hl.textContent = obVibeLabel();
+      obRenderResult(body);
+    }
+  }
+
+  function obRenderTransit(body) {
+    body.innerHTML = `
+      <div class="pl-q">How are you getting around?</div>
+      <div class="pl-chip-grid">
+        ${PL_TRANSIT_MODES.map(m => `<button class="pl-chip${OB.transitMode === m.id ? ' active' : ''}" data-ob-transit="${escapeAttr(m.id)}" type="button"><span class="pl-chip-emoji">${m.emoji}</span>${escapeHtml(m.label)}</button>`).join('')}
+      </div>
+      <button class="pl-next" id="obTransitNext" type="button">Next →</button>
+    `;
+    body.querySelectorAll('[data-ob-transit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        OB.transitMode = btn.dataset.obTransit;
+        body.querySelectorAll('[data-ob-transit]').forEach(b =>
+          b.classList.toggle('active', b.dataset.obTransit === OB.transitMode));
+      });
+    });
+    document.getElementById('obTransitNext').addEventListener('click', () => {
+      OB.step = OB.stops.length > 0 ? 'equation' : 'first-category';
+      obRender();
+    });
+  }
+
+  function obRenderCategory(body, isFirst) {
+    body.innerHTML = `
+      <div class="pl-q">${isFirst ? "What's your first stop?" : 'What would you like to add next?'}</div>
+      <div class="ob-cat-grid">
+        ${OB_CATS.map(c => `<button class="ob-cat-btn" data-ob-cat="${escapeAttr(c.id)}" type="button">
+          <span class="ob-cat-emoji">${c.emoji}</span>
+          <span class="ob-cat-label">${escapeHtml(c.label)}</span>
+          <span class="ob-cat-desc">${escapeHtml(c.desc)}</span>
+        </button>`).join('')}
+      </div>
+      ${!isFirst ? `<button class="pl-next" style="background:var(--surface);color:var(--text);border:1.5px solid var(--divider);margin-top:0.5rem" id="obCatBack" type="button">← Back to outing</button>` : ''}
+    `;
+    body.querySelectorAll('[data-ob-cat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        OB.pendingCat = btn.dataset.obCat; OB.step = 'pick-item'; obRender();
+      });
+    });
+    const backBtn = document.getElementById('obCatBack');
+    if (backBtn) backBtn.addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+  }
+
+  let obRetryTimer = null;
+
+  async function obRenderPickAsync(body, catId) {
+    const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
+    const lastCoords = lastStop ? lastStop.coords : null;
+    const radius     = obRadiusMiles();
+    const cat        = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
+    body.innerHTML   = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
+
+    const pool = obRawPool(catId);
+    await Promise.allSettled(pool.slice(0, 30).map(p => obLoadItemCoords(p)));
+    // Pull any remaining cached coords without extra API calls
+    pool.slice(30).forEach(p => {
+      if (p.coords !== undefined || p.type === 'event') return;
+      const q = p.item.location ? `${p.item.name}, ${p.item.location}` : p.item.name;
+      const cached = lsCoordGet('acc:' + q);
+      if (cached !== undefined) p.coords = cached;
+    });
+
+    // Guard: user may have navigated away during the async load
+    if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return;
+
+    const nearby = [], elsewhere = [];
+    for (const p of pool) {
+      if (lastCoords && p.coords) {
+        const d = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
+        p._dist = d;
+        (d <= radius ? nearby : elsewhere).push(p);
+      } else {
+        p._dist = Infinity; elsewhere.push(p);
+      }
+    }
+    nearby.sort((a, b) => a._dist - b._dist);
+
+    function itemHTML(p) {
+      const idx = pool.indexOf(p);
+      const distBadge = p._dist !== Infinity
+        ? `<span class="ob-pick-dist">${escapeHtml(obTravelLabel(p._dist))}</span>` : '';
+      return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button">
+        <span class="ob-pick-emoji">${p.emoji}</span>
+        <span class="ob-pick-info">
+          <span class="ob-pick-name">${escapeHtml(p.label)}</span>
+          ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(p.sublabel.split(',').slice(0, 2).join(',').trim())}</span>` : ''}
+        </span>
+        ${distBadge}
+      </button>`;
+    }
+
+    const hasNearby = nearby.length > 0;
+    body.innerHTML = `<div class="ob-pick-list">
+      ${lastCoords && hasNearby ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
+      ${lastCoords && !hasNearby ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} found within ${escapeHtml(obTravelLabel(radius))} — all options shown.</div>` : ''}
+      ${nearby.map(itemHTML).join('')}
+      ${hasNearby && lastCoords && elsewhere.length ? `<div class="ob-section-header">Further away</div>` : ''}
+      ${elsewhere.slice(0, 60).map(itemHTML).join('')}
+    </div>`;
+
+    body.querySelectorAll('[data-ob-pidx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = pool[parseInt(btn.dataset.obPidx, 10)];
+        if (!p) return;
+        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || null });
+        OB.step = 'equation'; obRender();
+      });
+    });
+  }
+
+  function obRenderEquation(body) {
+    const stopsHTML = OB.stops.map((s, i) => {
+      const prev = OB.stops[i - 1];
+      const distBadge = (prev && prev.coords && s.coords)
+        ? `<span class="ob-stop-dist">${escapeHtml(obTravelLabel(haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon)))}</span>` : '';
+      return `${i > 0 ? '<div class="ob-connector">+</div>' : ''}
+        <div class="ob-stop-card">
+          <div class="ob-stop-card-head">
+            <span class="ob-stop-num">${i + 1}</span>
+            <span class="ob-stop-name">${s.emoji} ${escapeHtml(s.label)}</span>
+            ${distBadge}
+            <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Remove" title="Remove">✕</button>
+          </div>
+          ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(s.sublabel.split(',').slice(0, 2).join(',').trim())}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="ob-equation">${stopsHTML}</div>
+      <div class="ob-add-label">Add a stop</div>
+      <div class="ob-cat-grid">
+        ${OB_CATS.map(c => `<button class="ob-cat-btn" data-ob-add="${escapeAttr(c.id)}" type="button">
+          <span class="ob-cat-emoji">${c.emoji}</span>
+          <span class="ob-cat-label" style="font-size:0.78rem">${escapeHtml(c.label)}</span>
+        </button>`).join('')}
+      </div>
+      ${OB.stops.length >= 2
+        ? `<button class="pl-next" id="obGenerate" type="button">= Build itinerary ✨</button>`
+        : `<div style="text-align:center;font-size:0.81rem;color:var(--text-secondary);margin-top:0.6rem">Add at least 2 stops to build your itinerary</div>`}
+    `;
+    body.querySelectorAll('[data-ob-rm]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        OB.stops.splice(parseInt(btn.dataset.obRm, 10), 1);
+        if (OB.stops.length === 0) OB.step = 'first-category';
+        obRender();
+      });
+    });
+    body.querySelectorAll('[data-ob-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        OB.pendingCat = btn.dataset.obAdd; OB.step = 'pick-item'; obRender();
+      });
+    });
+    const gen = document.getElementById('obGenerate');
+    if (gen) gen.addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
+  }
+
+  async function obBuildItinerary() {
+    try {
+      OB.result = await obCallGemini();
+      OB.step = 'result'; obRender();
+    } catch (e) {
+      const body = document.getElementById('obBody');
+      if (!body) return;
+      document.getElementById('obHeadline').textContent = 'Sorry!';
+      const rl = plRateLimitInfo(e);
+      const editBtn = `<button class="pl-next" style="background:var(--surface);color:var(--text);border:1.5px solid var(--divider);margin-top:0.5rem" id="obRetryEdit" type="button">← Edit outing</button>`;
+      if (rl) {
+        body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>${rl.message}</div>
+          <button class="pl-next" id="obRetry" type="button" disabled>↻ Try again</button>${editBtn}`;
+        const btn = document.getElementById('obRetry');
+        const tick = () => {
+          const ms = rl.retryAt - new Date();
+          if (ms <= 0) { btn.disabled = false; btn.textContent = '↻ Try again'; if (obRetryTimer) { clearInterval(obRetryTimer); obRetryTimer = null; } return; }
+          btn.textContent = `↻ Try again in ${plCountdownLabel(ms)}`;
+        };
+        obRetryTimer = setInterval(tick, 1000); tick();
+        btn.addEventListener('click', () => { if (!btn.disabled) { OB.step = 'generating'; obRender(); obBuildItinerary(); } });
+      } else {
+        body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">😔</div>Sorry, the AI is unavailable right now. Please try again later.</div>
+          <button class="pl-next" id="obRetry" type="button">↻ Try again</button>${editBtn}`;
+        document.getElementById('obRetry').addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
+      }
+      const eb = document.getElementById('obRetryEdit');
+      if (eb) eb.addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+    }
+  }
+
+  async function obCallGemini() {
+    const day      = obActiveDay();
+    const dayName  = day ? DAYS_LONG[day.getDay()] : 'today';
+    const modeLbl  = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
+    const stopLines = OB.stops.map((s, i) => {
+      const prev = OB.stops[i - 1];
+      const dist = (prev && prev.coords && s.coords)
+        ? ` (${obTravelLabel(haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon))} from previous stop)` : '';
+      return `${i + 1}. ${s.emoji} [${s.type}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}${dist}`;
+    }).join('\n');
+
+    const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
+
+Day: ${dayName}
+Transit: ${modeLbl}
+
+Stops (in order):
+${stopLines}
+
+Rules:
+1. Suggest a realistic start time and timing based on context (meal windows, event hours, typical duration).
+2. Write 2–3 engaging sentences per stop: what makes it special and why it fits.
+3. One short practical tip per stop (hours, reservations, etc.), or null if nothing useful.
+4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Bookstore", "Market", "Dessert", etc.
+5. "summary" = fun 6–10 word tagline for the full outing.
+
+Return ONLY valid JSON (no markdown fences):
+{"summary":"Tagline","stops":[{"name":"Stop name","eyebrow":"Label","time":"6:00 PM","durationMins":90,"desc":"Description.","tip":"Tip or null"}]}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getGeminiKey()}`;
+    const res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } },
+      }),
+    });
+    if (!res.ok) {
+      let detail = null; try { detail = await res.json(); } catch {}
+      const err = new Error('Gemini ' + res.status); err.status = res.status;
+      if (res.status === 429 && detail && detail.error) {
+        const dets = detail.error.details || [];
+        const ri = dets.find(d => (d['@type'] || '').includes('RetryInfo'));
+        if (ri && ri.retryDelay) { const mx = String(ri.retryDelay).match(/([\d.]+)s/); if (mx) err.retryDelaySec = Math.ceil(parseFloat(mx[1])); }
+        const qf = dets.find(d => (d['@type'] || '').includes('QuotaFailure'));
+        const ids = ((qf && qf.violations) || []).map(v => (v.quotaId || '') + ' ' + (v.quotaMetric || '')).join(' ');
+        if (/per_?day/i.test(ids)) err.quotaScope = 'day'; else if (/per_?minute/i.test(ids)) err.quotaScope = 'minute';
+      }
+      throw err;
+    }
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const out = parts.filter(p => p && p.text && !p.thought);
+    const raw = (out.length ? out : parts).map(p => p && p.text).filter(Boolean).join('').trim();
+    const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    let bod = (fence ? fence[1] : raw).trim();
+    try { return JSON.parse(bod); } catch {}
+    const objs = [...bod.matchAll(/\{[\s\S]*?\}/g)];
+    for (let i = objs.length - 1; i >= 0; i--) { try { return JSON.parse(objs[i][0]); } catch {} }
+    throw new Error('No parseable JSON from Gemini');
+  }
+
+  function obVibeLabel() {
+    return (OB.result && OB.result.summary) ? OB.result.summary : 'Your outing';
+  }
+
+  function obAllStopsDirHref() {
+    const pts = OB.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
+    if (pts.length < 2) return null;
+    const mode = OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : OB.transitMode === 'bike' ? 'bicycling' : 'walking';
+    const origin = encodeURIComponent(pts[0]), dest = encodeURIComponent(pts[pts.length - 1]);
+    const wps = pts.slice(1, -1).map(encodeURIComponent).join('|');
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
+    if (wps) url += `&waypoints=${wps}`;
+    return url;
+  }
+
+  function obRenderResult(body) {
+    const result = OB.result || {};
+    const aiStops = Array.isArray(result.stops) ? result.stops : [];
+    const routeHref = obAllStopsDirHref();
+    const located = OB.stops.filter(s => s.coords);
+    const mapHTML = located.length > 1
+      ? `<div class="dn-map-wrap"><img class="dn-map-img" src="${escapeAttr(plStaticMapUrl(located))}" alt="Map of your outing" loading="lazy" onerror="this.style.display='none'"></div>` : '';
+    const routeBtnHTML = routeHref
+      ? `<a class="pl-route-btn" href="${escapeAttr(routeHref)}" target="_blank" rel="noopener">🗺️ Open route in Google Maps</a>` : '';
+
+    const timelineHTML = OB.stops.map((s, i) => {
+      const ai   = aiStops[i] || {};
+      const next = OB.stops[i + 1];
+      let connector = '';
+      if (next) {
+        if (s.coords && next.coords) {
+          const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
+          const lbl = obTravelLabel(mi);
+          const isWalk = /walk/.test(lbl);
+          const modeEmoji = isWalk ? '🚶' : /bike/.test(lbl) ? '🚲' : /drive/.test(lbl) ? '🚗' : '🚇';
+          const dm = isWalk ? 'walking' : OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
+          const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=${dm}`;
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${escapeHtml(lbl)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+        } else {
+          connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
+        }
+      }
+      const card = `<div class="dn-pair-card pl-stop">
+        <div class="pl-stop-head">
+          <span class="pl-stop-num">${i + 1}</span>
+          <div>
+            <div class="dn-pair-eyebrow">${escapeHtml(s.emoji)} ${escapeHtml(ai.eyebrow || s.type)}${ai.time ? ` · ${escapeHtml(ai.time)}` : ''}</div>
+            <div class="dn-pair-title">${escapeHtml(ai.name || s.label)}</div>
+          </div>
+        </div>
+        ${ai.desc ? `<div class="dn-pair-desc">${escapeHtml(ai.desc)}</div>` : ''}
+        ${ai.tip ? `<div class="dn-pair-meta"><span>💡 ${escapeHtml(ai.tip)}</span></div>` : ''}
+      </div>`;
+      return card + connector;
+    }).join('');
+
+    body.innerHTML = `
+      ${result.summary ? `<div class="pl-summary">✨ ${escapeHtml(result.summary)}</div>` : ''}
+      ${mapHTML}
+      ${routeBtnHTML}
+      <div class="pl-timeline">${timelineHTML}</div>
+      <button class="dn-export-btn" id="obShare" type="button">📤 Share itinerary</button>
+      <button class="pl-next" style="background:var(--surface);color:var(--text);border:1.5px solid var(--divider);margin-top:0.75rem" id="obEditOuting" type="button">← Edit outing</button>
+    `;
+
+    const day = obActiveDay();
+    const dayLabel = day ? `${DAYS_LONG[day.getDay()]}, ${MONTHS[day.getMonth()].slice(0, 3)} ${day.getDate()}` : '';
+    OB.shareText = [
+      `🗺️ ${obVibeLabel()}`, dayLabel, '',
+      ...OB.stops.map((s, i) => {
+        const ai = aiStops[i] || {};
+        return [`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` (${ai.time})` : ''}`,
+                ai.tip ? `   💡 ${ai.tip}` : ''].filter(Boolean);
+      }).flat(),
+      '', routeHref ? `Route: ${routeHref}` : '',
+    ].filter((l, i, arr) => l !== '' || (i > 0 && arr[i - 1] !== '')).join('\n').trim();
+
+    document.getElementById('obShare').addEventListener('click', async () => {
+      try { await navigator.share({ text: OB.shareText }); }
+      catch { try { await navigator.clipboard.writeText(OB.shareText); alert('Copied to clipboard!'); } catch { alert(OB.shareText); } }
+    });
+    document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+  }
+
+  function setupOutingBuilder() {
+    const overlay = document.getElementById('obOverlay');
+    const back    = document.getElementById('obBack');
+    if (!overlay || !back) return;
+    back.addEventListener('click', () => {
+      if (OB.step === 'transit' && OB.stops.length === 0) { overlay.setAttribute('hidden', ''); return; }
+      if (OB.step === 'transit')          { OB.step = 'equation';       obRender(); return; }
+      if (OB.step === 'first-category')   { OB.step = 'transit';        obRender(); return; }
+      if (OB.step === 'pick-item')        { OB.step = OB.stops.length === 0 ? 'first-category' : 'equation'; obRender(); return; }
+      if (OB.step === 'equation')         { overlay.setAttribute('hidden', ''); return; }
+      OB.step = 'equation'; obRender(); // generating / result → equation
+    });
   }
 
   setRandomPhillyBackground();
