@@ -5264,11 +5264,11 @@ ${eventList}
 RESTAURANTS (pick from these by exact name; neighborhood shown after cuisine):
 ${restaurantList}
 
-ACTIVITY IDEAS (use if no calendar event fits):
+ACTIVITY IDEAS (LAST RESORT ONLY — these are generic filler, not real events; see rule 1):
 ${ideaList}
 
 RULES:
-1. PRIORITIZE THE GOINGS-ON CALENDAR EVENTS. ${dayEvents.length && activitySlots ? `There are ${dayEvents.length} calendar event(s) this day and ${activitySlots} activity slot(s). Fill the activity slots with the listed calendar events FIRST — set "isCalendarEvent": true and copy the event name exactly. Only use an Activity Idea if you run out of calendar events.` : 'If a calendar event is listed, use it for an activity slot (set "isCalendarEvent": true); otherwise use an Activity Idea (set "isCalendarEvent": false).'}
+1. ACTIVITY IDEAS ARE A TRUE LAST RESORT. Fill every activity slot in this priority order, stopping at the first that works: (a) a real Goings-On CALENDAR EVENT (set "isCalendarEvent": true, copy the name exactly) — always preferred; (b) if no event fits, drop the activity slot entirely and instead build a richer food-forward plan (e.g. an extra dessert/drinks stop, or a second complementary restaurant); ONLY (c) fall back to an ACTIVITY IDEA when an activity slot genuinely cannot be filled any other way. ${dayEvents.length && activitySlots ? `There are ${dayEvents.length} calendar event(s) and ${activitySlots} activity slot(s) — use the real events first and exhaust them before ever touching an idea.` : 'If any calendar event is listed, use it before any idea.'} A plan with zero ideas is better than a plan padded with generic ideas.
 2. EVENT TIMES ARE FIXED. When you use a calendar event, set its "hour" to the actual start time shown in CALENDAR EVENTS above — NEVER move it to a different time. Schedule the meals and dessert into the gaps around that real event time.
 3. ORDER ALL STOPS CHRONOLOGICALLY by hour, earliest first.
 4. DISTANCE IS A HARD CONSTRAINT: ${transitNote} Use the neighborhoods to keep every consecutive pair close enough. Do not pick stops on opposite sides of the city.
@@ -5287,6 +5287,7 @@ RULES:
    - Never pair an event with a generic "walk through the same park/square" right after — that's redundant filler. If the event is AT or beside Rittenhouse Square, do NOT also add a Rittenhouse Square walk.
    - Don't default to the same handful of ideas (e.g. "walk through Washington Square Park") every time. Pick what actually fits THIS occasion and these specific stops.
    - Two stops should never be essentially the same activity or the same single location.
+   - IF you must use an idea (rule 1c), it must CONTRAST with the surrounding stops, not echo them: do not pick an outdoor/park idea when another stop is already outdoors or at a park; do not repeat a neighborhood or theme already present in the plan. The idea should add a genuinely new flavor (different vibe, different part of town), or be omitted.
 10. BE SPECIFIC AND INTENTIONAL. Build a plan with a clear thread — a cuisine, a neighborhood character, a vibe — and make the summary explain the genuine reasoning, not a generic blurb. Favor a real Goings-On event over a generic idea whenever one reasonably fits the occasion and timing.
 11. MATCH MEAL TAGS TO THE TIME OF DAY. A restaurant's "tags" list which meals it actually serves. Only use a restaurant for a meal slot whose time matches one of its tags: a morning meal (before 11am) needs tag "breakfast", a midday meal (11am-3pm) needs tag "lunch", and an evening meal (5pm or later) needs tag "dinner". Never schedule a lunch-only spot for dinner or vice versa.
 
