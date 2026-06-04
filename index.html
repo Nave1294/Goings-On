@@ -3392,7 +3392,7 @@
     { name: 'Paffuto', location: '1009 S 8th St, Bella Vista', cuisine: 'Italian Café', price: '$', website: '', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['lunch', 'cheap-eats'] },
     { name: "Schlesinger's", location: '1521 Locust St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.', tags: ['lunch'] },
     { name: 'Huda', location: '32 S 18th St, Center City', cuisine: 'Sandwiches', price: '$', website: '', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.', tags: ['lunch', 'cheap-eats'] },
-    { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum, served at lunchtime. Count us in.', tags: ['lunch'] },
+    { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum, served Sundays only. Count us in.', tags: ['lunch'], days: ['Sunday'], season: 'Dim sum Sundays only' },
     { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: 'A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. One of the best work-from-cafe setups in the city.', tags: ['lunch', 'cheap-eats'] },
     { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "An even bigger staple than before in its new spot. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong.", tags: ['lunch', 'dinner'] },
     { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth it. Lunch salads here are definitively better than ones you'd make at home.", tags: ['lunch'] },
@@ -4774,7 +4774,9 @@
     const occasionLabel = (PL_OCCASIONS.find(o => o.id === PL.occasion) || {}).label || 'casual hangout';
     const foodLabel = (PL_FOODS.find(f => f.id === PL.food) || {}).label || 'any';
 
-    const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)];
+    const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]
+      // Drop day-restricted spots (e.g. Sunday-only dim sum) when planning another day.
+      .filter(r => !Array.isArray(r.days) || r.days.includes(dayName));
     const restaurantList = allR.map(r =>
       '"' + r.name + '" | ' + (r.cuisine || '') + ' | ' + (r.location ? r.location.split(',').slice(-1)[0].trim() : 'Philly') + ' | ' + (r.price || '') + ' | tags:' + (r.tags || []).join(',') + ' | ' + (r.desc || '').slice(0, 70)
     ).join('\n');
