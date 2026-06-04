@@ -3778,6 +3778,19 @@
 
   const placeInfoCache = {};
 
+  // --- localStorage coord cache (persists across page reloads) -------
+  const COORD_LS_KEY = 'goings_on_coords_v1';
+  let _lsCoords = null;
+  function lsCoordGet(key) {
+    if (!_lsCoords) { try { _lsCoords = JSON.parse(localStorage.getItem(COORD_LS_KEY) || '{}'); } catch { _lsCoords = {}; } }
+    return _lsCoords[key];
+  }
+  function lsCoordSet(key, val) {
+    if (!_lsCoords) lsCoordGet(key);
+    _lsCoords[key] = val;
+    try { localStorage.setItem(COORD_LS_KEY, JSON.stringify(_lsCoords)); } catch {}
+  }
+
   // Returns { photoUrl, lat, lon, address } for a text query (cached).
   async function fetchPlaceInfo(query) {
     if (placeInfoCache[query] !== undefined) return placeInfoCache[query];
@@ -3810,29 +3823,40 @@
     }
   }
 
-  async function loadRestoImages(root) {
+  // Lazy-load a single tile's photo (called when tile enters viewport).
+  async function loadTilePhoto(tile) {
+    if (tile.dataset.photoLoaded) return;
+    tile.dataset.photoLoaded = '1';
+    const info = await fetchPlaceInfo(tile.dataset.query || tile.dataset.place);
+    if (!info) return;
+    if (info.lat != null) {
+      tile.dataset.lat = info.lat;
+      tile.dataset.lon = info.lon;
+      updateTileDistance(tile);
+    }
+    const placeholder = tile.querySelector('.resto-img-placeholder');
+    if (placeholder && info.photoUrl) {
+      const img = document.createElement('img');
+      img.className = 'resto-img';
+      img.alt = tile.dataset.place;
+      img.style.opacity = '0';
+      img.style.transition = 'opacity 0.4s ease';
+      img.onload = () => { img.style.opacity = '1'; };
+      img.src = info.photoUrl;
+      placeholder.replaceWith(img);
+    }
+  }
+
+  // Shared IntersectionObserver for lazy photo loading across all tile lists.
+  const _tilePhotoObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { _tilePhotoObserver.unobserve(e.target); loadTilePhoto(e.target); } });
+  }, { rootMargin: '200px' });
+
+  function loadRestoImages(root) {
     const scope = root || document;
-    const tiles = scope.querySelectorAll('.resto-tile[data-place]');
-    await Promise.all([...tiles].map(async tile => {
-      const info = await fetchPlaceInfo(tile.dataset.query || tile.dataset.place);
-      if (!info) return;
-      if (info.lat != null) {
-        tile.dataset.lat = info.lat;
-        tile.dataset.lon = info.lon;
-        updateTileDistance(tile);
-      }
-      const placeholder = tile.querySelector('.resto-img-placeholder');
-      if (placeholder && info.photoUrl) {
-        const img = document.createElement('img');
-        img.className = 'resto-img';
-        img.alt = tile.dataset.place;
-        img.style.opacity = '0';
-        img.style.transition = 'opacity 0.4s ease';
-        img.onload = () => { img.style.opacity = '1'; };
-        img.src = info.photoUrl;
-        placeholder.replaceWith(img);
-      }
-    }));
+    scope.querySelectorAll('.resto-tile[data-place]').forEach(tile => {
+      if (!tile.dataset.photoLoaded) _tilePhotoObserver.observe(tile);
+    });
   }
 
   function restoTileHTML(r) {
@@ -3945,8 +3969,22 @@
 
   async function ensurePlaceCoords(r) {
     if (r._coords !== undefined) return;
-    const info = await fetchPlaceInfo(placeQuery(r));
+    const q = placeQuery(r);
+    // 1. Check persistent coord cache
+    const cached = lsCoordGet(q);
+    if (cached !== undefined) { r._coords = cached; return; }
+    // 2. Free geocoder: try neighborhood (reliably geocodes), then full query
+    const geoQuery = r.location ? `${r.location}, Philadelphia` : `${r.name} Philadelphia`;
+    const free = await geocode(geoQuery);
+    if (free) {
+      r._coords = { lat: free.lat, lon: free.lon };
+      lsCoordSet(q, r._coords);
+      return;
+    }
+    // 3. Fall back to Places API (no free quota used unless free geocoder fails)
+    const info = await fetchPlaceInfo(q);
     r._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+    lsCoordSet(q, r._coords);
   }
 
   function placeDist(r) {
@@ -4547,8 +4585,14 @@
 
   async function plEnsureIdeaCoords(idea) {
     if (idea._coords !== undefined) return;
-    const info = await fetchPlaceInfo(`${idea.title} Philadelphia`);
+    const q = `${idea.title} Philadelphia`;
+    const cached = lsCoordGet(q);
+    if (cached !== undefined) { idea._coords = cached; return; }
+    const free = await geocode(q);
+    if (free) { idea._coords = { lat: free.lat, lon: free.lon }; lsCoordSet(q, idea._coords); return; }
+    const info = await fetchPlaceInfo(q);
     idea._coords = (info && info.lat != null) ? { lat: info.lat, lon: info.lon } : null;
+    lsCoordSet(q, idea._coords);
   }
 
   // ── itinerary assembly ──
