@@ -1496,6 +1496,15 @@
     }
     .dn-export-btn:hover { filter: brightness(1.05); }
     .dn-export-btn:active { transform: scale(0.98); }
+    .pl-route-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; font: inherit; font-size: 0.88rem; font-weight: 700;
+      color: #fff; background: var(--accent); text-decoration: none;
+      border: none; border-radius: 14px; padding: 0.8rem 1rem;
+      margin: -0.2rem 0 1rem; cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .pl-route-btn:hover { filter: brightness(1.06); }
+    .pl-route-btn:active { transform: scale(0.98); }
     /* Planner wizard */
     .pl-progress { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
     .pl-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--divider); transition: background 0.2s ease; }
@@ -4915,6 +4924,22 @@
       : 'walking';
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
   }
+  // A single Google Maps directions link covering every located stop in order
+  // (first = origin, last = destination, middle = waypoints), in the chosen mode.
+  function plAllStopsDirHref() {
+    const pts = PL.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
+    if (pts.length < 2) return null;
+    const mode = PL.transit === 'drive' ? 'driving'
+      : PL.transit === 'transit' ? 'transit'
+      : PL.transit === 'bike' ? 'bicycling'
+      : 'walking';
+    const origin = encodeURIComponent(pts[0]);
+    const destination = encodeURIComponent(pts[pts.length - 1]);
+    const waypoints = pts.slice(1, -1).map(encodeURIComponent).join('|');
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${mode}`;
+    if (waypoints) url += `&waypoints=${waypoints}`;
+    return url;
+  }
   // Walking time from straight-line miles: ~3 mph plus a grid-detour factor.
   function plWalkMins(mi) { return Math.round(mi * 24); }
   // Biking time: ~9 mph effective in the city including lights and a detour factor.
@@ -5297,7 +5322,7 @@ Valid types: "meal", "activity", "dessert"`;
         if (ev) {
           usedEv.add(ev);
           await ensureEventCoords(ev);
-          const c = eventCoords(ev); // accurate venue coords, or null (→ no fake estimate)
+          const c = eventCoords(ev); // accurate venue coords, or null (→ no estimate)
           const eh = plEventHour(ev);
           const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
           // Compute actual event duration from calendar data when possible
@@ -5340,7 +5365,7 @@ Valid types: "meal", "activity", "dessert"`;
         const r = allR.find(x => x.name.toLowerCase() === (pick.name || '').toLowerCase())
           || allR.find(x => x.name.toLowerCase().includes((pick.name || '').slice(0, 12).toLowerCase()));
         if (r) {
-          const rCoords = await plEnsureRestoCoords(r); // accurate, or null
+          const rCoords = await plEnsureRestoCoords(r); // accurate venue coords, or null
           const mt = plMealTypeAt(pick.hour);
           const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.location ? r.name + ', ' + r.location : r.name);
           stops.push({
@@ -5508,8 +5533,12 @@ Valid types: "meal", "activity", "dessert"`;
     document.getElementById('plHeadline').textContent = plVibeLabel();
 
     const located = PL.stops.filter(s => s.coords);
+    const routeHref = plAllStopsDirHref();
     const mapHTML = located.length
       ? `<div class="dn-map-wrap"><img class="dn-map-img" src="${escapeAttr(plStaticMapUrl(located))}" alt="Map of your itinerary stops" loading="lazy" onerror="this.style.display='none'"></div>`
+      : '';
+    const routeBtnHTML = routeHref
+      ? `<a class="pl-route-btn" href="${escapeAttr(routeHref)}" target="_blank" rel="noopener">🗺️ Open route in Google Maps</a>`
       : '';
 
     const timeline = PL.stops.map((s, i) => {
@@ -5535,6 +5564,7 @@ Valid types: "meal", "activity", "dessert"`;
       ${dayLabel ? `<div class="pl-daystamp">${escapeHtml(dayLabel)} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}</div>` : ''}
       ${PL.summary ? `<div class="pl-summary">💡 ${escapeHtml(PL.summary)}</div>` : ''}
       ${mapHTML}
+      ${routeBtnHTML}
       <div class="pl-timeline">${timeline}</div>
       <button class="dn-export-btn" id="plExport" type="button">📤 Share itinerary</button>
       <div class="dn-feedback">
