@@ -3874,6 +3874,25 @@
     _lsCoords[key] = val;
     try { localStorage.setItem(COORD_LS_KEY, JSON.stringify(_lsCoords)); } catch {}
   }
+
+  // --- localStorage place-info cache: photo reference + coords, persisted so a
+  //     given spot is fetched from the Places API once ever, not once per load.
+  const PLACEINFO_LS_KEY = 'goings_on_placeinfo_v1';
+  let _lsPlaceInfo = null;
+  function lsPlaceInfoLoad() {
+    if (!_lsPlaceInfo) { try { _lsPlaceInfo = JSON.parse(localStorage.getItem(PLACEINFO_LS_KEY) || '{}'); } catch { _lsPlaceInfo = {}; } }
+    return _lsPlaceInfo;
+  }
+  function lsPlaceInfoGet(key) { return lsPlaceInfoLoad()[key]; }
+  function lsPlaceInfoSet(key, val) {
+    lsPlaceInfoLoad()[key] = val;
+    try { localStorage.setItem(PLACEINFO_LS_KEY, JSON.stringify(_lsPlaceInfo)); } catch {}
+  }
+  // Build a photo URL from a stored photo resource name + the current API key,
+  // so a key rotation never leaves stale URLs in the cache.
+  function photoUrlFromName(name) {
+    return name ? `https://places.googleapis.com/v1/${name}/media?maxHeightPx=400&key=${PLACES_API_KEY}` : null;
+  }
   // The free geocoder is a city/place-name database — it can fuzzy-match venue
   // names to far-off cities (e.g. a Philly spot landing in New York). Everything
   // in this app is greater-Philadelphia, so reject any result that isn't close.
@@ -3881,9 +3900,17 @@
     return lat != null && lon != null && haversineMiles(PHILLY_LAT, PHILLY_LON, lat, lon) <= 60;
   }
 
-  // Returns { photoUrl, lat, lon, address } for a text query (cached).
+  // Returns { photoUrl, lat, lon, address } for a text query. Cached in memory
+  // and in localStorage so each spot costs a Places API call only once, ever.
   async function fetchPlaceInfo(query) {
     if (placeInfoCache[query] !== undefined) return placeInfoCache[query];
+    // Persistent cache: rebuild the photo URL from the stored reference name.
+    const stored = lsPlaceInfoGet(query);
+    if (stored !== undefined) {
+      const info = stored && { photoUrl: photoUrlFromName(stored.photoName), lat: stored.lat, lon: stored.lon, address: stored.address };
+      placeInfoCache[query] = info || null;
+      return placeInfoCache[query];
+    }
     try {
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -3897,14 +3924,13 @@
       if (!res.ok) { placeInfoCache[query] = null; return null; }
       const data = await res.json();
       const place = data.places?.[0];
-      if (!place) { placeInfoCache[query] = null; return null; }
-      const photo = place.photos?.[0];
-      const info = {
-        photoUrl: photo?.name ? `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=400&key=${PLACES_API_KEY}` : null,
-        lat: place.location?.latitude ?? null,
-        lon: place.location?.longitude ?? null,
-        address: place.formattedAddress || null,
-      };
+      if (!place) { placeInfoCache[query] = null; lsPlaceInfoSet(query, null); return null; }
+      const photoName = place.photos?.[0]?.name || null;
+      const lat = place.location?.latitude ?? null;
+      const lon = place.location?.longitude ?? null;
+      const address = place.formattedAddress || null;
+      lsPlaceInfoSet(query, { photoName, lat, lon, address });
+      const info = { photoUrl: photoUrlFromName(photoName), lat, lon, address };
       placeInfoCache[query] = info;
       return info;
     } catch {
