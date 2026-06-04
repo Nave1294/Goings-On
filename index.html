@@ -2468,7 +2468,9 @@
     const queryStr = ev.location || ev.summary;
     if (!queryStr) { ev._coords = null; return; }
     const info = await fetchPlaceInfo(queryStr);
-    if (info && info.lat != null) {
+    // Accept only a confidently-near-Philly match; a far result is a mis-geocode
+    // and would produce a misleading distance / travel time.
+    if (info && info.lat != null && nearPhilly(info.lat, info.lon)) {
       ev._coords = { lat: info.lat, lon: info.lon };
       if (!ev.location && info.address) ev._foundLocation = info.address; // discovered online
     } else {
@@ -4901,19 +4903,32 @@
   ];
   const PL_TRANSIT_MODES = [
     { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~15 min on foot' },
+    { id: 'bike',    emoji: '🚲', label: 'Biking',         desc: 'Up to ~15 min by bike' },
     { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~20 min, direct service' },
     { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
   function plTransitDirHref(from, to, forceWalk) {
-    const mode = forceWalk ? 'walking' : PL.transit === 'drive' ? 'driving' : PL.transit === 'transit' ? 'transit' : 'walking';
+    const mode = forceWalk ? 'walking'
+      : PL.transit === 'drive' ? 'driving'
+      : PL.transit === 'transit' ? 'transit'
+      : PL.transit === 'bike' ? 'bicycling'
+      : 'walking';
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
   }
   // Walking time from straight-line miles: ~3 mph plus a grid-detour factor.
   function plWalkMins(mi) { return Math.round(mi * 24); }
+  // Biking time: ~9 mph effective in the city including lights and a detour factor.
+  function plBikeMins(mi) { return Math.round(mi * 7); }
   function plLegLabel(mi) {
     const walkMins = plWalkMins(mi);
     if (PL.transit === 'walk') {
       return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
+    }
+    if (PL.transit === 'bike') {
+      const bikeMins = plBikeMins(mi);
+      // Very short hops are quicker to just walk.
+      if (walkMins <= bikeMins + 2) return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
+      return bikeMins <= 1 ? '< 1 min bike' : `~${bikeMins} min bike`;
     }
     if (PL.transit === 'drive') {
       const mins = Math.round(mi / 22 * 60); // ~22 mph city driving incl. lights
@@ -4994,6 +5009,25 @@
     idea._coords = (info && info.lat != null && nearPhilly(info.lat, info.lon))
       ? { lat: info.lat, lon: info.lon } : null;
     lsCoordSet(q, idea._coords);
+  }
+
+  // Accurate venue coords for a planner restaurant stop, using the full
+  // "name, street, neighborhood" query via Places so travel-time estimates are
+  // real (not neighborhood-centroid approximations). Cached; tiny volume.
+  // Returns null when an exact location can't be confirmed — the leg then shows
+  // no time rather than a misleading one.
+  async function plEnsureRestoCoords(r) {
+    if (r._coordsAccurate !== undefined) return r._coordsAccurate;
+    const q = placeQuery(r);
+    const key = 'acc:' + q;
+    const cached = lsCoordGet(key);
+    if (cached !== undefined) { r._coordsAccurate = cached; return cached; }
+    const info = await fetchPlaceInfo(q);
+    const coords = (info && info.lat != null && nearPhilly(info.lat, info.lon))
+      ? { lat: info.lat, lon: info.lon } : null;
+    r._coordsAccurate = coords;
+    lsCoordSet(key, coords);
+    return coords;
   }
 
   // ── itinerary assembly ──
@@ -5185,8 +5219,8 @@
       : '(none scheduled this day)';
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
-    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
-    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'drive' ? 10 : 18;
+    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'bike' ? 'Biking — every leg should be a 15-minute bike ride or less (about 2 miles). Keep stops in the same or nearby neighborhoods so the ride between them is short and pleasant.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
+    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'bike' ? 12 : PL.transit === 'drive' ? 10 : 18;
 
     const prompt = `You are a sharp, opinionated Philadelphia local planning a great outing. Think it through carefully before answering: consider the occasion, what's actually worth doing, how the stops flow together into ONE coherent experience, and which real Goings-On events make the night special. Then return ONLY a raw JSON object — no prose, no markdown fences.
 
@@ -5263,7 +5297,7 @@ Valid types: "meal", "activity", "dessert"`;
         if (ev) {
           usedEv.add(ev);
           await ensureEventCoords(ev);
-          const c = eventCoords(ev);
+          const c = eventCoords(ev); // accurate venue coords, or null (→ no fake estimate)
           const eh = plEventHour(ev);
           const when = ev.start && ev.start.dateTime ? fmtTime(ev.start.dateTime) : 'All day';
           // Compute actual event duration from calendar data when possible
@@ -5306,7 +5340,7 @@ Valid types: "meal", "activity", "dessert"`;
         const r = allR.find(x => x.name.toLowerCase() === (pick.name || '').toLowerCase())
           || allR.find(x => x.name.toLowerCase().includes((pick.name || '').slice(0, 12).toLowerCase()));
         if (r) {
-          await ensurePlaceCoords(r);
+          const rCoords = await plEnsureRestoCoords(r); // accurate, or null
           const mt = plMealTypeAt(pick.hour);
           const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.location ? r.name + ', ' + r.location : r.name);
           stops.push({
@@ -5322,7 +5356,7 @@ Valid types: "meal", "activity", "dessert"`;
               r.reservation && { label: '📅 Reserve', href: r.reservation },
               { label: '🗺️ Map', href: mapHref },
             ].filter(Boolean),
-            coords: r._coords || null,
+            coords: rCoords || null,
             r,
           });
           continue;
@@ -5485,10 +5519,10 @@ Valid types: "meal", "activity", "dessert"`;
         if (s.coords && next.coords) {
           const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
           const label = plLegLabel(mi);
-          // Emoji + directions follow the actual leg mode (a short transit hop may say "walk").
+          // Emoji + directions follow the actual leg mode (a short transit/bike hop may say "walk").
           const isWalkLeg = /walk/.test(label);
           const dir = plTransitDirHref(s.coords, next.coords, isWalkLeg);
-          const modeEmoji = isWalkLeg ? '🚶' : /drive/.test(label) ? '🚗' : '🚇';
+          const modeEmoji = isWalkLeg ? '🚶' : /bike/.test(label) ? '🚲' : /drive/.test(label) ? '🚗' : '🚇';
           connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${label}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
