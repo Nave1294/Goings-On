@@ -1603,6 +1603,7 @@
     .spin-eyebrow { text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 0.5rem; }
     .spin-name { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.6rem; animation: spinPop 0.25s ease; }
     .spin-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.8rem; font-size: 0.82rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.9rem; }
+    .spin-meta-ctx { display: block; text-align: center; line-height: 1.45; }
     .spin-desc { font-size: 0.92rem; line-height: 1.5; text-align: center; margin-bottom: 1.25rem; }
     .spin-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
     .spin-action {
@@ -4184,23 +4185,22 @@
   function currentEatPool() {
     return discoverPool();
   }
-  function spinCardHTML(r) {
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+  let spinCtx = null; // the view context the current spin is drawing from
+  function spinCardHTML(it) {
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indecMapQuery(it))}`;
+    const desc = indecItemDesc(it);
+    const suffix = spinCtx ? ' · ' + escapeHtml(spinCtx.label) : '';
     return `
       <button class="add-close" data-spin-close aria-label="Close">✕</button>
-      <div class="spin-eyebrow">🎲 Your pick</div>
-      <div class="spin-name">${escapeHtml(r.name)}</div>
-      <div class="spin-meta">
-        ${r.cuisine ? `<span>🍴 ${escapeHtml(r.cuisine)}</span>` : ''}
-        ${r.location ? `<span>📍 ${escapeHtml(r.location.split(',')[0])}</span>` : ''}
-        ${r.price ? `<span>${escapeHtml(r.price)}</span>` : ''}
-      </div>
-      ${r.desc ? `<div class="spin-desc">${escapeHtml(r.desc)}</div>` : ''}
+      <div class="spin-eyebrow">🎲 Your pick${suffix}</div>
+      <div class="spin-name">${escapeHtml(indecItemName(it))}</div>
+      <div class="spin-meta spin-meta-ctx">${spinCtx ? spinCtx.meta(it) : ''}</div>
+      ${desc ? `<div class="spin-desc">${escapeHtml(desc)}</div>` : ''}
       <div class="spin-actions">
         <button class="spin-action spin-again" data-spin-again type="button">🎲 Spin again</button>
         <a class="spin-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>
-        ${r.website ? `<a class="spin-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
-        ${r.reservation ? `<a class="spin-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+        ${it.website ? `<a class="spin-action" href="${escapeAttr(it.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
+        ${it.reservation ? `<a class="spin-action" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
         <button class="spin-action" data-spin-close type="button">Done</button>
       </div>`;
   }
@@ -4211,32 +4211,35 @@
     const overlay = document.getElementById('spinOverlay');
     if (!card || !overlay) return;
     const myGen = ++spinGen;
-    const pool = currentEatPool();
+    // Follow whatever view you're in: events, restaurants, bookstores, markets.
+    spinCtx = discoverContext();
+    const pool = spinCtx.pool;
+    const nameOf = indecItemName;
     overlay.classList.add('open');
 
     if (!pool.length) {
       card.innerHTML = `<button class="add-close" data-spin-close aria-label="Close">✕</button>
-        <div class="spin-eyebrow">🎲 Spin</div>
+        <div class="spin-eyebrow">🎲 Spin${spinCtx ? ' · ' + escapeHtml(spinCtx.label) : ''}</div>
         <div class="spin-name">Nothing to pick</div>
-        <div class="spin-desc">No spots match your current filters. Clear a filter or switch tabs, then spin again.</div>
+        <div class="spin-desc">Nothing here to choose from right now. Switch tabs and spin again.</div>
         <div class="spin-actions"><button class="spin-action spin-again" data-spin-close type="button">Got it</button></div>`;
       return;
     }
 
     let pick;
     do { pick = pool[Math.floor(Math.random() * pool.length)]; }
-    while (pool.length > 1 && pick.name === lastSpinName);
-    lastSpinName = pick.name;
+    while (pool.length > 1 && nameOf(pick) === lastSpinName);
+    lastSpinName = nameOf(pick);
 
     // Tiny pools or reduced-motion users: skip the roll, reveal straight away.
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (pool.length < 3 || reduceMotion) { card.innerHTML = spinCardHTML(pick); return; }
 
     // Slot-machine roll: flick through random names, decelerating, then land.
-    const names = pool.map(p => p.name);
+    const names = pool.map(nameOf);
     card.innerHTML = `<button class="add-close" data-spin-close aria-label="Close">✕</button>
       <div class="spin-eyebrow">🎲 Rolling…</div>
-      <div class="spin-name spin-rolling" id="spinRoll">${escapeHtml(pick.name)}</div>`;
+      <div class="spin-name spin-rolling" id="spinRoll">${escapeHtml(nameOf(pick))}</div>`;
     const rollEl = card.querySelector('#spinRoll');
     const ticks = 10;
     let i = 0;
@@ -4276,9 +4279,10 @@
     return Infinity; // unknown timing → keep it
   }
 
-  // Per-view context: label for the title suffix, the pool to draw from, the
-  // meta line under each card name, and how to group items for "make it different".
-  function indecContext() {
+  // Per-view context shared by Indecision and the random spin: label for the
+  // title suffix, the pool to draw from, the meta line under each item's name,
+  // and how to group items for the "make it different" reshuffle.
+  function discoverContext() {
     const view = document.body.dataset.view || 'home';
     if (view === 'bookstores') {
       return {
@@ -4412,7 +4416,7 @@
   }
 
   function openIndecision() {
-    indec.ctx = indecContext();
+    indec.ctx = discoverContext();
     indec.pool = indec.ctx.pool;
     indec.seen = new Set();
     indecDeal(null);
@@ -4731,7 +4735,11 @@
       const spinBtn = document.getElementById('eatSpinBtn');
       const spinOverlay = document.getElementById('spinOverlay');
       if (spinBtn && spinOverlay) {
-        spinBtn.addEventListener('click', () => showScopeStep('spin'));
+        // Neighborhood scope only applies to restaurants; other views spin their own pool.
+        spinBtn.addEventListener('click', () => {
+          if (document.body.dataset.view === 'places-to-eat') showScopeStep('spin');
+          else { closeSheet(); spinRandomEat(); }
+        });
         spinOverlay.addEventListener('click', e => {
           if (e.target === spinOverlay || e.target.closest('[data-spin-close]')) spinOverlay.classList.remove('open');
           else if (e.target.closest('[data-spin-again]')) spinRandomEat();
