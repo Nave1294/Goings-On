@@ -4245,50 +4245,103 @@
   }
 
   // ── "Indecision" — pick-a-card game ──
-  // Three face-down cards; flip one to reveal a spot. Don't like it? Reshuffle
-  // into three more that lean away from what you just turned down.
-  const indec = { pool: [], trio: [], chosen: null, seen: new Set() };
+  // Three face-down cards; flip one to reveal a pick. Don't like it? Reshuffle
+  // into three more that lean away from what you just turned down. The pool
+  // follows whatever view you're in: events, restaurants, bookstores, markets.
+  const indec = { pool: [], trio: [], chosen: null, seen: new Set(), ctx: null };
 
-  // Pick 3 spots, biased to differ from `avoid` (the just-rejected pick) and to
-  // span distinct cuisine groups so the three cards feel meaningfully different.
+  // A unified accessor so one card UI works across events/eats/books/markets.
+  function indecItemName(it) { return it.name || it.summary || 'Untitled'; }
+  function indecItemHood(it) {
+    if (it.neighborhood) return it.neighborhood;
+    if (it.location) return it.location.split(',').pop().trim();
+    return 'Philly';
+  }
+  function indecItemDesc(it) { return it.desc || stripTags(it.description || '') || ''; }
+  function indecMapQuery(it) { return indecItemName(it) + ' ' + (it.location || 'Philadelphia'); }
+
+  // Per-view context: label for the title suffix, the pool to draw from, the
+  // meta line under each card name, and how to group items for "make it different".
+  function indecContext() {
+    const view = document.body.dataset.view || 'home';
+    if (view === 'bookstores') {
+      return {
+        label: 'Bookstores',
+        pool: dedupeByName(BOOKSTORES.flatMap(c => c.sections.flatMap(s => s.places))),
+        meta: it => `${it.specialty ? escapeHtml(it.specialty) + '<br>' : ''}📍 ${escapeHtml(indecItemHood(it))}`,
+        group: it => it.specialty || indecItemHood(it),
+      };
+    }
+    if (view === 'farmers-markets') {
+      return {
+        label: 'Farmers Markets',
+        pool: [...FARMERS_MARKETS],
+        meta: it => `📍 ${escapeHtml(indecItemHood(it))}${Array.isArray(it.days) && it.days.length ? '<br>' + escapeHtml(it.days.join(', ')) : ''}`,
+        group: it => indecItemHood(it),
+      };
+    }
+    if (view === 'home') {
+      const evs = [];
+      if (lastRender && lastRender.byDay)
+        for (const k of Object.keys(lastRender.byDay))
+          for (const ev of lastRender.byDay[k]) evs.push(ev);
+      return {
+        label: 'Goings On',
+        pool: evs,
+        meta: it => {
+          const when = (it.start && it.start.dateTime) ? fmtTime(it.start.dateTime) : 'All day';
+          return `🕑 ${escapeHtml(when)}${it.location ? '<br>📍 ' + escapeHtml(indecItemHood(it)) : ''}`;
+        },
+        group: it => (it.summary || '').toLowerCase().slice(0, 12) || Math.random().toString(),
+      };
+    }
+    // default — Places to Eat (respects the citywide / neighborhood scope step)
+    return {
+      label: 'Places to Eat',
+      pool: discoverPool(),
+      meta: it => `${it.cuisine ? escapeHtml(it.cuisine) + '<br>' : ''}📍 ${escapeHtml(indecItemHood(it))}${it.price ? ' · ' + escapeHtml(it.price) : ''}`,
+      group: it => cuisineGroupLabel(it),
+    };
+  }
+
+  // Pick 3 items, biased to differ from `avoid` (the just-rejected pick) and to
+  // span distinct groups so the three cards feel meaningfully different.
   function indecPickTrio(avoid) {
     const pool = indec.pool;
-    const avoidGroup = avoid ? cuisineGroupLabel(avoid) : null;
-    const avoidName = avoid ? avoid.name : null;
-    // Prefer spots that aren't the rejected one, weren't shown recently, and are
-    // a different cuisine group than the one turned down.
-    let cand = pool.filter(r => r.name !== avoidName && !indec.seen.has(r.name) &&
-      (!avoidGroup || cuisineGroupLabel(r) !== avoidGroup));
-    if (cand.length < 3) cand = pool.filter(r => r.name !== avoidName &&
-      (!avoidGroup || cuisineGroupLabel(r) !== avoidGroup));
-    if (cand.length < 3) cand = pool.filter(r => r.name !== avoidName);
+    const groupOf = indec.ctx.group;
+    const avoidGroup = avoid ? groupOf(avoid) : null;
+    const avoidName = avoid ? indecItemName(avoid) : null;
+    const nameOf = indecItemName;
+    let cand = pool.filter(r => nameOf(r) !== avoidName && !indec.seen.has(nameOf(r)) &&
+      (!avoidGroup || groupOf(r) !== avoidGroup));
+    if (cand.length < 3) cand = pool.filter(r => nameOf(r) !== avoidName &&
+      (!avoidGroup || groupOf(r) !== avoidGroup));
+    if (cand.length < 3) cand = pool.filter(r => nameOf(r) !== avoidName);
     if (cand.length < 3) cand = [...pool];
-    // Shuffle, then take up to 3 favoring distinct cuisine groups among them.
     const shuffled = [...cand].sort(() => Math.random() - 0.5);
     const trio = [], usedGroups = new Set();
     for (const r of shuffled) {
-      const g = cuisineGroupLabel(r);
+      const g = groupOf(r);
       if (!usedGroups.has(g)) { trio.push(r); usedGroups.add(g); }
       if (trio.length === 3) break;
     }
-    for (const r of shuffled) { // backfill if we couldn't get 3 distinct groups
+    for (const r of shuffled) {
       if (trio.length === 3) break;
       if (!trio.includes(r)) trio.push(r);
     }
-    trio.forEach(r => indec.seen.add(r.name));
-    if (indec.seen.size > pool.length - 3) indec.seen.clear(); // let spots recur once nearly exhausted
+    trio.forEach(r => indec.seen.add(nameOf(r)));
+    if (indec.seen.size > pool.length - 3) indec.seen.clear();
     return trio;
   }
 
-  function indecCardFaceHTML(r, idx) {
-    const hood = r.location ? r.location.split(',').pop().trim() : 'Philly';
+  function indecCardFaceHTML(it, idx) {
     return `
       <button class="indec-card" data-indec-idx="${idx}" type="button" aria-label="Flip card ${idx + 1}">
         <span class="indec-card-inner">
           <span class="indec-face indec-front">🎴</span>
           <span class="indec-face indec-back">
-            <span class="indec-back-name">${escapeHtml(r.name)}</span>
-            <span class="indec-back-meta">${r.cuisine ? escapeHtml(r.cuisine) + '<br>' : ''}📍 ${escapeHtml(hood)}${r.price ? ' · ' + escapeHtml(r.price) : ''}</span>
+            <span class="indec-back-name">${escapeHtml(indecItemName(it))}</span>
+            <span class="indec-back-meta">${indec.ctx.meta(it)}</span>
           </span>
         </span>
       </button>`;
@@ -4300,19 +4353,20 @@
     if (!card || !overlay) return;
     overlay.classList.add('open');
     indec.chosen = null;
+    const suffix = indec.ctx ? ` · ${indec.ctx.label}` : '';
 
     if (!indec.pool.length) {
       card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
-        <div class="spin-eyebrow">🃏 Indecision</div>
+        <div class="spin-eyebrow">🃏 Indecision${escapeHtml(suffix)}</div>
         <div class="spin-name">Nothing to pick</div>
-        <div class="indec-prompt">No spots match your current filters. Clear a filter or switch tabs, then try again.</div>
+        <div class="indec-prompt">Nothing here to choose from right now. Switch tabs and try again.</div>
         <div class="indec-actions"><button class="indec-action" data-indec-close type="button">Got it</button></div>`;
       return;
     }
 
     indec.trio = indecPickTrio(avoid);
     card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
-      <div class="spin-eyebrow">🃏 Indecision</div>
+      <div class="spin-eyebrow">🃏 Indecision${escapeHtml(suffix)}</div>
       <div class="indec-prompt">${avoid ? "Alright — three fresh ones. Pick a card." : 'Pick a card, any card.'}</div>
       <div class="indec-grid">${indec.trio.map((r, i) => indecCardFaceHTML(r, i)).join('')}</div>
       <div class="indec-detail"></div>`;
@@ -4320,28 +4374,28 @@
 
   function indecReveal(idx) {
     const card = document.getElementById('indecCard');
-    const r = indec.trio[idx];
-    if (!card || !r) return;
-    indec.chosen = r;
-    const cards = card.querySelectorAll('.indec-card');
-    cards.forEach((c, i) => {
-      if (i === idx) c.classList.add('flipped');
-      else c.classList.add('dimmed');
+    const it = indec.trio[idx];
+    if (!card || !it) return;
+    indec.chosen = it;
+    card.querySelectorAll('.indec-card').forEach((c, i) => {
+      c.classList.add(i === idx ? 'flipped' : 'dimmed');
     });
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + (r.location || ''))}`;
+    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indecMapQuery(it))}`;
+    const desc = indecItemDesc(it);
     const detail = card.querySelector('.indec-detail');
     detail.innerHTML = `
-      ${r.desc ? `<div class="indec-detail-desc">${escapeHtml(r.desc)}</div>` : '<div class="indec-detail-desc"></div>'}
+      <div class="indec-detail-desc">${desc ? escapeHtml(desc) : ''}</div>
       <div class="indec-actions">
         <a class="indec-action indec-love" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">❤️ Love it — map it</a>
-        ${r.website ? `<a class="indec-action" href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
-        ${r.reservation ? `<a class="indec-action" href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+        ${it.website ? `<a class="indec-action" href="${escapeAttr(it.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
+        ${it.reservation ? `<a class="indec-action" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
         <button class="indec-action indec-reshuffle" data-indec-reshuffle type="button">🔀 Not quite — 3 more</button>
       </div>`;
   }
 
   function openIndecision() {
-    indec.pool = currentEatPool();
+    indec.ctx = indecContext();
+    indec.pool = indec.ctx.pool;
     indec.seen = new Set();
     indecDeal(null);
   }
@@ -4670,7 +4724,12 @@
       const indecBtn = document.getElementById('eatIndecisionBtn');
       const indecOverlay = document.getElementById('indecOverlay');
       if (indecBtn && indecOverlay) {
-        indecBtn.addEventListener('click', () => showScopeStep('indec'));
+        // The neighborhood scope step only applies to restaurants; on other
+        // views (events, bookstores, markets) just deal from that view's pool.
+        indecBtn.addEventListener('click', () => {
+          if (document.body.dataset.view === 'places-to-eat') showScopeStep('indec');
+          else { closeSheet(); openIndecision(); }
+        });
         indecOverlay.addEventListener('click', e => {
           if (e.target === indecOverlay || e.target.closest('[data-indec-close]')) { indecOverlay.classList.remove('open'); return; }
           if (e.target.closest('[data-indec-reshuffle]')) { indecDeal(indec.chosen); return; }
