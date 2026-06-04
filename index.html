@@ -5140,6 +5140,8 @@
       }
       lines.push('');
     });
+    const routeHref = plAllStopsDirHref();
+    if (routeHref) { lines.push(`🗺️ Full route: ${routeHref}`, ''); }
     lines.push('Planned with Goings-On');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n');
   }
