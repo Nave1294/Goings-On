@@ -6091,19 +6091,21 @@ Valid types: "meal", "activity", "dessert"`;
   ];
 
   const OB = {
+    dayIdx: 0,
     transitMode: 'walk',
     stops: [],        // [{ type, emoji, label, sublabel, item, coords }]
-    step: 'transit',  // transit | first-category | pick-item | equation | generating | result
+    step: 'date',     // date | transit | first-category | pick-item | equation | generating | result
     pendingCat: null,
     result: null,
     shareText: '',
   };
 
+  // Proximity cutoff matched to ~15–20 min of travel in the chosen mode.
   function obRadiusMiles() {
-    return OB.transitMode === 'bike' ? 3.0
-      : OB.transitMode === 'transit' ? 5.0
-      : OB.transitMode === 'drive' ? 3.0
-      : 1.0;
+    return OB.transitMode === 'bike' ? 2.0     // ~14 min bike
+      : OB.transitMode === 'transit' ? 2.5     // ~22 min transit
+      : OB.transitMode === 'drive' ? 3.5       // ~10 min drive
+      : 0.75;                                  // ~18 min walk
   }
 
   function obTravelLabel(miles) {
@@ -6121,8 +6123,9 @@ Valid types: "meal", "activity", "dessert"`;
     return `~${tm} min transit`;
   }
 
-  function obActiveDayIdx() { return lastRender ? lastRender.activeIdx : 0; }
-  function obActiveDay()    { return lastRender ? lastRender.days[lastRender.activeIdx] : null; }
+  function obActiveDayIdx() { return OB.dayIdx; }
+  function obActiveDay()    { return lastRender ? lastRender.days[OB.dayIdx] : null; }
+  function obDays()         { return (lastRender && lastRender.days) || []; }
 
   function obRawPool(catId) {
     if (catId === 'event') {
@@ -6175,7 +6178,8 @@ Valid types: "meal", "activity", "dessert"`;
   function openOutingBuilder() {
     const overlay = document.getElementById('obOverlay');
     if (!overlay) return;
-    OB.stops = []; OB.step = 'transit'; OB.transitMode = 'walk';
+    OB.stops = []; OB.step = 'date'; OB.transitMode = 'walk';
+    OB.dayIdx = lastRender ? lastRender.activeIdx : 0;
     OB.pendingCat = null; OB.result = null; OB.shareText = '';
     overlay.removeAttribute('hidden');
     obRender();
@@ -6185,7 +6189,10 @@ Valid types: "meal", "activity", "dessert"`;
     const body = document.getElementById('obBody');
     const hl   = document.getElementById('obHeadline');
     if (!body || !hl) return;
-    if (OB.step === 'transit') {
+    if (OB.step === 'date') {
+      hl.textContent = 'Which day?';
+      obRenderDate(body);
+    } else if (OB.step === 'transit') {
       hl.textContent = 'Outing Builder';
       obRenderTransit(body);
     } else if (OB.step === 'first-category') {
@@ -6205,6 +6212,31 @@ Valid types: "meal", "activity", "dessert"`;
       hl.textContent = obVibeLabel();
       obRenderResult(body);
     }
+  }
+
+  function obRenderDate(body) {
+    const days = obDays();
+    if (!days.length) {
+      body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>Calendar events are still loading — open Goings On for a moment, then try again.</div>`;
+      return;
+    }
+    body.innerHTML = `
+      <div class="pl-q">Pick a day in the week ahead.</div>
+      <div class="dn-days">
+        ${days.map((d, i) => {
+          const cnt = plEventsForDay(i).length;
+          const lbl = i === 0 ? 'Today' : DAYS_SHORT[d.getDay()];
+          return `<button class="dn-day-chip${i === OB.dayIdx ? ' active' : ''}" data-ob-day="${i}" type="button">
+            <div>${lbl}</div><div class="dn-day-num">${d.getDate()}</div>
+            <div class="dn-day-cnt">${cnt ? cnt + (cnt === 1 ? ' evt' : ' evts') : '—'}</div></button>`;
+        }).join('')}
+      </div>
+      <button class="pl-next" id="obDateNext" type="button">Next →</button>`;
+    body.querySelectorAll('[data-ob-day]').forEach(c => c.addEventListener('click', () => {
+      OB.dayIdx = +c.dataset.obDay;
+      body.querySelectorAll('[data-ob-day]').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('obDateNext').addEventListener('click', () => { OB.step = 'transit'; obRender(); });
   }
 
   function obRenderTransit(body) {
@@ -6251,6 +6283,14 @@ Valid types: "meal", "activity", "dessert"`;
 
   let obRetryTimer = null;
 
+  // Best coords known for a pool entry: accurate (Places) if loaded, else the
+  // cheap neighborhood-level estimate from ensurePlaceCoords (item._coords).
+  function obBestCoords(p) {
+    if (p.coords) return p.coords;
+    if (p.item && p.item._coords) return p.item._coords;
+    return null;
+  }
+
   async function obRenderPickAsync(body, catId) {
     const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
     const lastCoords = lastStop ? lastStop.coords : null;
@@ -6259,29 +6299,44 @@ Valid types: "meal", "activity", "dessert"`;
     body.innerHTML   = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
 
     const pool = obRawPool(catId);
-    await Promise.allSettled(pool.slice(0, 30).map(p => obLoadItemCoords(p)));
-    // Pull any remaining cached coords without extra API calls
-    pool.slice(30).forEach(p => {
-      if (p.coords !== undefined || p.type === 'event') return;
-      const q = p.item.location ? `${p.item.name}, ${p.item.location}` : p.item.name;
-      const cached = lsCoordGet('acc:' + q);
-      if (cached !== undefined) p.coords = cached;
-    });
 
-    // Guard: user may have navigated away during the async load
+    if (catId === 'event') {
+      // Few events per day — geocode them all accurately.
+      await Promise.allSettled(pool.map(p => obLoadItemCoords(p)));
+    } else if (lastCoords) {
+      // Two-pass so the genuinely-nearest spots get accurate coords (and surface),
+      // instead of geocoding an arbitrary slice of the alphabetical list.
+      // Pass 1: cheap neighborhood-level coords for EVERY candidate (free geocoder,
+      //         cached) → rough distance → sort by proximity to the previous stop.
+      await Promise.allSettled(pool.map(p => ensurePlaceCoords(p.item)));
+      pool.forEach(p => {
+        const c = p.item && p.item._coords;
+        p._approx = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
+      });
+      pool.sort((a, b) => a._approx - b._approx);
+      // Pass 2: accurate venue coords (Places) for just the nearest candidates.
+      const candidates = pool.filter(p => p._approx !== Infinity).slice(0, 24);
+      await Promise.allSettled(candidates.map(p => obLoadItemCoords(p)));
+    } else {
+      // First stop: no anchor yet, so order doesn't matter — geocode a cap.
+      await Promise.allSettled(pool.slice(0, 40).map(p => obLoadItemCoords(p)));
+    }
+
+    // Guard: user may have navigated away during the async load.
     if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return;
 
     const nearby = [], elsewhere = [];
     for (const p of pool) {
-      if (lastCoords && p.coords) {
-        const d = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
-        p._dist = d;
-        (d <= radius ? nearby : elsewhere).push(p);
+      const c = obBestCoords(p);
+      if (lastCoords && c) {
+        p._dist = haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon);
+        (p._dist <= radius ? nearby : elsewhere).push(p);
       } else {
         p._dist = Infinity; elsewhere.push(p);
       }
     }
     nearby.sort((a, b) => a._dist - b._dist);
+    elsewhere.sort((a, b) => a._dist - b._dist);
 
     function itemHTML(p) {
       const idx = pool.indexOf(p);
@@ -6300,17 +6355,20 @@ Valid types: "meal", "activity", "dessert"`;
     const hasNearby = nearby.length > 0;
     body.innerHTML = `<div class="ob-pick-list">
       ${lastCoords && hasNearby ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
-      ${lastCoords && !hasNearby ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} found within ${escapeHtml(obTravelLabel(radius))} — all options shown.</div>` : ''}
+      ${lastCoords && !hasNearby ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : ''}
       ${nearby.map(itemHTML).join('')}
       ${hasNearby && lastCoords && elsewhere.length ? `<div class="ob-section-header">Further away</div>` : ''}
       ${elsewhere.slice(0, 60).map(itemHTML).join('')}
     </div>`;
 
     body.querySelectorAll('[data-ob-pidx]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const p = pool[parseInt(btn.dataset.obPidx, 10)];
         if (!p) return;
-        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || null });
+        // Anchor the chosen stop on accurate coords so the next "+" measures from
+        // the true location, not a neighborhood centroid.
+        if (p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
+        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: obBestCoords(p) });
         OB.step = 'equation'; obRender();
       });
     });
@@ -6545,9 +6603,9 @@ Return ONLY valid JSON (no markdown fences):
     const back    = document.getElementById('obBack');
     if (!overlay || !back) return;
     back.addEventListener('click', () => {
-      if (OB.step === 'transit' && OB.stops.length === 0) { overlay.setAttribute('hidden', ''); return; }
-      if (OB.step === 'transit')          { OB.step = 'equation';       obRender(); return; }
-      if (OB.step === 'first-category')   { OB.step = 'transit';        obRender(); return; }
+      if (OB.step === 'date')             { overlay.setAttribute('hidden', ''); return; }
+      if (OB.step === 'transit')          { OB.step = 'date';            obRender(); return; }
+      if (OB.step === 'first-category')   { OB.step = 'transit';         obRender(); return; }
       if (OB.step === 'pick-item')        { OB.step = OB.stops.length === 0 ? 'first-category' : 'equation'; obRender(); return; }
       if (OB.step === 'equation')         { overlay.setAttribute('hidden', ''); return; }
       OB.step = 'equation'; obRender(); // generating / result → equation
