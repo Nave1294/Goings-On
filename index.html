@@ -6382,27 +6382,17 @@ Valid types: "meal", "activity", "dessert"`;
 
   async function obRenderPickAsync(body, catId) {
     const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
-    let   lastCoords = lastStop ? lastStop.coords : null;
-    const radius     = obRadiusMiles();
-    const cat        = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
-    body.innerHTML   = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
-
-    // GPS fallback: if the anchor stop has no precise coords (e.g. an event with a
-    // vague location), try the user's current position so proximity sorting still
-    // works. This is free, requires no API quota, and degrades silently on denial.
-    let usingGPS = false;
-    if (!lastCoords && lastStop && navigator.geolocation) {
-      try {
-        lastCoords = await new Promise(resolve => {
-          navigator.geolocation.getCurrentPosition(
-            p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-            () => resolve(null),
-            { timeout: 3000, maximumAge: 60000 }
-          );
-        });
-        if (lastCoords) usingGPS = true;
-      } catch { lastCoords = null; }
-    }
+    // Use the last stop as the anchor — exact coords if we have them, neighbourhood
+    // centroid as a fallback. Never use the user's current location; the itinerary
+    // flows from stop to stop, not from wherever the user happens to be standing.
+    let lastCoords     = lastStop ? lastStop.coords : null;
+    const anchorExact  = lastStop ? !!lastStop.coordsExact : false;
+    // If stored coords are missing, try centroid one more time (covers events whose
+    // location string wasn't parsed at store-time but whose item has richer data).
+    if (!lastCoords && lastStop) lastCoords = obApproxCoords(lastStop.item);
+    const radius       = obRadiusMiles();
+    const cat          = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
+    body.innerHTML     = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
 
     const pool = obRawPool(catId);
 
@@ -6481,13 +6471,14 @@ Valid types: "meal", "activity", "dessert"`;
       </button>`;
     }
 
-    const hasAnchor    = !!(lastCoords || anchorNbhd);
-    const gpsNote      = usingGPS ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📡 Using your current location as reference</div>` : '';
+    // Show a soft note when the anchor is approximate (centroid, not exact coords).
+    const approxNote   = (lastCoords && !anchorExact && anchorNbhd)
+      ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📍 Centered on ${escapeHtml(anchorNbhd)} (approximate)</div>` : '';
     const noNearbyNote = (lastCoords && nearby.length === 0 && (sameArea.length + closeBy.length) === 0)
-      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : '';
+      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing confirmed within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : '';
 
     body.innerHTML = `<div class="ob-pick-list">
-      ${gpsNote}
+      ${approxNote}
       ${noNearbyNote}
       ${nearby.length    ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
       ${nearby.map(itemHTML).join('')}
@@ -6507,7 +6498,7 @@ Valid types: "meal", "activity", "dessert"`;
         // Anchor the chosen stop on accurate coords so the next "+" measures from
         // the true location, not a neighborhood centroid.
         if (p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
-        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || obApproxCoords(p.item) });
+        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || obApproxCoords(p.item), coordsExact: !!p.coords });
         OB.step = 'equation'; obRender();
       });
     });
