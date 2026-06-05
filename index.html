@@ -6100,12 +6100,13 @@ Valid types: "meal", "activity", "dessert"`;
     shareText: '',
   };
 
-  // Proximity cutoff matched to ~15–20 min of travel in the chosen mode.
+  // Proximity cutoff: straight-line, so deliberately conservative vs. actual travel time.
+  // Streets add 20-30% to straight-line distance, and Philly neighborhoods are large.
   function obRadiusMiles() {
-    return OB.transitMode === 'bike' ? 2.0     // ~14 min bike
-      : OB.transitMode === 'transit' ? 2.5     // ~22 min transit
-      : OB.transitMode === 'drive' ? 3.5       // ~10 min drive
-      : 0.75;                                  // ~18 min walk
+    return OB.transitMode === 'bike' ? 1.5     // ~10 min bike
+      : OB.transitMode === 'transit' ? 1.8     // ~nearby transit stop
+      : OB.transitMode === 'drive' ? 2.5       // ~8 min drive
+      : 0.5;                                   // ~10 min walk
   }
 
   function obTravelLabel(miles) {
@@ -6222,6 +6223,55 @@ Valid types: "meal", "activity", "dessert"`;
     return null;
   }
 
+  // Which neighborhoods share a walkable border. Philly hoods are large — only
+  // mark truly adjacent ones; skip hoods that merely share a distant corner.
+  const OB_NBHD_ADJ = {
+    'Fishtown':                ['Northern Liberties', 'Old City', 'Callowhill'],
+    'Northern Liberties':      ['Fishtown', 'Old City', 'Callowhill', 'Fairmount'],
+    'Old City':                ['Fishtown', 'Northern Liberties', 'Chinatown', 'Washington Square West', 'Queen Village'],
+    'Chinatown':               ['Old City', 'Washington Square West', 'Center City', 'Callowhill', 'Reading Terminal Market'],
+    'Callowhill':              ['Northern Liberties', 'Fishtown', 'Chinatown', 'Fairmount', 'Center City'],
+    'Fairmount':               ['Northern Liberties', 'Callowhill', 'Art Museum', 'Center City'],
+    'Art Museum':              ['Fairmount', 'Callowhill', 'Center City'],
+    'Center City':             ['Chinatown', 'Callowhill', 'Washington Square West', 'Midtown Village', 'Rittenhouse', 'Graduate Hospital', 'Art Museum', 'Fairmount', 'Reading Terminal Market'],
+    'Reading Terminal Market': ['Chinatown', 'Center City', 'Callowhill'],
+    'Washington Square West':  ['Old City', 'Chinatown', 'Center City', 'Midtown Village', 'Queen Village', 'Bella Vista'],
+    'Midtown Village':         ['Washington Square West', 'Center City', 'Rittenhouse'],
+    'Rittenhouse':             ['Center City', 'Midtown Village', 'Graduate Hospital'],
+    'Queen Village':           ['Old City', 'Washington Square West', 'Bella Vista', 'Pennsport'],
+    'Bella Vista':             ['Washington Square West', 'Queen Village', 'East Passyunk', 'Graduate Hospital'],
+    'East Passyunk':           ['Bella Vista', 'South Philadelphia', 'Graduate Hospital', 'Pennsport'],
+    'Graduate Hospital':       ['Rittenhouse', 'Center City', 'Art Museum', 'Bella Vista', 'East Passyunk', 'University City'],
+    'South Philadelphia':      ['East Passyunk', 'Pennsport', 'Graduate Hospital'],
+    'Pennsport':               ['Queen Village', 'South Philadelphia', 'East Passyunk'],
+    'University City':         ['Center City', 'Graduate Hospital', 'West Philadelphia'],
+    'West Philadelphia':       ['University City'],
+    'North Philadelphia':      ['Northern Liberties', 'Callowhill'],
+    'Germantown':              ['Mt. Airy'],
+    'Mt. Airy':                ['Germantown'],
+    'Collingswood':            [],
+  };
+
+  // Reverse-lookup: given coords, return the nearest neighborhood name (null if >1.2 mi away).
+  function obCoordsToNeighborhood(coords) {
+    if (!coords) return null;
+    let best = null, bestD = Infinity;
+    for (const [name, c] of Object.entries(OB_NBHD_COORDS)) {
+      const d = haversineMiles(coords.lat, coords.lon, c.lat, c.lon);
+      if (d < bestD) { bestD = d; best = name; }
+    }
+    return bestD < 1.2 ? best : null;
+  }
+
+  // Primary neighborhood for a data item — from its location string or explicit field.
+  function obItemNeighborhood(item) {
+    if (!item) return null;
+    const hoods = placeNeighborhoods(item.location || '');
+    if (hoods.length) return hoods[0];
+    if (item.neighborhood) return NEIGHBORHOOD_ALIASES[item.neighborhood] || item.neighborhood;
+    return null;
+  }
+
   function openOutingBuilder() {
     const overlay = document.getElementById('obOverlay');
     if (!overlay) return;
@@ -6332,10 +6382,27 @@ Valid types: "meal", "activity", "dessert"`;
 
   async function obRenderPickAsync(body, catId) {
     const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
-    const lastCoords = lastStop ? lastStop.coords : null;
+    let   lastCoords = lastStop ? lastStop.coords : null;
     const radius     = obRadiusMiles();
     const cat        = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
     body.innerHTML   = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
+
+    // GPS fallback: if the anchor stop has no precise coords (e.g. an event with a
+    // vague location), try the user's current position so proximity sorting still
+    // works. This is free, requires no API quota, and degrades silently on denial.
+    let usingGPS = false;
+    if (!lastCoords && lastStop && navigator.geolocation) {
+      try {
+        lastCoords = await new Promise(resolve => {
+          navigator.geolocation.getCurrentPosition(
+            p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
+            () => resolve(null),
+            { timeout: 3000, maximumAge: 60000 }
+          );
+        });
+        if (lastCoords) usingGPS = true;
+      } catch { lastCoords = null; }
+    }
 
     const pool = obRawPool(catId);
 
@@ -6343,48 +6410,65 @@ Valid types: "meal", "activity", "dessert"`;
       // Few events per day — geocode them all accurately so they can anchor.
       await Promise.allSettled(pool.map(p => obLoadItemCoords(p)));
     } else if (lastCoords) {
-      // Pass 1 (free, instant): rank every candidate by its neighborhood centroid
-      // so we know which are roughly nearest — no geocoding, no API calls.
+      // Pass 1 (free, instant): rank every candidate by its neighborhood centroid.
       pool.forEach(p => {
         const c = obApproxCoords(p.item);
         p._approx = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
       });
       pool.sort((a, b) => a._approx - b._approx);
-      // Pass 2: spend accurate Places lookups only on the ~20 nearest candidates
-      // (plus a few unranked ones so suburbs without a centroid aren't excluded).
+      // Pass 2: spend accurate Places lookups only on the ~20 nearest by centroid.
       const ranked   = pool.filter(p => p._approx !== Infinity).slice(0, 20);
       const unranked = pool.filter(p => p._approx === Infinity).slice(0, 6);
       await Promise.allSettled([...ranked, ...unranked].map(p => obLoadItemCoords(p)));
     }
-    // First non-event stop: no anchor yet, so distances are meaningless — skip all
-    // geocoding here and resolve the chosen spot's coords on pick instead.
 
-    // Guard: user may have navigated away during the async load.
-    if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return;
+    if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return; // nav guard
 
-    // Split into nearby vs. further. "Nearby" requires ACCURATE coords (p.coords)
-    // so its travel times are trustworthy; rough centroid distances only ever sort
-    // the "further away" list and are shown without a precise-looking badge.
-    const nearby = [], elsewhere = [];
+    // Determine anchor neighborhood for adjacency grouping. We use this regardless
+    // of whether we have exact coords, because neighborhoods are large and centroid
+    // distances alone are misleading (±0.5–1 mi error per side).
+    const anchorNbhd = obCoordsToNeighborhood(lastCoords)
+      || (lastStop ? obItemNeighborhood(lastStop.item) : null);
+    const adjNbhds   = anchorNbhd ? (OB_NBHD_ADJ[anchorNbhd] || []) : [];
+
+    // Four buckets — only "nearby" carries a distance badge (accurate coords required).
+    const nearby = [], sameArea = [], closeBy = [], elsewhere = [];
+
     for (const p of pool) {
-      if (!lastCoords) { p._dist = Infinity; p._exact = false; elsewhere.push(p); continue; }
+      if (!lastCoords) {
+        // No anchor at all (first stop, non-event). Adjacency-group if possible.
+        p._dist = Infinity; p._exact = false;
+        const pn = obItemNeighborhood(p.item);
+        if (pn && anchorNbhd && pn === anchorNbhd)      sameArea.push(p);
+        else if (pn && adjNbhds.includes(pn))           closeBy.push(p);
+        else                                             elsewhere.push(p);
+        continue;
+      }
+
       if (p.coords) {
-        p._dist = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
+        // Accurate coords → trustworthy distance badge.
+        p._dist  = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
         p._exact = true;
         (p._dist <= radius ? nearby : elsewhere).push(p);
       } else {
-        const c = obApproxCoords(p.item);
-        p._dist = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
+        // Centroid-only → group by adjacency; never show a precise distance badge.
+        const c  = obApproxCoords(p.item);
+        p._dist  = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
         p._exact = false;
-        elsewhere.push(p);
+        const pn = obItemNeighborhood(p.item);
+        if (pn && anchorNbhd && pn === anchorNbhd)      sameArea.push(p);
+        else if (pn && adjNbhds.includes(pn))           closeBy.push(p);
+        else                                             elsewhere.push(p);
       }
     }
+
     nearby.sort((a, b) => a._dist - b._dist);
+    sameArea.sort((a, b) => a._dist - b._dist);
+    closeBy.sort((a, b) => a._dist - b._dist);
     elsewhere.sort((a, b) => a._dist - b._dist);
 
     function itemHTML(p) {
       const idx = pool.indexOf(p);
-      // Only show a travel-time badge when we measured from accurate coordinates.
       const distBadge = (p._exact && p._dist !== Infinity)
         ? `<span class="ob-pick-dist">${escapeHtml(obTravelLabel(p._dist))}</span>` : '';
       return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button">
@@ -6397,12 +6481,22 @@ Valid types: "meal", "activity", "dessert"`;
       </button>`;
     }
 
-    const hasNearby = nearby.length > 0;
+    const hasAnchor    = !!(lastCoords || anchorNbhd);
+    const gpsNote      = usingGPS ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📡 Using your current location as reference</div>` : '';
+    const noNearbyNote = (lastCoords && nearby.length === 0 && (sameArea.length + closeBy.length) === 0)
+      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : '';
+
     body.innerHTML = `<div class="ob-pick-list">
-      ${lastCoords && hasNearby ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
-      ${lastCoords && !hasNearby ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : ''}
+      ${gpsNote}
+      ${noNearbyNote}
+      ${nearby.length    ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
       ${nearby.map(itemHTML).join('')}
-      ${hasNearby && lastCoords && elsewhere.length ? `<div class="ob-section-header">Further away</div>` : ''}
+      ${sameArea.length  ? `<div class="ob-section-header">📌 Same area${anchorNbhd ? ` — ${escapeHtml(anchorNbhd)}` : ''}</div>` : ''}
+      ${sameArea.map(itemHTML).join('')}
+      ${closeBy.length   ? `<div class="ob-section-header">🗺 Close by${anchorNbhd ? ` — near ${escapeHtml(anchorNbhd)}` : ''}</div>` : ''}
+      ${closeBy.map(itemHTML).join('')}
+      ${elsewhere.length && (nearby.length + sameArea.length + closeBy.length) > 0
+          ? `<div class="ob-section-header">Further away</div>` : ''}
       ${elsewhere.slice(0, 60).map(itemHTML).join('')}
     </div>`;
 
