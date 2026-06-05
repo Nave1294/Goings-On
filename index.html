@@ -6175,6 +6175,53 @@ Valid types: "meal", "activity", "dessert"`;
     return coords;
   }
 
+  // Approximate centroids for the neighborhoods that appear in the data. Used to
+  // rank candidates by rough proximity for FREE (no geocoding) so we only spend
+  // accurate Places lookups on the handful of genuinely-nearest spots. The free
+  // open-meteo geocoder can't resolve "Neighborhood, Philadelphia, PA" strings,
+  // so this static table replaces it for the Outing Builder's pre-sort.
+  const OB_NBHD_COORDS = {
+    'Northern Liberties': { lat: 39.963, lon: -75.140 },
+    'East Passyunk':      { lat: 39.927, lon: -75.166 },
+    'Queen Village':      { lat: 39.938, lon: -75.148 },
+    'Bella Vista':        { lat: 39.937, lon: -75.158 },
+    'Washington Square West': { lat: 39.947, lon: -75.159 },
+    'Midtown Village':    { lat: 39.948, lon: -75.162 },
+    'Rittenhouse':        { lat: 39.949, lon: -75.172 },
+    'Fishtown':           { lat: 39.969, lon: -75.134 },
+    'Old City':           { lat: 39.952, lon: -75.143 },
+    'Center City':        { lat: 39.952, lon: -75.163 },
+    'University City':     { lat: 39.954, lon: -75.193 },
+    'Chinatown':          { lat: 39.955, lon: -75.155 },
+    'Fairmount':          { lat: 39.967, lon: -75.176 },
+    'Graduate Hospital':  { lat: 39.940, lon: -75.180 },
+    'Callowhill':         { lat: 39.961, lon: -75.158 },
+    'Art Museum':         { lat: 39.965, lon: -75.180 },
+    'Pennsport':          { lat: 39.927, lon: -75.149 },
+    'South Philadelphia': { lat: 39.920, lon: -75.170 },
+    'North Philadelphia': { lat: 39.995, lon: -75.150 },
+    'West Philadelphia':  { lat: 39.962, lon: -75.215 },
+    'Germantown':         { lat: 40.035, lon: -75.175 },
+    'Mt. Airy':           { lat: 40.060, lon: -75.190 },
+    'Reading Terminal Market': { lat: 39.953, lon: -75.159 },
+    'Collingswood':       { lat: 39.918, lon: -75.071 },
+  };
+
+  // Rough centroid for a data item, with no network call. Tries the canonical
+  // neighborhoods named in its location string, then a market's explicit
+  // neighborhood field. Returns null when nothing is recognized.
+  function obApproxCoords(item) {
+    if (!item) return null;
+    for (const h of placeNeighborhoods(item.location || '')) {
+      if (OB_NBHD_COORDS[h]) return OB_NBHD_COORDS[h];
+    }
+    if (item.neighborhood) {
+      const canon = NEIGHBORHOOD_ALIASES[item.neighborhood] || item.neighborhood;
+      if (OB_NBHD_COORDS[canon]) return OB_NBHD_COORDS[canon];
+    }
+    return null;
+  }
+
   function openOutingBuilder() {
     const overlay = document.getElementById('obOverlay');
     if (!overlay) return;
@@ -6283,14 +6330,6 @@ Valid types: "meal", "activity", "dessert"`;
 
   let obRetryTimer = null;
 
-  // Best coords known for a pool entry: accurate (Places) if loaded, else the
-  // cheap neighborhood-level estimate from ensurePlaceCoords (item._coords).
-  function obBestCoords(p) {
-    if (p.coords) return p.coords;
-    if (p.item && p.item._coords) return p.item._coords;
-    return null;
-  }
-
   async function obRenderPickAsync(body, catId) {
     const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
     const lastCoords = lastStop ? lastStop.coords : null;
@@ -6301,38 +6340,43 @@ Valid types: "meal", "activity", "dessert"`;
     const pool = obRawPool(catId);
 
     if (catId === 'event') {
-      // Few events per day — geocode them all accurately.
+      // Few events per day — geocode them all accurately so they can anchor.
       await Promise.allSettled(pool.map(p => obLoadItemCoords(p)));
     } else if (lastCoords) {
-      // Two-pass so the genuinely-nearest spots get accurate coords (and surface),
-      // instead of geocoding an arbitrary slice of the alphabetical list.
-      // Pass 1: cheap neighborhood-level coords for EVERY candidate (free geocoder,
-      //         cached) → rough distance → sort by proximity to the previous stop.
-      await Promise.allSettled(pool.map(p => ensurePlaceCoords(p.item)));
+      // Pass 1 (free, instant): rank every candidate by its neighborhood centroid
+      // so we know which are roughly nearest — no geocoding, no API calls.
       pool.forEach(p => {
-        const c = p.item && p.item._coords;
+        const c = obApproxCoords(p.item);
         p._approx = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
       });
       pool.sort((a, b) => a._approx - b._approx);
-      // Pass 2: accurate venue coords (Places) for just the nearest candidates.
-      const candidates = pool.filter(p => p._approx !== Infinity).slice(0, 24);
-      await Promise.allSettled(candidates.map(p => obLoadItemCoords(p)));
-    } else {
-      // First stop: no anchor yet, so order doesn't matter — geocode a cap.
-      await Promise.allSettled(pool.slice(0, 40).map(p => obLoadItemCoords(p)));
+      // Pass 2: spend accurate Places lookups only on the ~20 nearest candidates
+      // (plus a few unranked ones so suburbs without a centroid aren't excluded).
+      const ranked   = pool.filter(p => p._approx !== Infinity).slice(0, 20);
+      const unranked = pool.filter(p => p._approx === Infinity).slice(0, 6);
+      await Promise.allSettled([...ranked, ...unranked].map(p => obLoadItemCoords(p)));
     }
+    // First non-event stop: no anchor yet, so distances are meaningless — skip all
+    // geocoding here and resolve the chosen spot's coords on pick instead.
 
     // Guard: user may have navigated away during the async load.
     if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return;
 
+    // Split into nearby vs. further. "Nearby" requires ACCURATE coords (p.coords)
+    // so its travel times are trustworthy; rough centroid distances only ever sort
+    // the "further away" list and are shown without a precise-looking badge.
     const nearby = [], elsewhere = [];
     for (const p of pool) {
-      const c = obBestCoords(p);
-      if (lastCoords && c) {
-        p._dist = haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon);
+      if (!lastCoords) { p._dist = Infinity; p._exact = false; elsewhere.push(p); continue; }
+      if (p.coords) {
+        p._dist = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
+        p._exact = true;
         (p._dist <= radius ? nearby : elsewhere).push(p);
       } else {
-        p._dist = Infinity; elsewhere.push(p);
+        const c = obApproxCoords(p.item);
+        p._dist = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
+        p._exact = false;
+        elsewhere.push(p);
       }
     }
     nearby.sort((a, b) => a._dist - b._dist);
@@ -6340,7 +6384,8 @@ Valid types: "meal", "activity", "dessert"`;
 
     function itemHTML(p) {
       const idx = pool.indexOf(p);
-      const distBadge = p._dist !== Infinity
+      // Only show a travel-time badge when we measured from accurate coordinates.
+      const distBadge = (p._exact && p._dist !== Infinity)
         ? `<span class="ob-pick-dist">${escapeHtml(obTravelLabel(p._dist))}</span>` : '';
       return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button">
         <span class="ob-pick-emoji">${p.emoji}</span>
@@ -6368,7 +6413,7 @@ Valid types: "meal", "activity", "dessert"`;
         // Anchor the chosen stop on accurate coords so the next "+" measures from
         // the true location, not a neighborhood centroid.
         if (p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
-        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: obBestCoords(p) });
+        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || obApproxCoords(p.item) });
         OB.step = 'equation'; obRender();
       });
     });
