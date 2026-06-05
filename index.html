@@ -6574,6 +6574,25 @@ Return ONLY valid JSON (no markdown fences):
     return url;
   }
 
+  // Build action links for an OB stop from its raw item data.
+  function obStopActions(s) {
+    const it = s.item || {};
+    const actions = [];
+    if (s.type === 'event') {
+      if (it.htmlLink) actions.push({ label: '📅 Details', href: it.htmlLink });
+      const loc = it.location || it.foundLocation;
+      if (loc) actions.push({ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(loc) });
+      else if (s.coords) actions.push({ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.label) });
+    } else {
+      if (it.website)     actions.push({ label: '🌐 Website', href: it.website });
+      if (it.reservation) actions.push({ label: '📅 Reserve', href: it.reservation });
+      const q = it.location ? `${it.name || s.label}, ${it.location}` : (it.name || s.label);
+      const mapQ = s.coords ? `${s.coords.lat},${s.coords.lon}` : encodeURIComponent(q + ', Philadelphia');
+      actions.push({ label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${mapQ}` });
+    }
+    return actions;
+  }
+
   function obRenderResult(body) {
     const result = OB.result || {};
     const aiStops = Array.isArray(result.stops) ? result.stops : [];
@@ -6601,6 +6620,14 @@ Return ONLY valid JSON (no markdown fences):
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
       }
+      const actions = obStopActions(s);
+      const metaParts = [];
+      if (s.item) {
+        if (s.item.cuisine)  metaParts.push('🍴 ' + s.item.cuisine);
+        if (s.item.price)    metaParts.push(s.item.price);
+        const locFirst = (s.item.location || '').split(',')[0];
+        if (locFirst) metaParts.push('📍 ' + locFirst);
+      }
       const card = `<div class="dn-pair-card pl-stop">
         <div class="pl-stop-head">
           <span class="pl-stop-num">${i + 1}</span>
@@ -6609,8 +6636,10 @@ Return ONLY valid JSON (no markdown fences):
             <div class="dn-pair-title">${escapeHtml(ai.name || s.label)}</div>
           </div>
         </div>
+        ${metaParts.length ? `<div class="dn-pair-meta">${metaParts.map(m => `<span>${escapeHtml(m)}</span>`).join('')}</div>` : ''}
         ${ai.desc ? `<div class="dn-pair-desc">${escapeHtml(ai.desc)}</div>` : ''}
-        ${ai.tip ? `<div class="dn-pair-meta"><span>💡 ${escapeHtml(ai.tip)}</span></div>` : ''}
+        ${ai.tip ? `<div class="dn-pair-meta" style="margin-top:0.4rem"><span>💡 ${escapeHtml(ai.tip)}</span></div>` : ''}
+        ${actions.length ? `<div class="dn-pair-actions">${actions.map(a => `<a class="dn-pair-action" href="${escapeAttr(a.href)}" target="_blank" rel="noopener">${escapeHtml(a.label)}</a>`).join('')}</div>` : ''}
       </div>`;
       return card + connector;
     }).join('');
