@@ -1702,6 +1702,7 @@
       display: flex; align-items: flex-start; gap: 0.6rem;
       padding: 0.75rem 0.85rem; border-radius: 12px;
       background: var(--surface); border: 1.5px solid var(--divider);
+      border-left-width: 4px;
       margin-bottom: 0.4rem; cursor: pointer; width: 100%; font: inherit; text-align: left;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
@@ -6713,9 +6714,21 @@ Valid types: "meal", "activity", "dessert"`;
       ? pool.filter(p => !inRange(p)).sort(byDist).slice(0, 40)
       : [];
 
-    function itemHTML(p) {
+    // Left-border accent: solid teal (#1a7a6e) for the closest item, fading to the
+    // divider colour at the bottom. This gives an at-a-glance distance gradient
+    // without any numbers. Only applied when there's an anchor to sort against.
+    function accentColor(rank, total, isFar) {
+      if (!lastCoords) return 'var(--divider)';
+      if (isFar)       return 'rgba(26,122,110,0.12)';
+      const t = total <= 1 ? 0 : rank / (total - 1);  // 0 = closest, 1 = farthest in range
+      const opacity = 0.9 - t * 0.72;                  // 0.9 → 0.18
+      return `rgba(26,122,110,${opacity.toFixed(2)})`;
+    }
+
+    function itemHTML(p, rank, total, isFar) {
       const idx = pool.indexOf(p);
-      return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button">
+      return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button"
+          style="border-left-color:${accentColor(rank, total, isFar)}">
         <span class="ob-pick-emoji">${p.emoji}</span>
         <span class="ob-pick-info">
           <span class="ob-pick-name">${escapeHtml(p.label)}</span>
@@ -6729,18 +6742,16 @@ Valid types: "meal", "activity", "dessert"`;
     const emptyNote  = (lastCoords && !within.length)
       ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} options close to your last stop.</div>` : '';
 
-    // First stop has no anchor so we show the full list (already alphabetical).
-    // Subsequent stops: main list = within-range closest first; far ones collapsed.
-    const showAll   = !lastCoords;
-    const mainList  = showAll ? within.slice(0, 80) : within;
-    const farBlock  = (!showAll && farther.length)
-      ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Farther away (${farther.length})</summary>${farther.map(itemHTML).join('')}</details>`
+    const showAll  = !lastCoords;
+    const mainList = showAll ? within.slice(0, 80) : within;
+    const farBlock = (!showAll && farther.length)
+      ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Farther away (${farther.length})</summary>${farther.map((p, i) => itemHTML(p, i, farther.length, true)).join('')}</details>`
       : '';
 
     body.innerHTML = `<div class="ob-pick-list">
       ${approxNote}
       ${emptyNote}
-      ${mainList.map(itemHTML).join('')}
+      ${mainList.map((p, i) => itemHTML(p, i, mainList.length, false)).join('')}
       ${farBlock}
     </div>`;
 
