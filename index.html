@@ -6594,74 +6594,59 @@ Valid types: "meal", "activity", "dessert"`;
 
     if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return; // nav guard
 
-    // Anchor neighborhood, for adjacency grouping of off-grid items.
+    // Anchor neighborhood, used to keep off-grid (centroid-only) items in range.
     const anchorNbhd = obCoordsToNeighborhood(lastCoords)
       || (lastStop ? obItemNeighborhood(lastStop.item) : null);
     const adjNbhds   = anchorNbhd ? (OB_NBHD_ADJ[anchorNbhd] || []) : [];
 
-    // Buckets. Grid/exact coords give a trustworthy distance and a badge; centroid-
-    // only items can't be measured reliably, so they're grouped by adjacency.
-    const nearby = [], sameArea = [], closeBy = [], elsewhere = [];
-
+    // Distance from the anchor for every candidate. Grid/exact coords are precise;
+    // centroid coords are rough (used only for ordering, never to claim a time).
     for (const p of pool) {
-      const measurable = p.coords && (p._precision !== 'centroid'); // events: precision undefined → measurable
-      if (lastCoords && measurable) {
-        p._dist  = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
-        p._exact = true;
-        (p._dist <= radius ? nearby : elsewhere).push(p);
-      } else {
-        // No anchor, or centroid-only coords → adjacency grouping, no distance badge.
-        p._dist  = (lastCoords && p.coords)
-          ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
-        p._exact = false;
-        const pn = obItemNeighborhood(p.item);
-        if (pn && anchorNbhd && pn === anchorNbhd)      sameArea.push(p);
-        else if (pn && adjNbhds.includes(pn))           closeBy.push(p);
-        else                                             elsewhere.push(p);
-      }
+      p._precise = !!(p.coords && p._precision !== 'centroid'); // events: precision undefined → precise
+      p._dist    = (lastCoords && p.coords)
+        ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
     }
 
-    nearby.sort((a, b) => a._dist - b._dist);
-    sameArea.sort((a, b) => a._dist - b._dist);
-    closeBy.sort((a, b) => a._dist - b._dist);
-    elsewhere.sort((a, b) => a._dist - b._dist);
+    // A candidate is "in range" when it clears the radius. Precise coords are held
+    // to the exact radius; off-grid items qualify only if they sit in the same or an
+    // adjacent neighborhood (their coordinates are too rough for a hard cutoff).
+    function inRange(p) {
+      if (!lastCoords) return true;                 // first stop: no anchor, show all
+      if (p._precise)  return p._dist <= radius;
+      const pn = obItemNeighborhood(p.item);
+      return !!(pn && anchorNbhd && (pn === anchorNbhd || adjNbhds.includes(pn)));
+    }
+
+    const within  = pool.filter(inRange).sort((a, b) => a._dist - b._dist);
+    const farther = lastCoords
+      ? pool.filter(p => !inRange(p)).sort((a, b) => a._dist - b._dist).slice(0, 40)
+      : [];
 
     function itemHTML(p) {
       const idx = pool.indexOf(p);
-      const distBadge = (p._exact && p._dist !== Infinity)
-        ? `<span class="ob-pick-dist">${escapeHtml(obTravelLabel(p._dist))}</span>` : '';
       return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button">
         <span class="ob-pick-emoji">${p.emoji}</span>
         <span class="ob-pick-info">
           <span class="ob-pick-name">${escapeHtml(p.label)}</span>
           ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(p.sublabel.split(',').slice(0, 2).join(',').trim())}</span>` : ''}
         </span>
-        ${distBadge}
       </button>`;
     }
 
-    const hasClose      = nearby.length + sameArea.length + closeBy.length > 0;
-    const approxNote    = (lastCoords && !anchorExact && anchorNbhd)
+    const approxNote = (lastCoords && !anchorExact && anchorNbhd)
       ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📍 Centered on ${escapeHtml(anchorNbhd)} (approximate)</div>` : '';
-    const noNearbyNote  = (lastCoords && !hasClose)
-      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} of your last stop — nearest options shown first.</div>` : '';
-    // When there ARE close options, tuck the far ones behind a toggle so the list
-    // reads as "near your last stop" rather than a giant unfiltered dump.
-    const farHTML = elsewhere.slice(0, 60).map(itemHTML).join('');
-    const farBlock = !elsewhere.length ? ''
-      : hasClose
-        ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Further away (${elsewhere.length})</summary>${farHTML}</details>`
-        : farHTML;
+    const emptyNote  = (lastCoords && !within.length)
+      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} options close to your last stop.</div>` : '';
+    // Out-of-range options stay hidden behind a toggle so the main list is only
+    // things actually near the previous stop, ordered closest first.
+    const farBlock = farther.length
+      ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Farther away (${farther.length})</summary>${farther.map(itemHTML).join('')}</details>`
+      : '';
 
     body.innerHTML = `<div class="ob-pick-list">
       ${approxNote}
-      ${noNearbyNote}
-      ${nearby.length    ? `<div class="ob-section-header">📍 Within ${escapeHtml(obTravelLabel(radius))}</div>` : ''}
-      ${nearby.map(itemHTML).join('')}
-      ${sameArea.length  ? `<div class="ob-section-header">📌 Same area${anchorNbhd ? ` — ${escapeHtml(anchorNbhd)}` : ''}</div>` : ''}
-      ${sameArea.map(itemHTML).join('')}
-      ${closeBy.length   ? `<div class="ob-section-header">🗺 Close by${anchorNbhd ? ` — near ${escapeHtml(anchorNbhd)}` : ''}</div>` : ''}
-      ${closeBy.map(itemHTML).join('')}
+      ${emptyNote}
+      ${within.map(itemHTML).join('')}
       ${farBlock}
     </div>`;
 
@@ -6683,15 +6668,11 @@ Valid types: "meal", "activity", "dessert"`;
 
   function obRenderEquation(body) {
     const stopsHTML = OB.stops.map((s, i) => {
-      const prev = OB.stops[i - 1];
-      const distBadge = (prev && prev.coords && s.coords)
-        ? `<span class="ob-stop-dist">${escapeHtml(obTravelLabel(haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon)))}</span>` : '';
       return `${i > 0 ? '<div class="ob-connector">+</div>' : ''}
         <div class="ob-stop-card">
           <div class="ob-stop-card-head">
             <span class="ob-stop-num">${i + 1}</span>
             <span class="ob-stop-name">${s.emoji} ${escapeHtml(s.label)}</span>
-            ${distBadge}
             <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Remove" title="Remove">✕</button>
           </div>
           ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(s.sublabel.split(',').slice(0, 2).join(',').trim())}</div>` : ''}
@@ -6764,10 +6745,7 @@ Valid types: "meal", "activity", "dessert"`;
     const dayName  = day ? DAYS_LONG[day.getDay()] : 'today';
     const modeLbl  = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
     const stopLines = OB.stops.map((s, i) => {
-      const prev = OB.stops[i - 1];
-      const dist = (prev && prev.coords && s.coords)
-        ? ` (${obTravelLabel(haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon))} from previous stop)` : '';
-      return `${i + 1}. ${s.emoji} [${s.type}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}${dist}`;
+      return `${i + 1}. ${s.emoji} [${s.type}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}`;
     }).join('\n');
 
     const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
@@ -6871,13 +6849,11 @@ Return ONLY valid JSON (no markdown fences):
       let connector = '';
       if (next) {
         if (s.coords && next.coords) {
-          const mi = haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon);
-          const lbl = obTravelLabel(mi);
-          const isWalk = /walk/.test(lbl);
-          const modeEmoji = isWalk ? '🚶' : /bike/.test(lbl) ? '🚲' : /drive/.test(lbl) ? '🚗' : '🚇';
-          const dm = isWalk ? 'walking' : OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
+          const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
+          const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : 'Walk';
+          const dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
           const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=${dm}`;
-          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${escapeHtml(lbl)}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${modeWord} to next</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
