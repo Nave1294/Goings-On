@@ -1713,6 +1713,8 @@
     .ob-pick-dist { font-size: 0.68rem; font-weight: 600; background: #d8f4f1; color: #1a7a6e; border-radius: 8px; padding: 0.12rem 0.45rem; margin-left: auto; flex-shrink: 0; white-space: nowrap; align-self: flex-start; }
     .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
     .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    .ob-far-details summary { outline: none; }
+    .ob-far-details summary::-webkit-details-marker { color: var(--text-secondary); }
     .indec-prompt { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; }
     .indec-grid { display: flex; align-items: flex-start; gap: 0.6rem; justify-content: center; margin-bottom: 1rem; }
     .indec-card {
@@ -6379,6 +6381,78 @@ Valid types: "meal", "activity", "dessert"`;
     return null;
   }
 
+  // ── Philadelphia street-grid geocoder (free, instant, no API) ──────────────
+  // Center City + South Philly follow a regular grid, so we can estimate block-
+  // level coordinates straight from an address string — far more precise than a
+  // neighbourhood centroid and with zero API cost or "wrong branch" ambiguity.
+  // Numbered streets run N–S (Front = 1st at the Delaware, rising westward);
+  // named streets run E–W from Market St, which is the 0 line for N/S house
+  // numbers. Returns {lat,lon} or null for anything off-grid (diagonals like
+  // Frankford/Passyunk Ave, West Philly, suburbs, or vague strings).
+  const PHL_MARKET_LAT  = 39.9523;   // Market St latitude (the N/S divider)
+  const PHL_FIRST_LON   = -75.1437;  // Front St (= 1st St), by the Delaware
+  const PHL_LON_PER_ST  = -0.001635; // longitude shift per numbered street, westward
+  const PHL_LAT_PER_BLK = 0.00122;   // latitude shift per block away from Market
+  // Named E–W streets → blocks from Market (negative = north, positive = south).
+  const PHL_EW_BLOCKS = {
+    'girard': -13, 'poplar': -10, 'brown': -9, 'fairmount': -8, 'green': -7,
+    'spring garden': -6, 'callowhill': -4, 'vine': -3, 'race': -2, 'cherry': -1.5,
+    'arch': -1, 'market': 0, 'chestnut': 1, 'ludlow': 1.5, 'sansom': 1.5,
+    'walnut': 2, 'locust': 2.5, 'spruce': 3, 'pine': 4, 'lombard': 5, 'south': 6,
+    'bainbridge': 6.5, 'fitzwater': 7, 'catharine': 8, 'christian': 9,
+    'carpenter': 9.5, 'washington': 10, 'federal': 11, 'wharton': 12, 'reed': 13,
+    'dickinson': 14, 'tasker': 15, 'morris': 16, 'moore': 17, 'mifflin': 18,
+    'mckean': 19, 'snyder': 20, 'jackson': 21, 'wolf': 22, 'ritner': 23,
+    'porter': 24, 'shunk': 25, 'oregon': 26,
+  };
+  function phlLonForStreet(n) { return PHL_FIRST_LON + PHL_LON_PER_ST * (n - 1); }
+  function phillyGridCoords(loc) {
+    if (!loc) return null;
+    const s = loc.split(',')[0].trim().toLowerCase();   // street address only
+    const m = s.match(/^(\d+)\s+(.*)$/);                 // leading house number
+    if (!m) return null;
+    const houseNum = parseInt(m[1], 10);
+    let rest = m[2];
+    let dir = '';
+    const dm = rest.match(/^(north|south|east|west|n|s|e|w)\s+(.*)$/);
+    if (dm) { dir = dm[1][0]; rest = dm[2]; }
+    // Case A: address ON a numbered street (e.g. "10th St", "Broad St" = 14th).
+    let stNum = null;
+    const num = rest.match(/^(\d+)(st|nd|rd|th)\b/);
+    if (num) stNum = parseInt(num[1], 10);
+    else if (/^broad\b/.test(rest)) stNum = 14;
+    if (stNum != null) {
+      if (stNum > 24) return null;                       // grid breaks past the Schuylkill
+      const lon = phlLonForStreet(stNum);
+      const blocks = houseNum / 100;                     // house number → blocks from Market
+      const lat = dir === 'n'
+        ? PHL_MARKET_LAT + PHL_LAT_PER_BLK * blocks
+        : PHL_MARKET_LAT - PHL_LAT_PER_BLK * blocks;     // default & 's' run south
+      return { lat, lon };
+    }
+    // Case B: address ON a named E–W street → lat from table, lon from house number.
+    const name = rest.replace(/\s+(st|street|ave|avenue|blvd|boulevard|pkwy|parkway|rd|road|sq|square|pl|place)\b.*$/, '').trim();
+    if (PHL_EW_BLOCKS[name] !== undefined) {
+      const lat = PHL_MARKET_LAT - PHL_LAT_PER_BLK * PHL_EW_BLOCKS[name];
+      const lon = phlLonForStreet(Math.max(1, houseNum / 100)); // 1800 block → 18th cross st
+      return { lat, lon };
+    }
+    return null;
+  }
+
+  // Best free estimate of an item's location, with how much to trust it:
+  //   'grid'     — block-level from the street address (good for radius filtering)
+  //   'centroid' — neighbourhood centroid only (coarse; group, don't measure)
+  // Falls back through grid → centroid → nothing.
+  function obItemGeo(item) {
+    if (!item) return { coords: null, precision: null };
+    const grid = phillyGridCoords(item.location || '');
+    if (grid) return { coords: grid, precision: 'grid' };
+    const c = obApproxCoords(item);
+    if (c) return { coords: c, precision: 'centroid' };
+    return { coords: null, precision: null };
+  }
+
   function openOutingBuilder() {
     const overlay = document.getElementById('obOverlay');
     if (!overlay) return;
@@ -6494,9 +6568,9 @@ Valid types: "meal", "activity", "dessert"`;
     // flows from stop to stop, not from wherever the user happens to be standing.
     let lastCoords     = lastStop ? lastStop.coords : null;
     const anchorExact  = lastStop ? !!lastStop.coordsExact : false;
-    // If stored coords are missing, try centroid one more time (covers events whose
-    // location string wasn't parsed at store-time but whose item has richer data).
-    if (!lastCoords && lastStop) lastCoords = obApproxCoords(lastStop.item);
+    // If stored coords are missing, re-derive from the last stop's address (grid →
+    // centroid). Covers anchors stored before this code path or with sparse data.
+    if (!lastCoords && lastStop) lastCoords = obItemGeo(lastStop.item).coords;
     const radius       = obRadiusMiles();
     const cat          = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
     body.innerHTML     = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
@@ -6504,53 +6578,41 @@ Valid types: "meal", "activity", "dessert"`;
     const pool = obRawPool(catId);
 
     if (catId === 'event') {
-      // Few events per day — geocode them all accurately so they can anchor.
+      // Few events per day — geocode them all accurately (API) so they can anchor.
       await Promise.allSettled(pool.map(p => obLoadItemCoords(p)));
-    } else if (lastCoords) {
-      // Pass 1 (free, instant): rank every candidate by its neighborhood centroid.
-      pool.forEach(p => {
-        const c = obApproxCoords(p.item);
-        p._approx = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
-      });
-      pool.sort((a, b) => a._approx - b._approx);
-      // Pass 2: spend accurate Places lookups only on the ~20 nearest by centroid.
-      const ranked   = pool.filter(p => p._approx !== Infinity).slice(0, 20);
-      const unranked = pool.filter(p => p._approx === Infinity).slice(0, 6);
-      await Promise.allSettled([...ranked, ...unranked].map(p => obLoadItemCoords(p)));
+    } else {
+      // Restaurants/markets/etc.: derive coordinates straight from the street
+      // address via the Philly grid — free, instant, no API quota, and immune to
+      // the "wrong branch" errors the Places API sometimes returns. Centroid is
+      // the fallback only when an address is off-grid (diagonals, West Philly).
+      for (const p of pool) {
+        const geo = obItemGeo(p.item);
+        p.coords = geo.coords;
+        p._precision = geo.precision; // 'grid' | 'centroid' | null
+      }
     }
 
     if (OB.step !== 'pick-item' || OB.pendingCat !== catId) return; // nav guard
 
-    // Determine anchor neighborhood for adjacency grouping. We use this regardless
-    // of whether we have exact coords, because neighborhoods are large and centroid
-    // distances alone are misleading (±0.5–1 mi error per side).
+    // Anchor neighborhood, for adjacency grouping of off-grid items.
     const anchorNbhd = obCoordsToNeighborhood(lastCoords)
       || (lastStop ? obItemNeighborhood(lastStop.item) : null);
     const adjNbhds   = anchorNbhd ? (OB_NBHD_ADJ[anchorNbhd] || []) : [];
 
-    // Four buckets — only "nearby" carries a distance badge (accurate coords required).
+    // Buckets. Grid/exact coords give a trustworthy distance and a badge; centroid-
+    // only items can't be measured reliably, so they're grouped by adjacency.
     const nearby = [], sameArea = [], closeBy = [], elsewhere = [];
 
     for (const p of pool) {
-      if (!lastCoords) {
-        // No anchor at all (first stop, non-event). Adjacency-group if possible.
-        p._dist = Infinity; p._exact = false;
-        const pn = obItemNeighborhood(p.item);
-        if (pn && anchorNbhd && pn === anchorNbhd)      sameArea.push(p);
-        else if (pn && adjNbhds.includes(pn))           closeBy.push(p);
-        else                                             elsewhere.push(p);
-        continue;
-      }
-
-      if (p.coords) {
-        // Accurate coords → trustworthy distance badge.
+      const measurable = p.coords && (p._precision !== 'centroid'); // events: precision undefined → measurable
+      if (lastCoords && measurable) {
         p._dist  = haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon);
         p._exact = true;
         (p._dist <= radius ? nearby : elsewhere).push(p);
       } else {
-        // Centroid-only → group by adjacency; never show a precise distance badge.
-        const c  = obApproxCoords(p.item);
-        p._dist  = c ? haversineMiles(lastCoords.lat, lastCoords.lon, c.lat, c.lon) : Infinity;
+        // No anchor, or centroid-only coords → adjacency grouping, no distance badge.
+        p._dist  = (lastCoords && p.coords)
+          ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
         p._exact = false;
         const pn = obItemNeighborhood(p.item);
         if (pn && anchorNbhd && pn === anchorNbhd)      sameArea.push(p);
@@ -6578,11 +6640,18 @@ Valid types: "meal", "activity", "dessert"`;
       </button>`;
     }
 
-    // Show a soft note when the anchor is approximate (centroid, not exact coords).
-    const approxNote   = (lastCoords && !anchorExact && anchorNbhd)
+    const hasClose      = nearby.length + sameArea.length + closeBy.length > 0;
+    const approxNote    = (lastCoords && !anchorExact && anchorNbhd)
       ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📍 Centered on ${escapeHtml(anchorNbhd)} (approximate)</div>` : '';
-    const noNearbyNote = (lastCoords && nearby.length === 0 && (sameArea.length + closeBy.length) === 0)
-      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing confirmed within ${escapeHtml(obTravelLabel(radius))} — nearest options shown first.</div>` : '';
+    const noNearbyNote  = (lastCoords && !hasClose)
+      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">Nothing within ${escapeHtml(obTravelLabel(radius))} of your last stop — nearest options shown first.</div>` : '';
+    // When there ARE close options, tuck the far ones behind a toggle so the list
+    // reads as "near your last stop" rather than a giant unfiltered dump.
+    const farHTML = elsewhere.slice(0, 60).map(itemHTML).join('');
+    const farBlock = !elsewhere.length ? ''
+      : hasClose
+        ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Further away (${elsewhere.length})</summary>${farHTML}</details>`
+        : farHTML;
 
     body.innerHTML = `<div class="ob-pick-list">
       ${approxNote}
@@ -6593,19 +6662,20 @@ Valid types: "meal", "activity", "dessert"`;
       ${sameArea.map(itemHTML).join('')}
       ${closeBy.length   ? `<div class="ob-section-header">🗺 Close by${anchorNbhd ? ` — near ${escapeHtml(anchorNbhd)}` : ''}</div>` : ''}
       ${closeBy.map(itemHTML).join('')}
-      ${elsewhere.length && (nearby.length + sameArea.length + closeBy.length) > 0
-          ? `<div class="ob-section-header">Further away</div>` : ''}
-      ${elsewhere.slice(0, 60).map(itemHTML).join('')}
+      ${farBlock}
     </div>`;
 
     body.querySelectorAll('[data-ob-pidx]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const p = pool[parseInt(btn.dataset.obPidx, 10)];
         if (!p) return;
-        // Anchor the chosen stop on accurate coords so the next "+" measures from
-        // the true location, not a neighborhood centroid.
-        if (p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
-        OB.stops.push({ type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item, coords: p.coords || obApproxCoords(p.item), coordsExact: !!p.coords });
+        // Events resolve their anchor via API; place items already carry grid coords.
+        if (p.type === 'event' && p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
+        OB.stops.push({
+          type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item,
+          coords: p.coords || obItemGeo(p.item).coords,
+          coordsExact: p.type === 'event' ? !!p.coords : (p._precision === 'grid'),
+        });
         OB.step = 'equation'; obRender();
       });
     });
