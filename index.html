@@ -6650,9 +6650,16 @@ Valid types: "meal", "activity", "dessert"`;
       return !!(pn && anchorNbhd && (pn === anchorNbhd || adjNbhds.includes(pn)));
     }
 
-    const within  = pool.filter(inRange).sort((a, b) => a._dist - b._dist);
+    function byDist(a, b) {
+      if (a._dist !== Infinity && b._dist !== Infinity) return a._dist - b._dist;
+      if (a._dist !== Infinity) return -1;
+      if (b._dist !== Infinity) return 1;
+      return a.label.localeCompare(b.label);  // both Infinity → alphabetical
+    }
+
+    const within  = pool.filter(inRange).sort(byDist);
     const farther = lastCoords
-      ? pool.filter(p => !inRange(p)).sort((a, b) => a._dist - b._dist).slice(0, 40)
+      ? pool.filter(p => !inRange(p)).sort(byDist).slice(0, 40)
       : [];
 
     function itemHTML(p) {
@@ -6670,16 +6677,19 @@ Valid types: "meal", "activity", "dessert"`;
       ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📍 Centered on ${escapeHtml(anchorNbhd)} (approximate)</div>` : '';
     const emptyNote  = (lastCoords && !within.length)
       ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} options close to your last stop.</div>` : '';
-    // Out-of-range options stay hidden behind a toggle so the main list is only
-    // things actually near the previous stop, ordered closest first.
-    const farBlock = farther.length
+
+    // First stop has no anchor so we show the full list (already alphabetical).
+    // Subsequent stops: main list = within-range closest first; far ones collapsed.
+    const showAll   = !lastCoords;
+    const mainList  = showAll ? within.slice(0, 80) : within;
+    const farBlock  = (!showAll && farther.length)
       ? `<details class="ob-far-details"><summary class="ob-section-header" style="cursor:pointer;list-style:revert">Farther away (${farther.length})</summary>${farther.map(itemHTML).join('')}</details>`
       : '';
 
     body.innerHTML = `<div class="ob-pick-list">
       ${approxNote}
       ${emptyNote}
-      ${within.map(itemHTML).join('')}
+      ${mainList.map(itemHTML).join('')}
       ${farBlock}
     </div>`;
 
