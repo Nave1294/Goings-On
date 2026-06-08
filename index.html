@@ -6440,14 +6440,28 @@ Valid types: "meal", "activity", "dessert"`;
     return null;
   }
 
-  // Best free estimate of an item's location, with how much to trust it:
-  //   'grid'     — block-level from the street address (good for radius filtering)
-  //   'centroid' — neighbourhood centroid only (coarse; group, don't measure)
-  // Falls back through grid → centroid → nothing.
+  // Best available location for a data item, with precision level:
+  //   'api'      — exact GPS from Places API (stored in either LS cache)
+  //   'grid'     — block-level from the Philly street grid (~0.1–0.3 mi)
+  //   'centroid' — neighbourhood centroid only (coarse; adjacency-group only)
+  // Checks the two localStorage caches first — both are populated during normal
+  // browsing (restaurant photos), so most venues are 'api'-precision for free.
   function obItemGeo(item) {
     if (!item) return { coords: null, precision: null };
+    const q = placeQuery(item);
+    if (q) {
+      // Cache 1: set by plEnsureRestoCoords (key: 'acc:<query>')
+      const c1 = lsCoordGet('acc:' + q);
+      if (c1) return { coords: c1, precision: 'api' };
+      // Cache 2: set by fetchPlaceInfo when a tile photo loads (key: query)
+      const c2 = lsPlaceInfoGet(q);
+      if (c2 && c2.lat != null && nearPhilly(c2.lat, c2.lon))
+        return { coords: { lat: c2.lat, lon: c2.lon }, precision: 'api' };
+    }
+    // Grid geocoder — free, no API, works for numbered/named-street addresses.
     const grid = phillyGridCoords(item.location || '');
     if (grid) return { coords: grid, precision: 'grid' };
+    // Neighbourhood centroid — last resort.
     const c = obApproxCoords(item);
     if (c) return { coords: c, precision: 'centroid' };
     return { coords: null, precision: null };
@@ -6588,7 +6602,30 @@ Valid types: "meal", "activity", "dessert"`;
       for (const p of pool) {
         const geo = obItemGeo(p.item);
         p.coords = geo.coords;
-        p._precision = geo.precision; // 'grid' | 'centroid' | null
+        p._precision = geo.precision; // 'api' | 'grid' | 'centroid' | null
+      }
+
+      // Spend API calls only on the top candidates that aren't already api-precise.
+      // Sorted first by best available distance so we geocode the most relevant ones.
+      // For restaurants whose photos have loaded during normal browsing this hits
+      // localStorage (free); truly uncached venues cost one Places API call each.
+      if (lastCoords) {
+        // Initial distance pass so we sort before deciding what to geocode.
+        for (const p of pool)
+          p._dist = p.coords ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
+        pool.sort((a, b) => a._dist - b._dist);
+        // Geocode the top candidates that don't already have api-level coords.
+        // Hits localStorage for anything whose photo has loaded — otherwise one API call.
+        const needsApi = pool.filter(p => p._precision !== 'api').slice(0, 15);
+        await Promise.allSettled(needsApi.map(async p => {
+          const coords = await plEnsureRestoCoords(p.item);
+          if (coords) { p.coords = coords; p._precision = 'api'; }
+        }));
+        // Recompute distances with any freshly-resolved coords.
+        for (const p of pool)
+          p._dist = p.coords ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
+      } else {
+        for (const p of pool) p._dist = Infinity;
       }
     }
 
@@ -6599,13 +6636,9 @@ Valid types: "meal", "activity", "dessert"`;
       || (lastStop ? obItemNeighborhood(lastStop.item) : null);
     const adjNbhds   = anchorNbhd ? (OB_NBHD_ADJ[anchorNbhd] || []) : [];
 
-    // Distance from the anchor for every candidate. Grid/exact coords are precise;
-    // centroid coords are rough (used only for ordering, never to claim a time).
-    for (const p of pool) {
-      p._precise = !!(p.coords && p._precision !== 'centroid'); // events: precision undefined → precise
-      p._dist    = (lastCoords && p.coords)
-        ? haversineMiles(lastCoords.lat, lastCoords.lon, p.coords.lat, p.coords.lon) : Infinity;
-    }
+    // Mark which items have trustworthy distance measurements.
+    for (const p of pool)
+      p._precise = !!(p.coords && p._precision !== 'centroid');
 
     // A candidate is "in range" when it clears the radius. Precise coords are held
     // to the exact radius; off-grid items qualify only if they sit in the same or an
