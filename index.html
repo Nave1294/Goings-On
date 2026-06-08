@@ -5101,7 +5101,7 @@
     { id: 'drinks',      emoji: '🍸', label: 'Drinks-forward' },
   ];
   const PL_TRANSIT_MODES = [
-    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~15 min on foot' },
+    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~20 min on foot' },
     { id: 'bike',    emoji: '🚲', label: 'Biking',         desc: 'Up to ~15 min by bike' },
     { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~20 min, direct service' },
     { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
@@ -5436,7 +5436,13 @@
       : '(none scheduled this day)';
 
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
-    const transitNote = PL.transit === 'walk' ? 'Walking only — every leg between consecutive stops MUST be a 15-minute walk or less (about 0.7 mi). Keep stops in the same or directly adjacent neighborhood.' : PL.transit === 'bike' ? 'Biking — every leg should be a 15-minute bike ride or less (about 2 miles). Keep stops in the same or nearby neighborhoods so the ride between them is short and pleasant.' : PL.transit === 'drive' ? 'Driving — every leg must be a 10-minute drive or less.' : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
+    const transitNote = PL.transit === 'walk'
+      ? 'Walking only — every leg between consecutive stops MUST be 20 minutes or under (roughly 0.9 mi straight-line, ~1.1 mi by actual streets). Plan a LINEAR route: stops must flow from one neighborhood to the next in a logical geographic progression, like a path on a map that never doubles back. If stop 1 is in Fishtown, stop 2 might be Northern Liberties — NOT back through Old City. Once you leave an area, do not return to it.'
+      : PL.transit === 'bike'
+      ? 'Biking — every leg should be a 15-minute bike ride or less (about 2 miles). Keep stops in the same or nearby neighborhoods so the ride between them is short and flows in one direction — do not zigzag across the city.'
+      : PL.transit === 'drive'
+      ? 'Driving — every leg must be a 10-minute drive or less. Route stops progressively; avoid sending the driver back and forth across the same area.'
+      : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
     const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'bike' ? 12 : PL.transit === 'drive' ? 10 : 18;
 
     const prompt = `You are a sharp, opinionated Philadelphia local planning a great outing. Think it through carefully before answering: consider the occasion, what's actually worth doing, how the stops flow together into ONE coherent experience, and which real Goings-On events make the night special. Then return ONLY a raw JSON object — no prose, no markdown fences.
@@ -5461,7 +5467,7 @@ RULES:
 1. ACTIVITY IDEAS ARE A TRUE LAST RESORT. Fill every activity slot in this priority order, stopping at the first that works: (a) a real Goings-On CALENDAR EVENT (set "isCalendarEvent": true, copy the name exactly) — always preferred; (b) if no event fits, drop the activity slot entirely and instead build a richer food-forward plan (e.g. an extra dessert/drinks stop, or a second complementary restaurant); ONLY (c) fall back to an ACTIVITY IDEA when an activity slot genuinely cannot be filled any other way. ${dayEvents.length && activitySlots ? `There are ${dayEvents.length} calendar event(s) and ${activitySlots} activity slot(s) — use the real events first and exhaust them before ever touching an idea.` : 'If any calendar event is listed, use it before any idea.'} A plan with zero ideas is better than a plan padded with generic ideas.
 2. EVENT TIMES ARE FIXED. When you use a calendar event, set its "hour" to the actual start time shown in CALENDAR EVENTS above — NEVER move it to a different time. Schedule the meals and dessert into the gaps around that real event time.
 3. ORDER ALL STOPS CHRONOLOGICALLY by hour, earliest first.
-4. DISTANCE IS A HARD CONSTRAINT: ${transitNote} Use the neighborhoods to keep every consecutive pair close enough. Do not pick stops on opposite sides of the city.
+4. DISTANCE AND ROUTE SHAPE ARE HARD CONSTRAINTS: ${transitNote} Use the listed neighborhoods to verify every consecutive pair is close enough. Do NOT scatter stops across the city. The full route plotted on a map must look like a coherent path through one part of Philadelphia — not a zigzag, not a star, not a loop that crosses itself. Think of it as walking in a general direction: each stop is a step forward, never a step back.
 5. For the occasion, pick accordingly (romantic spots for date night, lively for friends night out, etc).
 6. Food preference "${foodLabel}" should guide cuisine picks — match it unless preference is "any".
 7. Name restaurants, ideas, and events EXACTLY as listed. "hour" is the 24-hour start hour as an integer.
