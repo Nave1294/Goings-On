@@ -6270,13 +6270,64 @@ Valid types: "meal", "activity", "dessert"`;
     try {
       if (p.type === 'event') {
         const ev = p.item;
-        if (!ev.location) { p.coords = null; return null; }
-        const key = 'acc:ev:' + ev.location;
-        const cached = lsCoordGet(key);
-        if (cached !== undefined) { p.coords = cached; return cached; }
-        const info = await fetchPlaceInfo(ev.location);
-        coords = (info && info.lat != null && nearPhilly(info.lat, info.lon)) ? { lat: info.lat, lon: info.lon } : null;
-        lsCoordSet(key, coords);
+
+        // 1. Already resolved by ensureEventCoords during normal calendar browsing.
+        if (ev._coords) { p.coords = ev._coords; return ev._coords; }
+
+        // 2. Explicit calendar location field.
+        if (ev.location) {
+          const key = 'acc:ev:' + ev.location;
+          const cached = lsCoordGet(key);
+          if (cached !== undefined) { p.coords = cached; return cached; }
+          const info = await fetchPlaceInfo(ev.location);
+          if (info && info.lat != null && nearPhilly(info.lat, info.lon)) {
+            coords = { lat: info.lat, lon: info.lon };
+            lsCoordSet(key, coords);
+            p.coords = coords; return coords;
+          }
+        }
+
+        // 3. No location field — try the event title (same approach as ensureEventCoords).
+        if (!coords && ev.summary) {
+          const key = 'acc:ev:title:' + ev.summary;
+          const cached = lsCoordGet(key);
+          if (cached !== undefined) { p.coords = cached; return cached; }
+          const info = await fetchPlaceInfo(ev.summary);
+          if (info && info.lat != null && nearPhilly(info.lat, info.lon)) {
+            coords = { lat: info.lat, lon: info.lon };
+            if (info.address) ev._foundLocation = info.address;
+            lsCoordSet(key, coords);
+            p.coords = coords; return coords;
+          }
+        }
+
+        // 4. Extract a Philly address from the description text and geocode that.
+        if (!coords && ev.description) {
+          const desc = stripTags(ev.description);
+          const addrMatch = desc.match(/\d+\s+[A-Z][a-zA-Z\s]+(St|Street|Ave|Avenue|Blvd|Road|Rd|Dr|Lane|Ln|Way|Pkwy|Parkway)\b[^,\n]*/);
+          if (addrMatch) {
+            const extracted = addrMatch[0].trim();
+            const key = 'acc:ev:desc:' + extracted;
+            const cached = lsCoordGet(key);
+            if (cached !== undefined && cached !== null) { p.coords = cached; return cached; }
+            const info = await fetchPlaceInfo(extracted);
+            if (info && info.lat != null && nearPhilly(info.lat, info.lon)) {
+              coords = { lat: info.lat, lon: info.lon };
+              lsCoordSet(key, coords);
+              p.coords = coords; return coords;
+            }
+          }
+        }
+
+        // 5. Extract a neighbourhood name from title or description and use its centroid.
+        if (!coords) {
+          const haystack = `${ev.summary || ''} ${stripTags(ev.description || '')}`;
+          const hoods = placeNeighborhoods(haystack);
+          if (hoods.length && OB_NBHD_COORDS[hoods[0]]) {
+            coords = OB_NBHD_COORDS[hoods[0]];
+          }
+        }
+
       } else {
         coords = await plEnsureRestoCoords(p.item);
       }
