@@ -1,2 +1,3 @@
 node_modules/
 .audit-summary.json
+.bake-summary.json

@@ -1,0 +1,85 @@
+name: Bake Geo (coords + photo refs)
+
+# Keeps coordinates and photo references baked into index.html so the live
+# site never spends a paid Places Text Search call.
+#  • push to main (index.html changed) → "fill" mode: only NEW places are
+#    looked up, so freshly-added items get baked automatically and cheaply.
+#  • monthly schedule → "validate" mode: re-checks every photo reference and
+#    re-fetches any that have gone stale (the broken-code scan).
+#  • manual run → choose the mode.
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html']
+  schedule:
+    - cron: '0 11 1 * *'   # 1st of every month, 11:00 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'fill (new items only) or validate (full photo scan)'
+        default: validate
+        type: choice
+        options: [fill, validate]
+
+concurrency:
+  group: bake-geo
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "mode=validate" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=fill" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run bake-geo
+        run: node scripts/bake-geo.js --${{ steps.mode.outputs.mode }}
+        env:
+          PLACES_API_KEY: ${{ secrets.PLACES_API_KEY }}
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+
+          if [ -f .bake-summary.json ]; then
+            DATE=$(node -e "console.log(require('./.bake-summary.json').date)")
+            MODE=$(node -e "console.log(require('./.bake-summary.json').mode)")
+            FILLED=$(node -e "const s=require('./.bake-summary.json'); console.log(s.filled.length ? s.filled.join(', ') : 'none')")
+            REFRESHED=$(node -e "const s=require('./.bake-summary.json'); console.log(s.refreshed.length ? s.refreshed.join(', ') : 'none')")
+            SUBJECT="chore: bake-geo ${MODE} ${DATE} [skip ci]"
+            BODY="Filled: ${FILLED} | Refreshed photos: ${REFRESHED}"
+          else
+            SUBJECT="chore: bake-geo [skip ci]"
+            BODY=""
+          fi
+          rm -f .bake-summary.json
+
+          if git diff --staged --quiet; then
+            echo "No changes — all places already baked and current"
+          else
+            git commit -m "$SUBJECT" -m "$BODY"
+            git push
+          fi

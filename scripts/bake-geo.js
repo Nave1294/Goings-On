@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Bakes coordinates + a photo reference into every restaurant / bookstore /
+ * market entry in index.html, so the live site never spends a paid Places
+ * Text Search call to geocode or find a photo for a known place.
+ *
+ * Each place line gets a `geo` field:
+ *   geo: { lat: 39.95, lon: -75.16, ph: 'places/…/photos/…' }
+ *
+ * Modes:
+ *   --fill      (default) Only look up places that have NO geo yet. Cheap —
+ *               this is what runs on every push, so newly-added places get
+ *               baked automatically and existing ones cost nothing.
+ *   --validate  Fill missing AND re-check every existing photo reference;
+ *               anything that no longer loads is re-fetched. This is the
+ *               "scan for broken codes" pass, run on a schedule.
+ *
+ * Coordinates never expire, so they're only ever fetched once per place.
+ * Only photo references can go stale, which is what --validate repairs.
+ *
+ * Run manually:  node scripts/bake-geo.js --validate
+ * Secret:  PLACES_API_KEY
+ */
+
+const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
+
+const INDEX_PATH     = path.join(__dirname, '..', 'index.html');
+const PLACES_API_KEY = process.env.PLACES_API_KEY;
+
+if (!PLACES_API_KEY) { console.error('Missing PLACES_API_KEY'); process.exit(1); }
+
+const MODE = process.argv.includes('--validate') ? 'validate' : 'fill';
+
+// ─── Places API (New) Text Search ────────────────────────────────────────────
+
+function placesSearch(query) {
+  const body = JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' });
+  const fieldMask = 'places.displayName,places.location,places.photos';
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'places.googleapis.com',
+      path: '/v1/places:searchText',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+        'X-Goog-Api-Key': PLACES_API_KEY,
+        'X-Goog-FieldMask': fieldMask,
+      },
+    }, res => {
+      let s = '';
+      res.on('data', c => s += c);
+      res.on('end', () => { try { resolve(JSON.parse(s)); } catch { resolve({}); } });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+// HEAD-style check that a photo media reference still resolves. The endpoint
+// 302-redirects to the real image when valid, or returns 4xx when stale.
+function photoIsLive(ph) {
+  return new Promise(resolve => {
+    const url = `https://places.googleapis.com/v1/${ph}/media?maxHeightPx=200&key=${PLACES_API_KEY}`;
+    const u = new URL(url);
+    const req = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'GET' }, res => {
+      res.resume(); // drain
+      resolve(res.statusCode >= 200 && res.statusCode < 400);
+    });
+    req.on('error', () => resolve(false));
+    req.end();
+  });
+}
+
+// Word-level name match so we never bake the wrong venue's coordinates.
+function nameMatches(a, b) {
+  const toks = s => (s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const A = toks(a), B = toks(b);
+  if (!A.length || !B.length) return false;
+  const [short, long] = A.length <= B.length ? [A, B] : [B, A];
+  const words = new Set(long);
+  return short.every(t => words.has(t));
+}
+
+async function lookupGeo(name, location) {
+  const query = location ? `${name}, ${location}` : name;
+  const data = await placesSearch(query);
+  const place = data.places?.[0];
+  if (!place || !place.location) return null;
+  // Guard against a mis-match returning a far-off or wrong venue.
+  if (place.displayName?.text && !nameMatches(name, place.displayName.text)) return null;
+  return {
+    lat: Number(place.location.latitude.toFixed(6)),
+    lon: Number(place.location.longitude.toFixed(6)),
+    ph:  place.photos?.[0]?.name || '',
+  };
+}
+
+// ─── Line parsing / rewriting ─────────────────────────────────────────────────
+
+// Pull { lineIndex, raw, name, location, geo } from inside a marker block.
+function extractPlaceLines(html, startMarker, endMarker) {
+  const lines = html.split('\n');
+  let inside = false;
+  const results = [];
+  const placeRe = /^\s*\{\s*name:\s*(['"])(.*?)\1/;
+  lines.forEach((line, i) => {
+    if (line.includes(startMarker)) { inside = true;  return; }
+    if (line.includes(endMarker))   { inside = false; return; }
+    if (!inside) return;
+    if (!placeRe.test(line)) return;
+    const nameMatch = line.match(/name:\s*(['"])(.*?)\1/);
+    const locMatch  = line.match(/location:\s*(['"])(.*?)\1/);
+    const geoMatch  = line.match(/geo:\s*\{\s*lat:\s*([-\d.]+),\s*lon:\s*([-\d.]+),\s*ph:\s*'([^']*)'\s*\}/);
+    results.push({
+      lineIndex: i,
+      raw: line,
+      name:     nameMatch?.[2] || '',
+      location: locMatch?.[2]  || '',
+      geo: geoMatch ? { lat: +geoMatch[1], lon: +geoMatch[2], ph: geoMatch[3] } : null,
+    });
+  });
+  return results;
+}
+
+function withGeo(raw, geo) {
+  const geoStr = `geo: { lat: ${geo.lat}, lon: ${geo.lon}, ph: '${geo.ph}' }`;
+  if (/geo:\s*\{[^}]*\}/.test(raw)) return raw.replace(/geo:\s*\{[^}]*\}/, geoStr);
+  const lastBrace = raw.lastIndexOf('}');
+  const before = raw.slice(0, lastBrace).replace(/\s*$/, '');
+  const after  = raw.slice(lastBrace);
+  const sep = before.endsWith(',') ? ' ' : ', ';
+  return before + sep + geoStr + ' ' + after;
+}
+
+// ─── main ─────────────────────────────────────────────────────────────────────
+
+async function main() {
+  let html = fs.readFileSync(INDEX_PATH, 'utf8');
+
+  const sections = [
+    { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
+    { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
+  ];
+
+  const log = { filled: [], refreshed: [], stillLive: 0, notFound: [], unchanged: 0 };
+
+  for (const section of sections) {
+    console.log(`\n── ${section.label} (${MODE}) ──`);
+    const places = extractPlaceLines(html, section.start, section.end);
+    console.log(`   ${places.length} entries`);
+
+    for (const place of places) {
+      // FILL: already has geo → nothing to do (unless validating).
+      if (place.geo && MODE === 'fill') { log.unchanged++; continue; }
+
+      // VALIDATE: has geo → check the photo reference is still live.
+      if (place.geo && MODE === 'validate') {
+        if (!place.geo.ph) { log.unchanged++; continue; } // coords only, never expires
+        const live = await photoIsLive(place.geo.ph);
+        if (live) { log.stillLive++; continue; }
+        process.stdout.write(`  Stale photo: ${place.name} … `);
+        const fresh = await lookupGeo(place.name, place.location);
+        if (fresh && fresh.ph) {
+          const updated = withGeo(place.raw, { ...place.geo, ph: fresh.ph });
+          html = html.replace(place.raw, updated);
+          log.refreshed.push(place.name);
+          console.log('refreshed');
+        } else {
+          console.log('could not refetch — kept');
+        }
+        await new Promise(r => setTimeout(r, 150));
+        continue;
+      }
+
+      // No geo yet → look it up (both modes).
+      process.stdout.write(`  Baking: ${place.name} … `);
+      const geo = await lookupGeo(place.name, place.location);
+      if (!geo) { console.log('not found'); log.notFound.push(place.name); }
+      else {
+        const updated = withGeo(place.raw, geo);
+        html = html.replace(place.raw, updated);
+        log.filled.push(place.name);
+        console.log(`baked (${geo.lat}, ${geo.lon}${geo.ph ? ', +photo' : ', no photo'})`);
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+  }
+
+  fs.writeFileSync(INDEX_PATH, html, 'utf8');
+
+  const today = new Date().toISOString().slice(0, 10);
+  console.log(`\n══ bake-geo ${MODE} complete (${today}) ══`);
+  console.log(`  Filled:     ${log.filled.length}  — ${log.filled.join(', ') || 'none'}`);
+  console.log(`  Refreshed:  ${log.refreshed.length} — ${log.refreshed.join(', ') || 'none'}`);
+  console.log(`  Still live: ${log.stillLive}`);
+  console.log(`  Not found:  ${log.notFound.length} — ${log.notFound.join(', ') || 'none'}`);
+  console.log(`  Unchanged:  ${log.unchanged}`);
+
+  fs.writeFileSync(path.join(__dirname, '..', '.bake-summary.json'), JSON.stringify({
+    date: today, mode: MODE,
+    filled: log.filled, refreshed: log.refreshed, notFound: log.notFound,
+  }, null, 2));
+}
+
+main().catch(e => { console.error(e); process.exit(1); });

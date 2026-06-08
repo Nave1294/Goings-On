@@ -4097,6 +4097,25 @@
   function photoUrlFromName(name) {
     return name ? `https://places.googleapis.com/v1/${name}/media?maxHeightPx=400&key=${PLACES_API_KEY}` : null;
   }
+
+  // Baked geo index — coords + photo references pre-computed offline by
+  // scripts/bake-geo.js and stored as a `geo` field on each place object:
+  //   geo: { lat, lon, ph: 'places/…/photos/…' }
+  // Reading these at runtime avoids a paid Places Text Search per place per
+  // visitor — the single biggest API cost. Memoised; maps placeQuery() → geo.
+  let _bakedGeo = null;
+  function bakedGeoIndex() {
+    if (_bakedGeo) return _bakedGeo;
+    _bakedGeo = {};
+    const add = r => { if (r && r.geo) _bakedGeo[placeQuery(r)] = r.geo; };
+    try {
+      PLACES_TO_EAT.forEach(t => (t.sections || []).forEach(s => (s.places || []).forEach(add)));
+      BOOKSTORES.forEach(c => (c.sections || []).forEach(s => (s.places || []).forEach(add)));
+      FARMERS_MARKETS.forEach(add);
+    } catch {}
+    return _bakedGeo;
+  }
+
   // The free geocoder is a city/place-name database — it can fuzzy-match venue
   // names to far-off cities (e.g. a Philly spot landing in New York). Everything
   // in this app is greater-Philadelphia, so reject any result that isn't close.
@@ -4108,6 +4127,17 @@
   // and in localStorage so each spot costs a Places API call only once, ever.
   async function fetchPlaceInfo(query) {
     if (placeInfoCache[query] !== undefined) return placeInfoCache[query];
+    // Baked geo (offline-computed) wins — zero API cost for coords, and photos
+    // load from the stored reference via the cheap Photo SKU (no Text Search).
+    const baked = bakedGeoIndex()[query];
+    if (baked) {
+      const info = {
+        photoUrl: baked.ph ? photoUrlFromName(baked.ph) : null,
+        lat: baked.lat ?? null, lon: baked.lon ?? null, address: null,
+      };
+      placeInfoCache[query] = info;
+      return info;
+    }
     // Persistent cache: rebuild the photo URL from the stored reference name.
     const stored = lsPlaceInfoGet(query);
     if (stored !== undefined) {
@@ -4162,6 +4192,9 @@
       img.style.opacity = '0';
       img.style.transition = 'opacity 0.4s ease';
       img.onload = () => { img.style.opacity = '1'; };
+      // If a baked photo reference has gone stale, fall back to the emoji
+      // placeholder instead of a broken image. The next bake-geo scan refreshes it.
+      img.onerror = () => { img.replaceWith(placeholder); };
       img.src = info.photoUrl;
       placeholder.replaceWith(img);
     }
@@ -6506,6 +6539,9 @@ Valid types: "meal", "activity", "dessert"`;
   // browsing (restaurant photos), so most venues are 'api'-precision for free.
   function obItemGeo(item) {
     if (!item) return { coords: null, precision: null };
+    // Baked coords (offline-computed) are exact and free.
+    if (item.geo && item.geo.lat != null && item.geo.lon != null)
+      return { coords: { lat: item.geo.lat, lon: item.geo.lon }, precision: 'api' };
     const q = placeQuery(item);
     if (q) {
       // Cache 1: set by plEnsureRestoCoords (key: 'acc:<query>')
