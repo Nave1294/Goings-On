@@ -1702,7 +1702,7 @@
       display: flex; align-items: flex-start; gap: 0.6rem;
       padding: 0.75rem 0.85rem; border-radius: 12px;
       background: var(--surface); border: 1.5px solid var(--divider);
-      border-left-width: 4px;
+      border-left-width: 5px;
       margin-bottom: 0.4rem; cursor: pointer; width: 100%; font: inherit; text-align: left;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
@@ -6717,18 +6717,19 @@ Valid types: "meal", "activity", "dessert"`;
     // Left-border accent: solid teal (#1a7a6e) for the closest item, fading to the
     // divider colour at the bottom. This gives an at-a-glance distance gradient
     // without any numbers. Only applied when there's an anchor to sort against.
-    function accentColor(rank, total, isFar) {
-      if (!lastCoords) return 'var(--divider)';
-      if (isFar)       return 'rgba(26,122,110,0.12)';
-      const t = total <= 1 ? 0 : rank / (total - 1);  // 0 = closest, 1 = farthest in range
-      const opacity = 0.9 - t * 0.72;                  // 0.9 → 0.18
-      return `rgba(26,122,110,${opacity.toFixed(2)})`;
+    function accentStyle(rank, total, isFar) {
+      if (!lastCoords) return '';
+      if (isFar) return 'border-left-color:rgba(26,122,110,0.15);';
+      const t = total <= 1 ? 0 : rank / (total - 1);   // 0 = closest, 1 = farthest
+      const op  = (1.0  - t * 0.88).toFixed(2);         // border: 1.0 → 0.12
+      const bgOp = (0.09 - t * 0.085).toFixed(3);       // bg tint: 0.09 → 0.005
+      return `border-left-color:rgba(26,122,110,${op});background:rgba(26,122,110,${bgOp});`;
     }
 
     function itemHTML(p, rank, total, isFar) {
       const idx = pool.indexOf(p);
       return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button"
-          style="border-left-color:${accentColor(rank, total, isFar)}">
+          style="${accentStyle(rank, total, isFar)}">
         <span class="ob-pick-emoji">${p.emoji}</span>
         <span class="ob-pick-info">
           <span class="ob-pick-name">${escapeHtml(p.label)}</span>
