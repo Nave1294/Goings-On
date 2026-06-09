@@ -327,10 +327,10 @@
     .tab.no-events .tab-badge { color: var(--text-tertiary); }
 
     .day-panel {
-      animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes fadeIn {
+    @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
@@ -1522,9 +1522,9 @@
     .pl-next:active { transform: scale(0.98); }
     .pl-warn { font-size: 0.8rem; font-weight: 600; color: #b4452f; margin-top: 0.8rem; }
     .pl-warn[hidden] { display: none; }
-    .pl-key-input { width: 100%; box-sizing: border-box; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--text1); outline: none; }
+    .pl-key-input { width: 100%; box-sizing: border-box; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--divider); border-radius: 10px; background: var(--surface); color: var(--text); outline: none; }
     .pl-key-input:focus { border-color: var(--accent); }
-    .pl-key-reset { font-size: 0.75rem; color: var(--text3); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-top: 1rem; display: block; }
+    .pl-key-reset { font-size: 0.75rem; color: var(--text-tertiary); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-top: 1rem; display: block; }
     .pl-key-reset:hover { color: var(--accent); }
     .pl-time-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .pl-time-chip {
@@ -1563,7 +1563,7 @@
     .pl-chip.active { color: #fff; background: #6d4b8f; border-color: #6d4b8f; }
     .pl-chip-emoji { font-size: 1.05rem; }
     .pl-daystamp { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.9rem; }
-    .pl-summary { font-size: 0.92rem; line-height: 1.5; color: var(--text1); background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
+    .pl-summary { font-size: 0.92rem; line-height: 1.5; color: var(--text); background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
     .pl-timeline { display: flex; flex-direction: column; }
     .pl-stop { margin-bottom: 0; }
     .pl-stop-head { display: flex; align-items: flex-start; gap: 0.7rem; }
@@ -1881,7 +1881,7 @@
   </svg>
 </button>
 
-<button class="add-btn" id="addBtn" aria-label="Suggest something to add">
+<button type="button" class="add-btn" id="addBtn" aria-label="Suggest something to add">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M12 5v14"/>
     <path d="M5 12h14"/>
@@ -3069,7 +3069,7 @@
               },
               {
                   "name": "Dancerobot",
-                  "location": "1710 San [address incomplete in article], Philadelphia",
+                  "location": "Philadelphia",
                   "cuisine": "Japanese",
                   "desc": "A Japanese kissaten-influenced spot from Royal Izakaya chef Jesse Ito and chef Justin Bacharach featuring French onion soup a la Japonaise, kare pan beef-filled buns, wagyu roast beef, katsu curry, and pizza toast, with a full bar.",
                   "website": "",
@@ -4214,7 +4214,7 @@
 
   function restoTileHTML(r) {
     const fullLoc = r.name + ' ' + (r.location || '');
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
+    const mapHref = mapUrl(fullLoc);
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
@@ -4250,7 +4250,7 @@
 
   function bookTileHTML(r) {
     const fullLoc = r.name + ' ' + (r.location || '');
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullLoc)}`;
+    const mapHref = mapUrl(fullLoc);
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">📚</div>`;
@@ -4402,7 +4402,12 @@
   // Set by the scope step before each Discover action. '' = anywhere in the city.
   let discoverScope = '';
   // The full master list of eat spots (every tab but Trending), deduped.
-  function discoverMasterPlaces() { return dedupeByName(sectionsForAll().flatMap(s => s.places)); }
+  // Built from static data, so memoize it — sectionsForAll() already dedupes
+  // globally, so its flattened places need no second dedupe pass.
+  let _discoverMaster = null;
+  function discoverMasterPlaces() {
+    return _discoverMaster || (_discoverMaster = sectionsForAll().flatMap(s => s.places));
+  }
   // The pool Discover actions draw from: the master list, scoped to a hood if chosen.
   function discoverPool() {
     const all = discoverMasterPlaces();
@@ -4412,12 +4417,9 @@
 
   // ── Random chooser ("Spin") ──
   // Draws from the Discover pool (citywide or the chosen neighborhood).
-  function currentEatPool() {
-    return discoverPool();
-  }
   let spinCtx = null; // the view context the current spin is drawing from
   function spinCardHTML(it) {
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indecMapQuery(it))}`;
+    const mapHref = mapUrl(indecMapQuery(it));
     const desc = indecItemDesc(it);
     const suffix = spinCtx ? ' · ' + escapeHtml(spinCtx.label) : '';
     return `
@@ -4634,7 +4636,7 @@
     card.querySelectorAll('.indec-card').forEach((c, i) => {
       c.classList.add(i === idx ? 'flipped' : 'dimmed');
     });
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indecMapQuery(it))}`;
+    const mapHref = mapUrl(indecMapQuery(it));
     const desc = indecItemDesc(it);
     const detail = card.querySelector('.indec-detail');
     detail.innerHTML = `
@@ -5025,12 +5027,10 @@
   }
 
   // ── Planner: theme matching & idea fallbacks ────────────────────
-  // Shared scoring data used by the Planner to pair calendar events with
-  // restaurants by theme keywords, and a curated list of creative Philly
-  // ideas to weave in when a day's calendar is thin.
+  // Theme keywords used by the Planner to rank a day's calendar events, plus a
+  // curated list of creative Philly ideas to weave in when the calendar is thin.
 
-  // Theme keyword → the restaurant traits that pair well with it.
-  // Each event/restaurant gets a set of "themes"; overlap scores points.
+  // Event text → themes; an event matching more themes ranks higher.
   const DN_THEME_RULES = [
     { theme: 'music',    evRe: /music|concert|jazz|band|live|dj|sing|orchestra|symphony|gig|vinyl/i },
     { theme: 'art',      evRe: /art|museum|gallery|exhibit|paint|sculpt|mural|design|craft/i },
@@ -5042,32 +5042,12 @@
     { theme: 'sports',   evRe: /game|phillies|sixers|eagles|flyers|union|match|race|run|5k/i },
     { theme: 'food',     evRe: /food|taste|culinary|dinner|brunch|chef|restaurant week|night market/i },
   ];
-  // Restaurant trait → which themes it satisfies (via cuisine/tags/desc text).
-  const DN_RESTO_RULES = [
-    { theme: 'music',    test: r => /bar|lounge|live|jazz|cocktail|wine|speakeasy/i.test(`${r.cuisine} ${r.desc}`) },
-    { theme: 'art',      test: r => hasTag(r, 'date-night') || hasTag(r, 'unique') },
-    { theme: 'film',     test: r => hasTag(r, 'cheap-eats') || /cozy|casual|snack|popcorn|diner/i.test(r.desc || '') },
-    { theme: 'stage',    test: r => hasTag(r, 'dinner') },
-    { theme: 'outdoor',  test: r => hasTag(r, 'byob') || /patio|garden|outdoor|rooftop|waterfront|picnic|takeout|to-go|counter|sandwich|taco|pizza/i.test(`${r.cuisine} ${r.desc}`) },
-    { theme: 'drinks',   test: r => /bar|wine|beer|brew|cocktail|byob|lounge|pub|tavern/i.test(`${r.cuisine} ${r.desc}`) || hasTag(r, 'byob') },
-    { theme: 'literary', test: r => /cafe|coffee|tea|cozy|intimate|quiet/i.test(`${r.cuisine} ${r.desc}`) },
-    { theme: 'sports',   test: r => /bar|pub|tavern|wings|burger|beer|sports/i.test(`${r.cuisine} ${r.desc}`) },
-    { theme: 'food',     test: r => hasTag(r, 'unique') || hasTag(r, 'dinner') },
-  ];
-  function hasTag(r, t) { return Array.isArray(r.tags) && r.tags.includes(t); }
-
   function eventThemes(ev) {
     const text = `${ev.summary || ''} ${stripTags(ev.description || '')}`;
     const set = new Set();
     for (const rule of DN_THEME_RULES) if (rule.evRe.test(text)) set.add(rule.theme);
     return set;
   }
-  function restaurantThemes(r) {
-    const set = new Set();
-    for (const rule of DN_RESTO_RULES) if (rule.test(r)) set.add(rule.theme);
-    return set;
-  }
-
   // Curated creative fallbacks — each can weave in the chosen restaurant.
   // { title, nbhd, themes, when: 'evening'|'day'|'any', line(restoName) }
   const DN_FALLBACK_IDEAS = [
@@ -5113,7 +5093,6 @@
     transit: 'walk',
     occasion: 'date',
     food: 'any',
-    seed: 0,        // bumped on "Shuffle" to vary the picks
     stops: [],
     summary: '',    // AI's short rationale for the picks
     shareText: '',
@@ -5225,12 +5204,6 @@
     if (h >= 11 && h <= 14) return 'lunch';
     if (h >= 17 && h <= 21) return 'dinner';
     return null; // not a normal meal time → lead with an activity instead
-  }
-  function plWalkLabel(mi) {
-    const mins = Math.round(mi * 20); // ~20 min/mile walking pace
-    if (mins <= 1) return '< 1 min walk';
-    if (mins < 60) return `~${mins} min walk`;
-    return `~${fmtMiles(mi)} walk`;
   }
   function plCap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 
@@ -5429,12 +5402,13 @@
     const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
     let body = (fence ? fence[1] : raw).trim();
     try { return JSON.parse(body); } catch {}
-    // Find the last valid JSON object or array in the text (thinking may produce
-    // intermediate fragments; the real answer is always at the end).
-    const allObjs = [...body.matchAll(/\{[\s\S]*?\}/g)];
-    for (let i = allObjs.length - 1; i >= 0; i--) { try { return JSON.parse(allObjs[i][0]); } catch {} }
-    const allArrs = [...body.matchAll(/\[[\s\S]*?\]/g)];
-    for (let i = allArrs.length - 1; i >= 0; i--) { try { return JSON.parse(allArrs[i][0]); } catch {} }
+    // Fallback: grab the outermost object/array (first "{" to last "}", first
+    // "[" to last "]") in case the model wrapped the JSON in stray prose. Greedy
+    // so nested braces stay inside the match.
+    const objMatch = body.match(/\{[\s\S]*\}/);
+    if (objMatch) { try { return JSON.parse(objMatch[0]); } catch {} }
+    const arrMatch = body.match(/\[[\s\S]*\]/);
+    if (arrMatch) { try { return JSON.parse(arrMatch[0]); } catch {} }
     throw new Error('No parseable JSON from AI');
   }
 
@@ -5571,7 +5545,7 @@ Valid types: "meal", "activity", "dessert"`;
             desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
             actions: [
               ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
-              ev.location && { label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location) },
+              ev.location && { label: '🗺️ Map', href: mapUrl(ev.location) },
             ].filter(Boolean),
             coords: c || null,
           });
@@ -5588,7 +5562,7 @@ Valid types: "meal", "activity", "dessert"`;
             meta: [idea.nbhd && ('📍 ' + idea.nbhd)].filter(Boolean),
             desc: '',          // filled in after sorting so it references the right meal
             _idea: idea,
-            actions: [{ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(idea.title + ' Philadelphia') }],
+            actions: [{ label: '🗺️ Map', href: mapUrl(idea.title + ' Philadelphia') }],
             coords: idea._coords || null,
           });
           continue;
@@ -5599,7 +5573,7 @@ Valid types: "meal", "activity", "dessert"`;
         if (r) {
           const rCoords = await plEnsureRestoCoords(r); // accurate venue coords, or null
           const mt = plMealTypeAt(pick.hour);
-          const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.location ? r.name + ', ' + r.location : r.name);
+          const mapHref = mapUrl(r.location ? r.name + ', ' + r.location : r.name);
           stops.push({
             kind: pick.type === 'dessert' ? 'dessert' : 'meal',
             hour: pick.hour, duration: pick.duration || (pick.type === 'dessert' ? 45 : 90),
@@ -5717,7 +5691,7 @@ Valid types: "meal", "activity", "dessert"`;
       console.warn('Planner AI failed:', e);
       document.getElementById('plHeadline').textContent = 'Sorry!';
       const rl = plRateLimitInfo(e);
-      const editBtn = `<button class="pl-next" style="margin-top:0.5rem;background:var(--surface2);color:var(--text2)" id="plEditAns" type="button">✏️ Edit answers</button>`;
+      const editBtn = `<button class="pl-next" style="margin-top:0.5rem;background:var(--surface);color:var(--text-secondary)" id="plEditAns" type="button">✏️ Edit answers</button>`;
       if (rl) {
         body.innerHTML = `<div class="dn-empty"><div class="dn-empty-icon">⏳</div>${rl.message}</div>
           <button class="pl-next" id="plRetry" type="button" disabled>↻ Try again</button>
@@ -5807,7 +5781,7 @@ Valid types: "meal", "activity", "dessert"`;
 
     PL.shareText = plShareText(dayLabel);
     document.getElementById('plExport').addEventListener('click', plShare);
-    document.getElementById('plShuffle').addEventListener('click', () => { PL.seed++; plBuildAndRender(); });
+    document.getElementById('plShuffle').addEventListener('click', () => { plBuildAndRender(); });
     document.getElementById('plEdit').addEventListener('click', () => { PL.step = 0; plRenderStep(); });
     const kr = document.getElementById('plKeyReset');
     if (kr) kr.addEventListener('click', () => { localStorage.removeItem('gemini_key'); plRenderKeyPrompt(); });
@@ -5945,7 +5919,6 @@ Valid types: "meal", "activity", "dessert"`;
       return;
     }
     PL.step = 0;
-    PL.seed = 0;
     overlay.removeAttribute('hidden');
     plRenderStep();
   }
@@ -6002,7 +5975,7 @@ Valid types: "meal", "activity", "dessert"`;
   let currentFmDay = 'All';
 
   function fmTileHTML(m) {
-    const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(m.name + ', ' + m.location)}`;
+    const mapHref = mapUrl(m.name + ', ' + m.location);
     return `
       <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(m.name + ', ' + m.location)}">
         <div class="resto-main">
@@ -6075,7 +6048,6 @@ Valid types: "meal", "activity", "dessert"`;
         updateTileDistance(tile);
       }
     });
-    list.addEventListener('click', onRestoMainClick);
   }
 
   function setupFmTabs() {
@@ -6086,6 +6058,9 @@ Valid types: "meal", "activity", "dessert"`;
     tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
       tab.addEventListener('click', () => renderFmDay(tab.dataset.day));
     });
+    // Bind the list's click handler once — renderFmDay only replaces innerHTML,
+    // so the #fmList element itself persists and delegation keeps working.
+    document.getElementById('fmList').addEventListener('click', onRestoMainClick);
     renderFmDay('All');
   }
 
@@ -6256,21 +6231,6 @@ Valid types: "meal", "activity", "dessert"`;
       : OB.transitMode === 'transit' ? 1.8     // ~nearby transit stop
       : OB.transitMode === 'drive' ? 2.5       // ~8 min drive
       : 0.5;                                   // ~10 min walk
-  }
-
-  function obTravelLabel(miles) {
-    if (OB.transitMode === 'walk') {
-      const m = Math.round(miles * 24); return m <= 1 ? '< 1 min walk' : `~${m} min walk`;
-    }
-    if (OB.transitMode === 'bike') {
-      const m = Math.round(miles * 7); return m <= 1 ? '< 1 min bike' : `~${m} min bike`;
-    }
-    if (OB.transitMode === 'drive') {
-      const m = Math.round(miles / 22 * 60); return m <= 1 ? '< 1 min drive' : `~${m} min drive`;
-    }
-    const wm = Math.round(miles * 24), tm = Math.round(10 + miles * 5);
-    if (wm <= tm) return wm <= 1 ? '< 1 min walk' : `~${wm} min walk`;
-    return `~${tm} min transit`;
   }
 
   function obActiveDayIdx() { return OB.dayIdx; }
@@ -6807,7 +6767,7 @@ Valid types: "meal", "activity", "dessert"`;
         OB.stops.push({
           type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item,
           coords: p.coords || obItemGeo(p.item).coords,
-          coordsExact: p.type === 'event' ? !!p.coords : (p._precision === 'grid'),
+          coordsExact: p.type === 'event' ? !!p.coords : (p._precision === 'api' || p._precision === 'grid'),
         });
         OB.step = 'equation'; obRender();
       });
@@ -6968,9 +6928,9 @@ Return ONLY valid JSON (no markdown fences):
     const actions = [];
     if (s.type === 'event') {
       if (it.htmlLink) actions.push({ label: '📅 Details', href: it.htmlLink });
-      const loc = it.location || it.foundLocation;
-      if (loc) actions.push({ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(loc) });
-      else if (s.coords) actions.push({ label: '🗺️ Map', href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.label) });
+      const loc = it.location || it._foundLocation;
+      if (loc) actions.push({ label: '🗺️ Map', href: mapUrl(loc) });
+      else if (s.coords) actions.push({ label: '🗺️ Map', href: mapUrl(s.label) });
     } else {
       if (it.website)     actions.push({ label: '🌐 Website', href: it.website });
       if (it.reservation) actions.push({ label: '📅 Reserve', href: it.reservation });

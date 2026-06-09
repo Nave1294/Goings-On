@@ -25,7 +25,6 @@
 const https     = require('https');
 const fs        = require('fs');
 const path      = require('path');
-const vm        = require('vm');
 const Anthropic  = require('@anthropic-ai/sdk');
 
 const INDEX_PATH = path.join(__dirname, '..', 'index.html');
@@ -35,51 +34,12 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 if (!PLACES_API_KEY)  { console.error('Missing PLACES_API_KEY'); process.exit(1); }
 if (!ANTHROPIC_API_KEY) { console.error('Missing ANTHROPIC_API_KEY'); process.exit(1); }
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-function post(url, body) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(body);
-    const u = new URL(url);
-    const req = https.request({
-      hostname: u.hostname, path: u.pathname + u.search,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
-    }, res => {
-      let s = '';
-      res.on('data', c => s += c);
-      res.on('end', () => {
-        try { resolve(JSON.parse(s)); }
-        catch { resolve({ error: s }); }
-      });
-    });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
-}
-
 // ─── Google Places lookup ────────────────────────────────────────────────────
 
-async function checkPlace(name, location) {
-  const query = location ? `${name}, ${location}, Philadelphia` : `${name}, Philadelphia`;
-  try {
-    const res = await post(
-      `https://places.googleapis.com/v1/places:searchText`,
-      { textQuery: query, languageCode: 'en' },
-    );
-    // Need headers — use fetch-style via a small wrapper
-    // (The Places API (New) uses an HTTP header for the API key and field mask)
-    // Re-do with proper headers below
-    return null;
-  } catch { return null; }
-}
-
-// The Places API (New) requires X-Goog-Api-Key and X-Goog-FieldMask headers,
-// which the basic https.request above doesn't set. Use this wrapper instead.
+// The Places API (New) requires X-Goog-Api-Key and X-Goog-FieldMask headers.
 function placesSearch(query) {
   const body = JSON.stringify({ textQuery: query, languageCode: 'en' });
-  const fieldMask = 'places.displayName,places.formattedAddress,places.websiteUri,places.businessStatus,places.regularOpeningHours';
+  const fieldMask = 'places.displayName,places.formattedAddress,places.websiteUri,places.businessStatus';
   return new Promise((resolve, reject) => {
     const req = https.request({
       hostname: 'places.googleapis.com',
@@ -168,7 +128,7 @@ Rules:
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = msg.content[0].text.trim()
+  const text = (msg.content[0]?.text || '').trim()
     .replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   try {
     const obj = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
@@ -237,14 +197,20 @@ Rules:
     messages: [{ role: 'user', content: prompt }],
   });
 
-  return msg.content[0].text.trim();
+  // Empty/non-text reply → return the original so the caller treats it as "no change".
+  return (msg.content[0]?.text || '').trim() || original.raw.trim();
 }
 
 // ─── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
   const client = new Anthropic();
-  let html = fs.readFileSync(INDEX_PATH, 'utf8');
+  const html = fs.readFileSync(INDEX_PATH, 'utf8');
+  // Edit by line index into one split (never by substring) so duplicate or
+  // substring-overlapping lines can't be corrupted. Removals are deferred to
+  // the end so indices stay stable while both sections are processed.
+  const lines = html.split('\n');
+  const removeIdx = new Set();
 
   const sections = [
     { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
@@ -279,14 +245,7 @@ async function main() {
       if (apiData.status === 'CLOSED_PERMANENTLY') {
         console.log('PERMANENTLY CLOSED — removing');
         log.removed.push(place.name);
-        // Remove the line from html
-        const lines = html.split('\n');
-        lines.splice(
-          // Re-find the line index since html may have changed
-          lines.findIndex(l => l === place.raw),
-          1,
-        );
-        html = lines.join('\n');
+        removeIdx.add(place.lineIndex);
         continue;
       }
 
@@ -297,7 +256,7 @@ async function main() {
           const { line, confidence } = await getBackfilledLocation(client, place, apiData);
           if (confidence > 0.8 && line && line !== place.raw.trim()) {
             const indent = place.raw.match(/^(\s*)/)[1];
-            html = html.replace(place.raw, indent + line);
+            lines[place.lineIndex] = indent + line;
             log.located.push(place.name);
             console.log(`located (confidence ${confidence.toFixed(2)})`);
           } else {
@@ -326,7 +285,7 @@ async function main() {
         if (updatedLine !== place.raw.trim()) {
           // Replace in html — match the leading whitespace too
           const indent = place.raw.match(/^(\s*)/)[1];
-          html = html.replace(place.raw, indent + updatedLine);
+          lines[place.lineIndex] = indent + updatedLine;
           log.updated.push(place.name);
         } else {
           log.unchanged++;
@@ -342,7 +301,7 @@ async function main() {
     }
   }
 
-  fs.writeFileSync(INDEX_PATH, html, 'utf8');
+  fs.writeFileSync(INDEX_PATH, lines.filter((_, i) => !removeIdx.has(i)).join('\n'), 'utf8');
 
   // Print summary
   const today = new Date().toISOString().slice(0, 10);

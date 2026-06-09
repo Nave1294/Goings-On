@@ -13,7 +13,7 @@ on:
     branches: [main]
     paths: ['index.html']
   schedule:
-    - cron: '0 11 1 * *'   # 1st of every month, 11:00 UTC
+    - cron: '0 13 1 * *'   # 1st of every month, 13:00 UTC (offset from the audit)
   workflow_dispatch:
     inputs:
       mode:
@@ -22,8 +22,10 @@ on:
         type: choice
         options: [fill, validate]
 
+# Serialize against the other workflows that edit index.html so their pushes
+# never race each other.
 concurrency:
-  group: bake-geo
+  group: edit-index-html
   cancel-in-progress: false
 
 jobs:
@@ -81,5 +83,6 @@ jobs:
             echo "No changes — all places already baked and current"
           else
             git commit -m "$SUBJECT" -m "$BODY"
+            git pull --rebase origin main
             git push
           fi

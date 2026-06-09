@@ -33,7 +33,9 @@ async function cacheFirstPhoto(request) {
   if (hit) return hit;                  // already on-device → no API call
   try {
     const resp = await fetch(request);  // first time → one API call, then store
-    cache.put(request, resp.clone()).then(() => trimCache(cache)).catch(() => {});
+    // Only cache successful responses — caching a 403/429 (e.g. quota outage)
+    // would serve a broken image from cache forever, even after it recovers.
+    if (resp.ok) cache.put(request, resp.clone()).then(() => trimCache(cache)).catch(() => {});
     return resp;
   } catch (e) {
     // Offline / fetch failed — fall back to whatever might be cached.

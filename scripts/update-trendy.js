@@ -85,13 +85,13 @@ function parseItems(xml) {
 
 function ageDays(iso) {
   const d = new Date(iso);
-  if (isNaN(d)) return Infinity;
+  if (isNaN(d.getTime())) return Infinity;
   return (Date.now() - d.getTime()) / (24 * 60 * 60 * 1000);
 }
 
 function isoDate(input) {
   const d = new Date(input);
-  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 }
 
 function stripHtml(s) {
@@ -100,8 +100,21 @@ function stripHtml(s) {
 
 function fmtDate(input) {
   const d = new Date(input);
-  if (isNaN(d)) return '';
+  if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Scraped locations occasionally carry article cruft like
+// "1710 San [address incomplete in article]". Drop bracketed fragments and
+// tidy stray separators so nothing ugly reaches the live site.
+function cleanLoc(s) {
+  return (s || '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,/g, ',')
+    .replace(/^[,\s]+|[,\s]+$/g, '')
+    .trim();
 }
 
 // Fetch the full article page and reduce it to readable plain text.
@@ -158,7 +171,7 @@ ${source}`,
     }],
   });
 
-  const text = msg.content[0].text.trim();
+  const text = (msg.content[0]?.text || '').trim();
   const match = text.match(/\[[\s\S]*\]/);
   if (!match) { console.warn('  Claude returned no JSON array'); return []; }
   try {
@@ -216,7 +229,7 @@ async function main() {
       .filter(r => r && r.name)
       .map(r => ({
         name:     r.name,
-        location: r.location || '',
+        location: cleanLoc(r.location),
         cuisine:  r.cuisine  || '',
         desc:     r.desc     || '',
         website:  '',

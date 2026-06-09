@@ -94,9 +94,14 @@ async function lookupGeo(name, location) {
   if (!place || !place.location) return null;
   // Guard against a mis-match returning a far-off or wrong venue.
   if (place.displayName?.text && !nameMatches(name, place.displayName.text)) return null;
+  // A malformed location (missing/non-numeric lat or lon) must not crash the
+  // whole run — skip the entry instead.
+  const lat = Number(place.location.latitude);
+  const lon = Number(place.location.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
   return {
-    lat: Number(place.location.latitude.toFixed(6)),
-    lon: Number(place.location.longitude.toFixed(6)),
+    lat: Number(lat.toFixed(6)),
+    lon: Number(lon.toFixed(6)),
     ph:  place.photos?.[0]?.name || '',
   };
 }
@@ -141,7 +146,10 @@ function withGeo(raw, geo) {
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  let html = fs.readFileSync(INDEX_PATH, 'utf8');
+  const html = fs.readFileSync(INDEX_PATH, 'utf8');
+  // Edit by line index into one split, never by substring match — two
+  // byte-identical place lines would otherwise collide under String.replace.
+  const lines = html.split('\n');
 
   const sections = [
     { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
@@ -168,7 +176,7 @@ async function main() {
         const fresh = await lookupGeo(place.name, place.location);
         if (fresh && fresh.ph) {
           const updated = withGeo(place.raw, { ...place.geo, ph: fresh.ph });
-          html = html.replace(place.raw, updated);
+          lines[place.lineIndex] = updated;
           log.refreshed.push(place.name);
           console.log('refreshed');
         } else {
@@ -184,7 +192,7 @@ async function main() {
       if (!geo) { console.log('not found'); log.notFound.push(place.name); }
       else {
         const updated = withGeo(place.raw, geo);
-        html = html.replace(place.raw, updated);
+        lines[place.lineIndex] = updated;
         log.filled.push(place.name);
         console.log(`baked (${geo.lat}, ${geo.lon}${geo.ph ? ', +photo' : ', no photo'})`);
       }
@@ -192,7 +200,7 @@ async function main() {
     }
   }
 
-  fs.writeFileSync(INDEX_PATH, html, 'utf8');
+  fs.writeFileSync(INDEX_PATH, lines.join('\n'), 'utf8');
 
   const today = new Date().toISOString().slice(0, 10);
   console.log(`\n══ bake-geo ${MODE} complete (${today}) ══`);
