@@ -3965,68 +3965,44 @@
 
   // BOOK-PLACES-START — managed by audit-places.js, do not edit markers
   // ── Bookstore data ──────────────────────────────────────────────
+  // Single source of truth: each shop is listed exactly once. The category
+  // tabs below are derived from these flags, so adding or editing a shop — or
+  // the audit script removing a closed one — only ever touches one line.
+  //   hood      → neighborhood group it appears under in the "By Neighborhood" tab
+  //   community → include in the "Community & Mission" tab
+  //   niche     → include in the "Specialty Picks" tab
+  const BOOKSHOPS = [
+    { name: "Harriett's Bookshop", location: '258 E Girard Ave, Fishtown', specialty: 'Women of Color & BIPOC', website: 'https://www.oursisterbookshops.com', desc: 'Named for Harriet Tubman, this Fishtown shop amplifies women, gender-expansive authors, and voices of color. Founded by Jeannine Cook — curated picks, author events, and a warm community spirit.', hood: '🐟 Fishtown', community: true },
+    { name: 'Binding Agents', location: '908 Christian St, Italian Market', specialty: 'Cookbooks', website: 'https://www.bindingagentsphilly.com', desc: 'Philly\'s only cookbook-focused bookstore, in the heart of the Italian Market. Deep selection of culinary titles from Philly chefs and beyond — food writing, memoirs, and technique. Opened 2024.', hood: '🏛️ Italian Market', niche: true },
+    { name: "Molly's Books & Records", location: '1010 S 9th St, Italian Market', specialty: 'Used Books & Vinyl', website: '', desc: 'South Philly staple where you can buy, sell, and trade used books, records, and CDs. A digger\'s paradise — good finds, good prices, good vibes.', hood: '🏛️ Italian Market', niche: true },
+    { name: 'A Novel Idea on Passyunk', location: '1726 E Passyunk Ave', specialty: 'Community & Occult', website: 'https://anovelideaphilly.com', desc: 'Part bookstore, part witch shop, part event space — a community-minded East Passyunk gem. Curated fiction, occult titles, local author events, and true neighborhood warmth.', hood: '🌿 East Passyunk', niche: true },
+    { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.', hood: '🎸 South Street', community: true, niche: true },
+    { name: "Hakim's Bookstore & Gift Shop", location: '210 S 52nd St, West Philadelphia', specialty: 'Black History & Culture', website: 'https://www.hakimsbookstore.com', desc: 'Philadelphia\'s oldest Black-owned bookstore, founded in 1959. A West Philly institution carrying Black history, Pan-Africanism, culture, and gift items. A true community anchor for over 65 years.', hood: '🏘️ West Philadelphia', community: true },
+    { name: 'House of Our Own', location: '3920 Spruce St, West Philadelphia', specialty: 'General & Scholarly', website: 'https://shopsatpenn.com/house-our-own-books', desc: 'A rambling Victorian house on the edge of Penn\'s campus filled with new and used books — scholarly titles, fiction, arts, and much more. Calm, browsable, beloved by students and neighbors.', hood: '🏘️ West Philadelphia', niche: true },
+    { name: "Uncle Bobbie's Coffee & Books", location: '5445 Germantown Ave, Germantown', specialty: 'Black & Community Books', website: 'https://www.unclebobbies.com', desc: 'Marc Lamont Hill\'s Germantown cultural hub. A Black-owned bookstore and coffee shop hosting readings with literary heavyweights. Strong in Black authors, politics, and fiction. A cornerstone since 2017.', hood: '🌳 Germantown', community: true },
+    { name: "Giovanni's Room", location: '345 S 12th St, Center City', specialty: 'LGBTQ+ & Feminist', website: 'https://www.giovannisroom.com', desc: 'One of the oldest LGBTQ+ bookstores in the country, founded in 1973. Now run by Philly AIDS Thrift, it carries thousands of queer and feminist books, magazines, film, music, and apparel.', hood: '🌈 Gayborhood', community: true },
+  ];
+
+  // "By Neighborhood" sections, grouped in first-seen order from BOOKSHOPS.
+  const BOOK_NEIGHBORHOOD_SECTIONS = [];
+  {
+    const byHood = new Map();
+    for (const b of BOOKSHOPS) {
+      if (!b.hood) continue;
+      let sec = byHood.get(b.hood);
+      if (!sec) { sec = { label: b.hood, places: [] }; byHood.set(b.hood, sec); BOOK_NEIGHBORHOOD_SECTIONS.push(sec); }
+      sec.places.push(b);
+    }
+  }
+
+  // Category tabs, all derived from the single BOOKSHOPS list above.
   const BOOKSTORES = [
-    {
-      id: 'neighborhood',
-      emoji: '🗺️',
-      label: 'By Neighborhood',
-      subtitle: 'Philly’s indie bookshops, block by block',
-      sections: [
-        { label: '🐟 Fishtown', places: [
-          { name: "Harriett's Bookshop", location: '258 E Girard Ave, Fishtown', specialty: 'Women of Color & BIPOC', website: 'https://www.oursisterbookshops.com', desc: 'Named for Harriet Tubman, this Fishtown shop amplifies women, gender-expansive authors, and voices of color. Founded by Jeannine Cook — curated picks, author events, and a warm community spirit.' },
-        ]},
-        { label: '🏛️ Italian Market', places: [
-          { name: 'Binding Agents', location: '908 Christian St, Italian Market', specialty: 'Cookbooks', website: 'https://www.bindingagentsphilly.com', desc: 'Philly\'s only cookbook-focused bookstore, in the heart of the Italian Market. Deep selection of culinary titles from Philly chefs and beyond — food writing, memoirs, and technique. Opened 2024.' },
-          { name: "Molly's Books & Records", location: '1010 S 9th St, Italian Market', specialty: 'Used Books & Vinyl', website: '', desc: 'South Philly staple where you can buy, sell, and trade used books, records, and CDs. A digger\'s paradise — good finds, good prices, good vibes.' },
-        ]},
-        { label: '🌿 East Passyunk', places: [
-          { name: 'A Novel Idea on Passyunk', location: '1726 E Passyunk Ave', specialty: 'Community & Occult', website: 'https://anovelideaphilly.com', desc: 'Part bookstore, part witch shop, part event space — a community-minded East Passyunk gem. Curated fiction, occult titles, local author events, and true neighborhood warmth.' },
-        ]},
-        { label: '🎸 South Street', places: [
-          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
-        ]},
-        { label: '🏘️ West Philadelphia', places: [
-          { name: "Hakim's Bookstore & Gift Shop", location: '210 S 52nd St, West Philadelphia', specialty: 'Black History & Culture', website: 'https://www.hakimsbookstore.com', desc: 'Philadelphia\'s oldest Black-owned bookstore, founded in 1959. A West Philly institution carrying Black history, Pan-Africanism, culture, and gift items. A true community anchor for over 65 years.' },
-          { name: 'House of Our Own', location: '3920 Spruce St, West Philadelphia', specialty: 'General & Scholarly', website: 'https://shopsatpenn.com/house-our-own-books', desc: 'A rambling Victorian house on the edge of Penn\'s campus filled with new and used books — scholarly titles, fiction, arts, and much more. Calm, browsable, beloved by students and neighbors.' },
-        ]},
-        { label: '🌳 Germantown', places: [
-          { name: "Uncle Bobbie's Coffee & Books", location: '5445 Germantown Ave, Germantown', specialty: 'Black & Community Books', website: 'https://www.unclebobbies.com', desc: 'Marc Lamont Hill\'s Germantown cultural hub. A Black-owned bookstore and coffee shop hosting readings with literary heavyweights. Strong in Black authors, politics, and fiction. A cornerstone since 2017.' },
-        ]},
-        { label: '🌈 Gayborhood', places: [
-          { name: "Giovanni's Room", location: '345 S 12th St, Center City', specialty: 'LGBTQ+ & Feminist', website: 'https://www.giovannisroom.com', desc: 'One of the oldest LGBTQ+ bookstores in the country, founded in 1973. Now run by Philly AIDS Thrift, it carries thousands of queer and feminist books, magazines, film, music, and apparel.' },
-        ]},
-      ],
-    },
-    {
-      id: 'community',
-      emoji: '✊',
-      label: 'Community & Mission',
-      subtitle: 'Bookstores built around a purpose',
-      sections: [
-        { label: '✊ Mission-Driven Shops', places: [
-          { name: "Harriett's Bookshop", location: '258 E Girard Ave, Fishtown', specialty: 'Women of Color & BIPOC', website: 'https://www.oursisterbookshops.com', desc: 'Named for Harriet Tubman, this Fishtown shop amplifies women, gender-expansive authors, and voices of color. Founded by Jeannine Cook — curated picks, author events, and a warm community spirit.' },
-          { name: "Giovanni's Room", location: '345 S 12th St, Center City', specialty: 'LGBTQ+ & Feminist', website: 'https://www.giovannisroom.com', desc: 'One of the oldest LGBTQ+ bookstores in the country, founded in 1973. Now run by Philly AIDS Thrift, it carries thousands of queer and feminist books, magazines, film, music, and apparel.' },
-          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
-          { name: "Hakim's Bookstore & Gift Shop", location: '210 S 52nd St, West Philadelphia', specialty: 'Black History & Culture', website: 'https://www.hakimsbookstore.com', desc: 'Philadelphia\'s oldest Black-owned bookstore, founded in 1959. A West Philly institution carrying Black history, Pan-Africanism, culture, and gift items. A true community anchor for over 65 years.' },
-          { name: "Uncle Bobbie's Coffee & Books", location: '5445 Germantown Ave, Germantown', specialty: 'Black & Community Books', website: 'https://www.unclebobbies.com', desc: 'Marc Lamont Hill\'s Germantown cultural hub. A Black-owned bookstore and coffee shop hosting readings with literary heavyweights. Strong in Black authors, politics, and fiction. A cornerstone since 2017.' },
-        ]},
-      ],
-    },
-    {
-      id: 'specialty',
-      emoji: '📖',
-      label: 'Specialty Picks',
-      subtitle: 'Stores with a unique focus',
-      sections: [
-        { label: '📖 Find Your Niche', places: [
-          { name: 'Binding Agents', location: '908 Christian St, Italian Market', specialty: 'Cookbooks', website: 'https://www.bindingagentsphilly.com', desc: 'Philly\'s only cookbook-focused bookstore, in the heart of the Italian Market. Deep selection of culinary titles from Philly chefs and beyond — food writing, memoirs, and technique. Opened 2024.' },
-          { name: 'A Novel Idea on Passyunk', location: '1726 E Passyunk Ave', specialty: 'Community & Occult', website: 'https://anovelideaphilly.com', desc: 'Part bookstore, part witch shop, part event space — a community-minded East Passyunk gem. Curated fiction, occult titles, local author events, and true neighborhood warmth.' },
-          { name: "Molly's Books & Records", location: '1010 S 9th St, Italian Market', specialty: 'Used Books & Vinyl', website: '', desc: 'South Philly staple where you can buy, sell, and trade used books, records, and CDs. A digger\'s paradise — good finds, good prices, good vibes.' },
-          { name: 'Wooden Shoe Books', location: '704 South St', specialty: 'Anarchist & Radical', website: 'https://woodenshoebooks.org', desc: 'All-volunteer nonprofit infoshop on South Street since 1976. Anarchist theory, labor history, banned books, zines, and alternative press. One of Philly\'s most storied bookstores.' },
-          { name: 'House of Our Own', location: '3920 Spruce St, West Philadelphia', specialty: 'General & Scholarly', website: 'https://shopsatpenn.com/house-our-own-books', desc: 'A rambling Victorian house on the edge of Penn\'s campus filled with new and used books — scholarly titles, fiction, arts, and much more. Calm, browsable, beloved by students and neighbors.' },
-        ]},
-      ],
-    },
+    { id: 'neighborhood', emoji: '🗺️', label: 'By Neighborhood', subtitle: 'Philly’s indie bookshops, block by block',
+      sections: BOOK_NEIGHBORHOOD_SECTIONS },
+    { id: 'community', emoji: '✊', label: 'Community & Mission', subtitle: 'Bookstores built around a purpose',
+      sections: [{ label: '✊ Mission-Driven Shops', places: BOOKSHOPS.filter(b => b.community) }] },
+    { id: 'specialty', emoji: '📖', label: 'Specialty Picks', subtitle: 'Stores with a unique focus',
+      sections: [{ label: '📖 Find Your Niche', places: BOOKSHOPS.filter(b => b.niche) }] },
   ];
   // BOOK-PLACES-END
 
