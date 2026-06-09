@@ -2,7 +2,14 @@
 'use strict';
 
 /**
- * Quarterly audit of all restaurant and bookstore entries in index.html.
+ * Rolling audit of all restaurant and bookstore entries in index.html.
+ *
+ * Runs daily but checks only a small slice each day (AUDIT_BATCH places, keyed
+ * off the day-of-quarter), so over the first days of each quarter the slices
+ * sweep the entire list and then idle. This keeps the daily Places API quota
+ * bounded no matter how many places the list grows to — a longer list simply
+ * takes more days of the quarter to finish sweeping. Pass --all to audit the
+ * whole list in one run (manual backfills).
  *
  * For each place it:
  *   1. Calls Google Places API to check current businessStatus & details
@@ -201,6 +208,17 @@ Rules:
   return (msg.content[0]?.text || '').trim() || original.raw.trim();
 }
 
+// ─── Daily slice scheduling ──────────────────────────────────────────────────
+
+// Days elapsed since the start of the current calendar quarter (UTC, 0-based).
+// Used to pick which slice of the place list to audit on a given day.
+function dayOfQuarter(d = new Date()) {
+  const qStartMonth = Math.floor(d.getUTCMonth() / 3) * 3;
+  const qStart = Date.UTC(d.getUTCFullYear(), qStartMonth, 1);
+  const today = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return Math.floor((today - qStart) / 86400000);
+}
+
 // ─── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -226,13 +244,31 @@ async function main() {
     unchanged: 0,
   };
 
+  // Gather every place across both marked sections, in stable file order.
+  const allPlaces = [];
   for (const section of sections) {
-    console.log(`\n── Auditing ${section.label} ──`);
-    const places = extractPlaceLines(html, section.start, section.end);
-    console.log(`   Found ${places.length} place entries`);
+    for (const p of extractPlaceLines(html, section.start, section.end)) allPlaces.push(p);
+  }
+
+  // Audit only today's slice. Each run checks at most AUDIT_BATCH places no
+  // matter how long the list grows, so the daily Places quota stays bounded —
+  // and there's no cap on how many places you can add; a longer list just takes
+  // more days of the quarter to sweep. `--all` audits everything at once.
+  const BATCH = Number(process.env.AUDIT_BATCH) || 25;
+  const auditAll = process.argv.includes('--all');
+  const dq = dayOfQuarter();
+  const sliceStart = auditAll ? 0 : dq * BATCH;
+  const slice = auditAll ? allPlaces : allPlaces.slice(sliceStart, sliceStart + BATCH);
+
+  if (!slice.length) {
+    const lastDay = Math.max(0, Math.ceil(allPlaces.length / BATCH) - 1);
+    console.log(`Day ${dq} of the quarter — idle (all ${allPlaces.length} places are swept by day ${lastDay}).`);
+    return;
+  }
+  console.log(`Day ${dq} of the quarter — auditing ${slice.length} of ${allPlaces.length} [${sliceStart}–${sliceStart + slice.length - 1}]`);
 
     // Rate-limit: check in serial to avoid hammering the API
-    for (const place of places) {
+    for (const place of slice) {
       process.stdout.write(`  Checking: ${place.name} ... `);
       const apiData = await lookupPlace(place.name, place.location);
 
@@ -299,7 +335,6 @@ async function main() {
       // Small delay to respect rate limits
       await new Promise(r => setTimeout(r, 200));
     }
-  }
 
   fs.writeFileSync(INDEX_PATH, lines.filter((_, i) => !removeIdx.has(i)).join('\n'), 'utf8');
 

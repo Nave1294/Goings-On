@@ -1,11 +1,17 @@
-name: Quarterly Places Audit
+name: Rolling Places Audit
 
 on:
   schedule:
-    # 1st of January, April, July, October at 11 AM UTC
-    - cron: '0 11 1 1,4,7,10 *'
+    # Daily at 11 AM UTC. Each run audits one small slice (AUDIT_BATCH places);
+    # over the first days of each quarter the slices sweep the whole list, then
+    # the remaining days idle. Keeps the daily quota bounded regardless of size.
+    - cron: '0 11 * * *'
   workflow_dispatch:
-    # Allow manual runs from the Actions tab (main branch only)
+    inputs:
+      all:
+        description: 'Audit every place now (ignore the daily slice)'
+        type: boolean
+        default: false
 
 # Serialize against the other workflows that edit index.html so their pushes
 # never race each other.
@@ -34,8 +40,9 @@ jobs:
         run: npm ci
 
       - name: Run places audit
-        run: node scripts/audit-places.js
+        run: node scripts/audit-places.js ${{ github.event.inputs.all == 'true' && '--all' || '' }}
         env:
+          AUDIT_BATCH: '25'
           PLACES_API_KEY: ${{ secrets.PLACES_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
@@ -53,10 +60,10 @@ jobs:
             UPDATED=$(node -e "const s=require('./.audit-summary.json'); console.log(s.updated.length ? s.updated.join(', ') : 'none')")
             LOCATED=$(node -e "const s=require('./.audit-summary.json'); console.log((s.located||[]).length ? s.located.join(', ') : 'none')")
             NOT_FOUND=$(node -e "const s=require('./.audit-summary.json'); console.log(s.notFound.length ? s.notFound.join(', ') : 'none')")
-            SUBJECT="chore: quarterly places audit ${DATE} [skip ci]"
+            SUBJECT="chore: places audit ${DATE} [skip ci]"
             BODY="Removed (closed): ${REMOVED} | Updated (changed): ${UPDATED} | Located (filled): ${LOCATED} | Not found: ${NOT_FOUND}"
           else
-            SUBJECT="chore: quarterly places audit [skip ci]"
+            SUBJECT="chore: places audit [skip ci]"
             BODY=""
           fi
           rm -f .audit-summary.json
