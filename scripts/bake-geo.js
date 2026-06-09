@@ -54,7 +54,15 @@ function placesSearch(query) {
     }, res => {
       let s = '';
       res.on('data', c => s += c);
-      res.on('end', () => { try { resolve(JSON.parse(s)); } catch { resolve({}); } });
+      res.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(s); } catch { parsed = {}; }
+        // Surface HTTP errors that didn't come back as a JSON {error} body.
+        if (res.statusCode >= 400 && !parsed.error) {
+          parsed.error = { code: res.statusCode, status: `HTTP_${res.statusCode}`, message: s.slice(0, 200) };
+        }
+        resolve(parsed);
+      });
     });
     req.on('error', reject);
     req.write(body);
@@ -90,6 +98,17 @@ function nameMatches(a, b) {
 async function lookupGeo(name, location) {
   const query = location ? `${name}, ${location}` : name;
   const data = await placesSearch(query);
+  // A rejected request (bad key, missing API enablement, or — most commonly —
+  // an HTTP-referrer-restricted key called from CI) must fail loudly rather
+  // than masquerade as "not found" for every place.
+  if (data.error) {
+    throw new Error(
+      `Places API rejected the request (${data.error.status || data.error.code || 'error'}): ${data.error.message || ''}\n` +
+      `Hint: a browser key restricted to HTTP referrers will NOT work from GitHub Actions — ` +
+      `server-side calls send no referrer. Set the PLACES_API_KEY secret to a key with no ` +
+      `HTTP-referrer restriction (restrict it to the Places API instead).`
+    );
+  }
   const place = data.places?.[0];
   if (!place || !place.location) return null;
   // Guard against a mis-match returning a far-off or wrong venue.
