@@ -5299,13 +5299,18 @@
   }
 
   function plShareText(dayLabel) {
-    const lines = [`🗓️ ${plVibeLabel()}`, dayLabel ? `${dayLabel} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}` : '', PL.summary ? `💡 ${PL.summary}` : '', ''];
+    const lines = [`🗓️ ${plVibeLabel()}`];
+    if (dayLabel) lines.push(`${dayLabel} · ${plHourLabel(PL.startHour)}–${plHourLabel(PL.endHour)}`);
+    if (PL.summary) lines.push(`💡 ${PL.summary}`);
+    lines.push('');
     PL.stops.forEach((s, i) => {
-      lines.push(`${i + 1}. ${s.emoji} ${s.eyebrow}${s.hour != null ? ` (${plHourLabel(s.hour)})` : ''}`);
+      lines.push(`${i + 1}. ${s.emoji} ${s.eyebrow}${s.hour != null ? ` · ${plHourLabel(s.hour)}` : ''}`);
       lines.push(`   ${s.title}`);
       if (s.meta && s.meta.length) lines.push(`   ${s.meta.join('  ')}`);
-      const link = (s.actions || []).find(a => /Website|Details/.test(a.label));
-      if (link) lines.push(`   ${link.href}`);
+      const res = (s.actions || []).find(a => /Reserve/.test(a.label));
+      const web = (s.actions || []).find(a => /Website|Details/.test(a.label));
+      if (res) lines.push(`   📅 Reserve: ${res.href}`);
+      else if (web) lines.push(`   🔗 ${web.href}`);
       const next = PL.stops[i + 1];
       if (next && s.coords && next.coords) {
         lines.push(`   ↓ ${plLegLabel(haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon))}`);
@@ -5313,7 +5318,7 @@
       lines.push('');
     });
     const routeHref = plAllStopsDirHref();
-    if (routeHref) { lines.push(`🗺️ Full route: ${routeHref}`, ''); }
+    if (routeHref) lines.push(`🗺️ Full route: ${routeHref}`, '');
     lines.push('Planned with Goings-On');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n');
   }
@@ -5521,6 +5526,7 @@ Valid types: "meal", "activity", "dessert"`;
             desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
             actions: [
               ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
+              { label: '🎟️ Find tickets', href: `https://www.google.com/search?q=${encodeURIComponent((ev.summary || '') + ' tickets Philadelphia')}` },
               ev.location && { label: '🗺️ Map', href: mapUrl(ev.location) },
             ].filter(Boolean),
             coords: c || null,
@@ -5561,6 +5567,7 @@ Valid types: "meal", "activity", "dessert"`;
             actions: [
               r.website && { label: '🌐 Website', href: r.website },
               r.reservation && { label: '📅 Reserve', href: r.reservation },
+              !r.website && { label: '🔍 Search', href: `https://www.google.com/search?q=${encodeURIComponent(r.name + (r.location ? ', ' + r.location.split(',')[0] : ', Philadelphia'))}` },
               { label: '🗺️ Map', href: mapHref },
             ].filter(Boolean),
             coords: rCoords || null,
@@ -6502,6 +6509,7 @@ Valid types: "meal", "activity", "dessert"`;
     if (!overlay) return;
     OB.stops = []; OB.step = 'date'; OB.transitMode = 'walk';
     OB.dayIdx = lastRender ? lastRender.activeIdx : 0;
+    OB.startHour = 18; OB.neighborhood = null;
     OB.pendingCat = null; OB.result = null; OB.shareText = '';
     overlay.removeAttribute('hidden');
     obRender();
@@ -6517,6 +6525,12 @@ Valid types: "meal", "activity", "dessert"`;
     } else if (OB.step === 'transit') {
       hl.textContent = 'Outing Builder';
       obRenderTransit(body);
+    } else if (OB.step === 'neighborhood') {
+      hl.textContent = 'Where in the city?';
+      obRenderNeighborhood(body);
+    } else if (OB.step === 'time') {
+      hl.textContent = 'Start time';
+      obRenderTime(body);
     } else if (OB.step === 'first-category') {
       hl.textContent = 'Pick your first stop';
       obRenderCategory(body, true);
@@ -6577,6 +6591,53 @@ Valid types: "meal", "activity", "dessert"`;
       });
     });
     document.getElementById('obTransitNext').addEventListener('click', () => {
+      OB.step = 'neighborhood';
+      obRender();
+    });
+  }
+
+  const OB_NEIGHBORHOODS = [
+    { id: null,                      emoji: '🌆', label: 'Anywhere' },
+    { id: 'Rittenhouse',             emoji: '🌳', label: 'Rittenhouse' },
+    { id: 'Fishtown',                emoji: '🐟', label: 'Fishtown' },
+    { id: 'Northern Liberties',      emoji: '🎨', label: 'NoLibs' },
+    { id: 'Old City',                emoji: '🏛️', label: 'Old City' },
+    { id: 'Center City',             emoji: '🏙️', label: 'Center City' },
+    { id: 'East Passyunk',           emoji: '🍕', label: 'East Passyunk' },
+    { id: 'Bella Vista',             emoji: '🌿', label: 'Bella Vista' },
+    { id: 'Washington Square West',  emoji: '☕', label: 'Wash Sq West' },
+    { id: 'Fairmount',               emoji: '🎨', label: 'Fairmount' },
+    { id: 'Graduate Hospital',       emoji: '🌇', label: 'Graduate Hosp' },
+    { id: 'University City',         emoji: '📚', label: 'University City' },
+    { id: 'Chinatown',               emoji: '🏮', label: 'Chinatown' },
+  ];
+
+  function obRenderNeighborhood(body) {
+    body.innerHTML = `
+      <div class="pl-q">Where should the outing be based? Stops will be picked nearby.</div>
+      <div class="pl-chip-grid">
+        ${OB_NEIGHBORHOODS.map(n => `<button class="pl-chip${OB.neighborhood === n.id ? ' active' : ''}" data-ob-nbhd="${n.id === null ? '' : escapeAttr(n.id)}" type="button"><span class="pl-chip-emoji">${n.emoji}</span>${escapeHtml(n.label)}</button>`).join('')}
+      </div>
+      <button class="pl-next" id="obNbhdNext" type="button">Next →</button>`;
+    body.querySelectorAll('[data-ob-nbhd]').forEach(c => c.addEventListener('click', () => {
+      OB.neighborhood = c.dataset.obNbhd || null;
+      body.querySelectorAll('[data-ob-nbhd]').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('obNbhdNext').addEventListener('click', () => { OB.step = 'time'; obRender(); });
+  }
+
+  function obRenderTime(body) {
+    body.innerHTML = `
+      <div class="pl-q">What time are you starting?</div>
+      <div class="pl-time-grid">
+        ${PL_TIME_OPTS.map(o => `<button class="pl-time-chip${o.hr === OB.startHour ? ' active' : ''}" data-ob-time="${o.hr}" type="button">${o.label}</button>`).join('')}
+      </div>
+      <button class="pl-next" id="obTimeNext" type="button">Next →</button>`;
+    body.querySelectorAll('[data-ob-time]').forEach(c => c.addEventListener('click', () => {
+      OB.startHour = +c.dataset.obTime;
+      body.querySelectorAll('[data-ob-time]').forEach(x => x.classList.toggle('active', +x.dataset.obTime === OB.startHour));
+    }));
+    document.getElementById('obTimeNext').addEventListener('click', () => {
       OB.step = OB.stops.length > 0 ? 'equation' : 'first-category';
       obRender();
     });
@@ -6614,7 +6675,10 @@ Valid types: "meal", "activity", "dessert"`;
     const anchorExact  = lastStop ? !!lastStop.coordsExact : false;
     // If stored coords are missing, re-derive from the last stop's address (grid →
     // centroid). Covers anchors stored before this code path or with sparse data.
+    // For the very first stop, use the selected neighborhood centroid as anchor.
     if (!lastCoords && lastStop) lastCoords = obItemGeo(lastStop.item).coords;
+    if (!lastCoords && OB.neighborhood && OB_NBHD_COORDS[OB.neighborhood])
+      lastCoords = OB_NBHD_COORDS[OB.neighborhood];
     const radius       = obRadiusMiles();
     const cat          = OB_CATS.find(c => c.id === catId) || OB_CATS[0];
     body.innerHTML     = `<div class="dn-loading">${cat.emoji} Finding ${escapeHtml(cat.label.toLowerCase())} options…</div>`;
@@ -6832,16 +6896,21 @@ Valid types: "meal", "activity", "dessert"`;
       return `${i + 1}. ${s.emoji} [${s.type}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}`;
     }).join('\n');
 
+    const startLabel = plHourLabel(OB.startHour);
+    const nbhdLabel  = OB.neighborhood || 'Philadelphia';
+
     const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
 
 Day: ${dayName}
+Start time: ${startLabel}
+Area: ${nbhdLabel}
 Transit: ${modeLbl}
 
 Stops (in order):
 ${stopLines}
 
 Rules:
-1. Suggest a realistic start time and timing based on context (meal windows, event hours, typical duration).
+1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there.
 2. Write 2–3 engaging sentences per stop: what makes it special and why it fits.
 3. One short practical tip per stop (hours, reservations, etc.), or null if nothing useful.
 4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Bookstore", "Market", "Dessert", etc.
@@ -6904,12 +6973,17 @@ Return ONLY valid JSON (no markdown fences):
     const actions = [];
     if (s.type === 'event') {
       if (it.htmlLink) actions.push({ label: '📅 Details', href: it.htmlLink });
+      actions.push({ label: '🎟️ Find tickets', href: `https://www.google.com/search?q=${encodeURIComponent((it.summary || s.label) + ' tickets Philadelphia')}` });
       const loc = it.location || it._foundLocation;
       if (loc) actions.push({ label: '🗺️ Map', href: mapUrl(loc) });
       else if (s.coords) actions.push({ label: '🗺️ Map', href: mapUrl(s.label) });
     } else {
       if (it.website)     actions.push({ label: '🌐 Website', href: it.website });
       if (it.reservation) actions.push({ label: '📅 Reserve', href: it.reservation });
+      if (!it.website) {
+        const searchQ = (it.name || s.label) + (it.location ? ', ' + it.location.split(',')[0] : ', Philadelphia');
+        actions.push({ label: '🔍 Search', href: `https://www.google.com/search?q=${encodeURIComponent(searchQ)}` });
+      }
       const q = it.location ? `${it.name || s.label}, ${it.location}` : (it.name || s.label);
       const mapQ = s.coords ? `${s.coords.lat},${s.coords.lon}` : encodeURIComponent(q + ', Philadelphia');
       actions.push({ label: '🗺️ Map', href: `https://www.google.com/maps/search/?api=1&query=${mapQ}` });
@@ -6977,19 +7051,49 @@ Return ONLY valid JSON (no markdown fences):
 
     const day = obActiveDay();
     const dayLabel = day ? `${DAYS_LONG[day.getDay()]}, ${MONTHS[day.getMonth()].slice(0, 3)} ${day.getDate()}` : '';
-    OB.shareText = [
-      `🗺️ ${obVibeLabel()}`, dayLabel, '',
-      ...OB.stops.map((s, i) => {
+    OB.shareText = (() => {
+      const modeLbl = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
+      const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
+      const lines = [`🗺️ ${obVibeLabel()}`];
+      if (dayLabel) lines.push(dayLabel);
+      lines.push(`${modeEmoji} ${modeLbl} · Starting ${plHourLabel(OB.startHour)}`);
+      if (OB.neighborhood) lines.push(`📍 ${OB.neighborhood}`);
+      lines.push('');
+      OB.stops.forEach((s, i) => {
         const ai = aiStops[i] || {};
-        return [`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` (${ai.time})` : ''}`,
-                ai.tip ? `   💡 ${ai.tip}` : ''].filter(Boolean);
-      }).flat(),
-      '', routeHref ? `Route: ${routeHref}` : '',
-    ].filter((l, i, arr) => l !== '' || (i > 0 && arr[i - 1] !== '')).join('\n').trim();
+        const it = s.item || {};
+        lines.push(`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` · ${ai.time}` : ''}`);
+        if (s.sublabel) lines.push(`   📍 ${s.sublabel.split(',').slice(0, 2).join(',').trim()}`);
+        if (ai.desc) lines.push(`   ${ai.desc}`);
+        if (ai.tip) lines.push(`   💡 ${ai.tip}`);
+        const acts = obStopActions(s);
+        const res = acts.find(a => /Reserve/.test(a.label));
+        const web = acts.find(a => /Website|Search|Details/.test(a.label));
+        if (res) lines.push(`   📅 Reserve: ${res.href}`);
+        else if (web) lines.push(`   🔗 ${web.href}`);
+        if (i < OB.stops.length - 1) lines.push('');
+      });
+      if (routeHref) lines.push('', `🗺️ Full route: ${routeHref}`);
+      lines.push('', 'Planned with Goings-On');
+      return lines.join('\n');
+    })();
 
     document.getElementById('obShare').addEventListener('click', async () => {
-      try { await navigator.share({ text: OB.shareText }); }
-      catch { try { await navigator.clipboard.writeText(OB.shareText); alert('Copied to clipboard!'); } catch { alert(OB.shareText); } }
+      const btn = document.getElementById('obShare');
+      if (navigator.share) {
+        try { await navigator.share({ title: obVibeLabel(), text: OB.shareText }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      try {
+        await navigator.clipboard.writeText(OB.shareText);
+        if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied to clipboard'; setTimeout(() => { btn.textContent = o; }, 1800); }
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = OB.shareText; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+        if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = o; }, 1800); }
+      }
     });
     document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = 'equation'; obRender(); });
   }
@@ -7001,7 +7105,9 @@ Return ONLY valid JSON (no markdown fences):
     back.addEventListener('click', () => {
       if (OB.step === 'date')             { overlay.setAttribute('hidden', ''); return; }
       if (OB.step === 'transit')          { OB.step = 'date';            obRender(); return; }
-      if (OB.step === 'first-category')   { OB.step = 'transit';         obRender(); return; }
+      if (OB.step === 'neighborhood')     { OB.step = 'transit';         obRender(); return; }
+      if (OB.step === 'time')             { OB.step = 'neighborhood';    obRender(); return; }
+      if (OB.step === 'first-category')   { OB.step = 'time';            obRender(); return; }
       if (OB.step === 'pick-item')        { OB.step = OB.stops.length === 0 ? 'first-category' : 'equation'; obRender(); return; }
       if (OB.step === 'equation')         { overlay.setAttribute('hidden', ''); return; }
       OB.step = 'equation'; obRender(); // generating / result → equation
