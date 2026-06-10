@@ -6321,6 +6321,8 @@ Valid types: "meal", "activity", "dessert"`;
 
   const OB = {
     dayIdx: 0,
+    startHour: 18,
+    endHour: 22,
     transitMode: 'walk',
     stops: [],        // [{ type, emoji, label, sublabel, item, coords }]
     step: 'date',     // date | transit | first-category | pick-item | equation | generating | result
@@ -6343,9 +6345,16 @@ Valid types: "meal", "activity", "dessert"`;
   function obActiveDay()    { return lastRender ? lastRender.days[OB.dayIdx] : null; }
   function obDays()         { return (lastRender && lastRender.days) || []; }
 
+  // True when an event's start time falls inside the chosen outing window.
+  // All-day events (no specific hour) always pass.
+  function obEventInWindow(ev) {
+    const hr = plEventHour(ev);
+    return hr == null || (hr >= OB.startHour && hr <= OB.endHour + 1);
+  }
+
   function obRawPool(catId) {
     if (catId === 'event') {
-      return plEventsForDay(obActiveDayIdx()).map(ev => ({
+      return plEventsForDay(obActiveDayIdx()).filter(obEventInWindow).map(ev => ({
         type: 'event', emoji: '📅', label: ev.summary || 'Event',
         sublabel: ev.location || '', item: ev, coords: undefined,
       }));
@@ -6632,7 +6641,7 @@ Valid types: "meal", "activity", "dessert"`;
     if (!overlay) return;
     OB.stops = []; OB.step = 'date'; OB.transitMode = 'walk';
     OB.dayIdx = lastRender ? lastRender.activeIdx : 0;
-    OB.startHour = 18; OB.neighborhood = null;
+    OB.startHour = 18; OB.endHour = 22; OB.neighborhood = null;
     OB.pendingCat = null; OB.result = null; OB.shareText = '';
     overlay.removeAttribute('hidden');
     obRender();
@@ -6652,7 +6661,7 @@ Valid types: "meal", "activity", "dessert"`;
       hl.textContent = 'Where in the city?';
       obRenderNeighborhood(body);
     } else if (OB.step === 'time') {
-      hl.textContent = 'Start time';
+      hl.textContent = 'Start & end time';
       obRenderTime(body);
     } else if (OB.step === 'first-category') {
       hl.textContent = 'Pick your first stop';
@@ -6750,17 +6759,22 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   function obRenderTime(body) {
+    const row = (sel, val) => PL_TIME_OPTS.map(o =>
+      `<button class="pl-time-chip${o.hr === val ? ' active' : ''}" data-ob-sel="${sel}" data-hr="${o.hr}" type="button">${o.label}</button>`).join('');
     body.innerHTML = `
       <div class="pl-q">What time are you starting?</div>
-      <div class="pl-time-grid">
-        ${PL_TIME_OPTS.map(o => `<button class="pl-time-chip${o.hr === OB.startHour ? ' active' : ''}" data-ob-time="${o.hr}" type="button">${o.label}</button>`).join('')}
-      </div>
+      <div class="pl-time-grid">${row('start', OB.startHour)}</div>
+      <div class="pl-q" style="margin-top:1.1rem;">And roughly when should it wrap up?</div>
+      <div class="pl-time-grid">${row('end', OB.endHour)}</div>
+      <div class="pl-warn" id="obTimeWarn" hidden>End time should be after the start.</div>
       <button class="pl-next" id="obTimeNext" type="button">Next →</button>`;
-    body.querySelectorAll('[data-ob-time]').forEach(c => c.addEventListener('click', () => {
-      OB.startHour = +c.dataset.obTime;
-      body.querySelectorAll('[data-ob-time]').forEach(x => x.classList.toggle('active', +x.dataset.obTime === OB.startHour));
+    body.querySelectorAll('.pl-time-chip').forEach(c => c.addEventListener('click', () => {
+      const sel = c.dataset.obSel, hr = +c.dataset.hr;
+      if (sel === 'start') OB.startHour = hr; else OB.endHour = hr;
+      body.querySelectorAll(`.pl-time-chip[data-ob-sel="${sel}"]`).forEach(x => x.classList.toggle('active', x === c));
     }));
     document.getElementById('obTimeNext').addEventListener('click', () => {
+      if (OB.endHour <= OB.startHour) { document.getElementById('obTimeWarn').hidden = false; return; }
       OB.step = OB.stops.length > 0 ? 'equation' : 'first-category';
       obRender();
     });
@@ -6922,8 +6936,12 @@ Valid types: "meal", "activity", "dessert"`;
 
     const approxNote = (lastCoords && !anchorExact && anchorNbhd)
       ? `<div style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:0.5rem">📍 Centered on ${escapeHtml(anchorNbhd)} (approximate)</div>` : '';
-    const emptyNote  = (lastCoords && !within.length)
-      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} options close to your last stop.</div>` : '';
+    const emptyNote  = !pool.length
+      ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">${catId === 'event'
+          ? `No events fall within your ${plHourLabel(OB.startHour)}–${plHourLabel(OB.endHour)} window — try widening the time range or pick another category.`
+          : `No ${escapeHtml(cat.label.toLowerCase())} options available.`}</div>`
+      : (lastCoords && !within.length)
+        ? `<div style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:0.6rem">No ${escapeHtml(cat.label.toLowerCase())} options close to your last stop.</div>` : '';
 
     const showAll  = !lastCoords;
     const mainList = showAll ? within.slice(0, 80) : within;
@@ -7047,6 +7065,7 @@ Valid types: "meal", "activity", "dessert"`;
     }).join('\n');
 
     const startLabel  = plHourLabel(OB.startHour);
+    const endLabel    = plHourLabel(OB.endHour);
     const nbhdLabel   = OB.neighborhood || 'Philadelphia';
     const transitNote = OB.transitMode === 'mix'
       ? 'Walk + transit (SEPTA) — walk short legs, take transit for longer ones'
@@ -7055,7 +7074,7 @@ Valid types: "meal", "activity", "dessert"`;
     const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
 
 Day: ${dayName}
-Start time: ${startLabel}
+Time window: ${startLabel}–${endLabel}
 Area: ${nbhdLabel}
 Transit: ${transitNote}
 
@@ -7063,7 +7082,7 @@ Stops (in order):
 ${stopLines}
 
 Rules:
-1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there.
+1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there, keeping everything within the ${startLabel}–${endLabel} window.
 2. Write 2–3 engaging sentences per stop: what makes it special and why it fits.
 3. One short practical tip per stop (hours, reservations, etc.), or null if nothing useful.
 4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Bookstore", "Market", "Dessert", etc.
