@@ -1800,7 +1800,12 @@
     .indec-results-head { text-align: center; margin-bottom: 1rem; }
     .indec-results-title { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
     .indec-results-sub { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; }
-    .indec-liked-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; max-height: 52vh; overflow-y: auto; }
+    .indec-top-pick { background: linear-gradient(150deg, rgba(26,122,110,0.13), rgba(42,168,154,0.05)); border: 2px solid var(--accent); border-radius: 16px; padding: 0.9rem 1rem; margin-bottom: 0.9rem; animation: spinPop 0.3s ease; }
+    .indec-top-label { font-size: 0.66rem; font-weight: 800; color: #1a7a6e; letter-spacing: 0.09em; }
+    .indec-top-name { font-size: 1.18rem; font-weight: 800; color: var(--text); margin: 0.25rem 0 0.18rem; letter-spacing: -0.02em; line-height: 1.18; }
+    .indec-top-reason { font-size: 0.79rem; color: var(--text-secondary); margin-bottom: 0.6rem; line-height: 1.35; }
+    .indec-list-head { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.2rem 0 0.5rem; }
+    .indec-liked-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; max-height: 42vh; overflow-y: auto; }
     .indec-liked-item { background: var(--surface); border: 1.5px solid var(--divider); border-radius: 14px; padding: 0.7rem 0.9rem; }
     .indec-liked-eyebrow { font-size: 0.66rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.12rem; }
     .indec-liked-name { font-weight: 700; font-size: 0.96rem; color: var(--text); line-height: 1.2; }
@@ -4699,7 +4704,46 @@
     else advance();
   }
 
-  // Final screen: the full list of everything swiped yes.
+  // Score the liked items against the taste the session revealed and return the
+  // best fit plus a short human reason. The signal: which groups (cuisines) and
+  // tags the user gravitated toward across all their yes's, with a nudge for
+  // anything close by when proximity is on.
+  function indecTopPick(liked) {
+    if (liked.length <= 1) return { item: liked[0] || null, reason: 'Your one and only pick.' };
+    const groupOf = indec.ctx.group;
+    const groupFreq = new Map(), tagFreq = new Map();
+    liked.forEach(it => {
+      const g = groupOf(it);
+      if (g) groupFreq.set(g, (groupFreq.get(g) || 0) + 1);
+      (it.tags || []).forEach(t => tagFreq.set(t, (tagFreq.get(t) || 0) + 1));
+    });
+    let best = liked[0], bestScore = -Infinity;
+    liked.forEach(it => {
+      let score = (groupFreq.get(groupOf(it)) || 0) * 3;
+      (it.tags || []).forEach(t => { score += (tagFreq.get(t) || 0); });
+      if (proximityActive && userLoc && it._coords)
+        score += Math.max(0, 2 - haversineMiles(userLoc.lat, userLoc.lon, it._coords.lat, it._coords.lon));
+      if (score > bestScore) { bestScore = score; best = it; }
+    });
+    // Craft the reason from the strongest revealed preference.
+    const bestGroup = groupOf(best);
+    const groupCount = groupFreq.get(bestGroup) || 0;
+    const sharedTag = (best.tags || []).filter(t => (tagFreq.get(t) || 0) >= 2)
+      .sort((a, b) => (tagFreq.get(b) || 0) - (tagFreq.get(a) || 0))[0];
+    let reason;
+    if (groupCount >= 2) {
+      reason = `You kept saying yes to ${escapeHtml(String(bestGroup).toLowerCase())} — this is the standout.`;
+    } else if (sharedTag) {
+      reason = `Matches the ${escapeHtml(sharedTag.replace(/-/g, ' '))} vibe you leaned into.`;
+    } else if (indec.noGroups.size) {
+      reason = `Best fit after ruling out ${indec.noGroups.size} type${indec.noGroups.size === 1 ? '' : 's'} you passed on.`;
+    } else {
+      reason = 'Our pick from everything you liked.';
+    }
+    return { item: best, reason };
+  }
+
+  // Final screen: a recommended top pick + the full list of everything swiped yes.
   function indecShowResults() {
     const card = document.getElementById('indecCard');
     if (!card) return;
@@ -4722,17 +4766,32 @@
       return;
     }
 
-    const rows = liked.map(it => {
-      const eyebrow = indec.ctx.eyebrow(it);
-      const name    = indecItemName(it);
+    const linksFor = it => {
       const mapHref = mapUrl(indecMapQuery(it));
       const links = [`<a class="indec-liked-link" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>`];
       if (it.website)     links.push(`<a class="indec-liked-link" href="${escapeAttr(it.website)}" target="_blank" rel="noopener">🌐 Site</a>`);
       if (it.reservation) links.push(`<a class="indec-liked-link" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>`);
+      return links.join('');
+    };
+
+    const top = indecTopPick(liked);
+    const topItem = top.item;
+    const topBlock = topItem ? `
+      <div class="indec-top-pick">
+        <div class="indec-top-label">⭐ TOP MATCH</div>
+        <div class="indec-top-name">${escapeHtml(indecItemName(topItem))}</div>
+        <div class="indec-top-reason">${top.reason}</div>
+        <div class="indec-liked-links">${linksFor(topItem)}</div>
+      </div>` : '';
+
+    // The remaining picks (everything except the top match), if any.
+    const others = liked.filter(it => it !== topItem);
+    const rows = others.map(it => {
+      const eyebrow = indec.ctx.eyebrow(it);
       return `<div class="indec-liked-item">
         ${eyebrow ? `<div class="indec-liked-eyebrow">${escapeHtml(eyebrow)}</div>` : ''}
-        <div class="indec-liked-name">${escapeHtml(name)}</div>
-        <div class="indec-liked-links">${links.join('')}</div>
+        <div class="indec-liked-name">${escapeHtml(indecItemName(it))}</div>
+        <div class="indec-liked-links">${linksFor(it)}</div>
       </div>`;
     }).join('');
 
@@ -4741,9 +4800,10 @@
       <div class="indec-results-head">
         <div style="font-size:1.6rem">🎉</div>
         <div class="indec-results-title">Your ${liked.length} pick${liked.length === 1 ? '' : 's'}</div>
-        <div class="indec-results-sub">Everything you swiped yes on${indec.ctx.label ? ' · ' + escapeHtml(indec.ctx.label) : ''}</div>
+        <div class="indec-results-sub">Recommended from your swipes${indec.ctx.label ? ' · ' + escapeHtml(indec.ctx.label) : ''}</div>
       </div>
-      <div class="indec-liked-list">${rows}</div>
+      ${topBlock}
+      ${others.length ? `<div class="indec-list-head">The rest of your yes's</div><div class="indec-liked-list">${rows}</div>` : ''}
       <div class="indec-actions">
         <button class="indec-action indec-love" id="indecRestart" type="button">🔄 Start over</button>
         <button class="indec-action indec-keep" data-indec-close type="button">Done</button>
