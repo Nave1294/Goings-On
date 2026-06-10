@@ -1793,6 +1793,20 @@
     .indec-action:active { transform: scale(0.96); }
     .indec-action.indec-love { color: #fff; background: var(--accent); }
     .indec-action.indec-keep { color: var(--text-secondary); }
+    .indec-done-row { display: flex; justify-content: center; margin-top: 0.9rem; }
+    .indec-done-btn { font: inherit; font-size: 0.82rem; font-weight: 700; color: #1a7a6e; background: var(--accent-soft); border: none; border-radius: 999px; padding: 0.5rem 1.3rem; cursor: pointer; transition: filter 0.15s ease; }
+    .indec-done-btn:hover { filter: brightness(0.96); }
+    .indec-done-btn:disabled { opacity: 0.45; cursor: default; }
+    .indec-results-head { text-align: center; margin-bottom: 1rem; }
+    .indec-results-title { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .indec-results-sub { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; }
+    .indec-liked-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; max-height: 52vh; overflow-y: auto; }
+    .indec-liked-item { background: var(--surface); border: 1.5px solid var(--divider); border-radius: 14px; padding: 0.7rem 0.9rem; }
+    .indec-liked-eyebrow { font-size: 0.66rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.12rem; }
+    .indec-liked-name { font-weight: 700; font-size: 0.96rem; color: var(--text); line-height: 1.2; }
+    .indec-liked-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+    .indec-liked-link { font-size: 0.74rem; font-weight: 600; color: #1a7a6e; text-decoration: none; background: var(--accent-soft); border-radius: 999px; padding: 0.28rem 0.65rem; }
+    .indec-liked-link:active { transform: scale(0.96); }
 
     /* ── Discover scope step (citywide vs neighborhood) ── */
     .eat-scope { animation: spinPop 0.25s ease; }
@@ -4514,9 +4528,11 @@
   }
 
   // ── "Indecision" — pick-a-card game ──
-  // Swipe-style indecision: one card at a time, thumbs up/down. Rejected items'
-  // cuisine groups are deprioritised so later cards feel meaningfully different.
-  const indec = { queue: [], queueIdx: 0, noGroups: new Set(), ctx: null, total: 0 };
+  // Swipe-style indecision: one card at a time, thumbs up/down. Yes's are
+  // collected; saying no to something narrows the remaining pool by removing
+  // similar (same-group) options. Ends when you're done or run out, then shows
+  // a list of everything you liked.
+  const indec = { remaining: [], liked: [], noGroups: new Set(), ctx: null, total: 0 };
 
   // A unified accessor so one card UI works across events/eats/books/markets.
   function indecItemName(it) { return it.name || it.summary || 'Untitled'; }
@@ -4597,43 +4613,29 @@
     };
   }
 
-  // Build (or rebuild) the swipe queue from the pool, deprioritising rejected groups.
-  function indecBuildQueue() {
-    const pool = indec.ctx.pool;
+  // Build the remaining list from the pool, dropping any rejected groups, shuffled.
+  function indecBuildRemaining() {
     const groupOf = indec.ctx.group;
-    const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
-    const preferred     = pool.filter(it => !indec.noGroups.has(groupOf(it)));
-    const deprioritised = pool.filter(it =>  indec.noGroups.has(groupOf(it)));
-    indec.queue    = [...shuffle(preferred), ...shuffle(deprioritised)];
-    indec.queueIdx = 0;
+    indec.remaining = indec.ctx.pool
+      .filter(it => !indec.noGroups.has(groupOf(it)))
+      .sort(() => Math.random() - 0.5);
   }
 
-  // Render the current swipe card.
+  // Render the current swipe card (or jump to the results list when out of cards).
   function indecShowCard() {
     const card = document.getElementById('indecCard');
     if (!card) return;
 
-    // Exhausted queue → rebuild (preferred items first again after full cycle).
-    if (indec.queueIdx >= indec.queue.length) {
-      indec.noGroups.clear();
-      indecBuildQueue();
-    }
+    if (!indec.remaining.length) { indecShowResults(); return; }
 
-    const it = indec.queue[indec.queueIdx];
-    if (!it) {
-      card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
-        <div class="spin-eyebrow">🃏 Indecision</div>
-        <div class="indec-prompt">Nothing to pick from here. Switch tabs and try again.</div>
-        <div class="indec-actions"><button class="indec-action" data-indec-close type="button">Got it</button></div>`;
-      return;
-    }
-
-    const label     = indec.ctx.label;
-    const eyebrow   = indec.ctx.eyebrow(it);
-    const name      = indecItemName(it);
-    const desc      = indecItemDesc(it);
-    const remaining = indec.queue.length - indec.queueIdx;
-    const countStr  = `${indec.queueIdx + 1} of ${indec.total}`;
+    const it       = indec.remaining[0];
+    const label    = indec.ctx.label;
+    const eyebrow  = indec.ctx.eyebrow(it);
+    const name     = indecItemName(it);
+    const desc     = indecItemDesc(it);
+    const liked    = indec.liked.length;
+    const left     = indec.remaining.length;
+    const countStr = `❤️ ${liked} · ${left} left`;
 
     card.innerHTML = `
       <button class="add-close" data-indec-close aria-label="Close">✕</button>
@@ -4655,56 +4657,99 @@
         <button class="indec-btn-no"  id="indecBtnNo"  type="button" aria-label="No">✕</button>
         <button class="indec-btn-yes" id="indecBtnYes" type="button" aria-label="Yes">✓</button>
       </div>
-      <div class="indec-hint">swipe or tap</div>`;
+      <div class="indec-hint">swipe or tap · saying no hides similar spots</div>
+      <div class="indec-done-row">
+        <button class="indec-done-btn" id="indecDoneBtn" type="button" ${liked ? '' : 'disabled'}>
+          ${liked ? `Done — see my ${liked} pick${liked === 1 ? '' : 's'}` : 'Swipe right on what you like'}
+        </button>
+      </div>`;
 
     document.getElementById('indecBtnNo' ).addEventListener('click', indecDoNo);
     document.getElementById('indecBtnYes').addEventListener('click', indecDoYes);
+    const doneBtn = document.getElementById('indecDoneBtn');
+    if (doneBtn && liked) doneBtn.addEventListener('click', indecShowResults);
     indecAttachSwipe();
   }
 
-  // Reject current card: record its group, animate left, advance.
+  // Accept current card: collect it, animate right, advance.
+  function indecDoYes() {
+    const it = indec.remaining[0];
+    if (!it) return;
+    indec.liked.push(it);
+    const cardEl = document.getElementById('indecSwipeCardEl');
+    const advance = () => { indec.remaining.shift(); indecShowCard(); };
+    if (cardEl) { cardEl.classList.add('fly-right'); setTimeout(advance, 320); }
+    else advance();
+  }
+
+  // Reject current card: record its group (hiding similar spots), animate left, advance.
   function indecDoNo() {
-    const it = indec.queue[indec.queueIdx];
+    const it = indec.remaining[0];
     if (!it) return;
     const group = indec.ctx.group(it);
     if (group) indec.noGroups.add(group);
+    const groupOf = indec.ctx.group;
     const cardEl = document.getElementById('indecSwipeCardEl');
-    if (cardEl) {
-      cardEl.classList.add('fly-left');
-      setTimeout(() => { indec.queueIdx++; indecShowCard(); }, 330);
-    } else {
-      indec.queueIdx++; indecShowCard();
-    }
+    const advance = () => {
+      // Drop the current card and any remaining options sharing a rejected group.
+      indec.remaining = indec.remaining.filter(x => !indec.noGroups.has(groupOf(x)));
+      indecShowCard();
+    };
+    if (cardEl) { cardEl.classList.add('fly-left'); setTimeout(advance, 320); }
+    else advance();
   }
 
-  // Accept current card: animate right, show result screen.
-  function indecDoYes() {
-    const it = indec.queue[indec.queueIdx];
-    if (!it) return;
-    const card    = document.getElementById('indecCard');
-    const cardEl  = document.getElementById('indecSwipeCardEl');
-    if (cardEl) cardEl.classList.add('fly-right');
-    setTimeout(() => {
-      const name    = indecItemName(it);
-      const desc    = indecItemDesc(it);
-      const mapHref = mapUrl(indecMapQuery(it));
+  // Final screen: the full list of everything swiped yes.
+  function indecShowResults() {
+    const card = document.getElementById('indecCard');
+    if (!card) return;
+    const liked = indec.liked;
+
+    if (!liked.length) {
       card.innerHTML = `
         <button class="add-close" data-indec-close aria-label="Close">✕</button>
-        <div class="indec-result-wrap">
-          <div style="font-size:1.9rem">🎉</div>
-          <div class="indec-result-name">${escapeHtml(name)}</div>
-          ${desc ? `<div class="indec-result-desc">${escapeHtml(desc.slice(0, 220))}</div>` : ''}
+        <div class="indec-results-head">
+          <div style="font-size:1.7rem">🤷</div>
+          <div class="indec-results-title">No picks yet</div>
+          <div class="indec-results-sub">You didn't swipe yes on anything. Want another round?</div>
         </div>
         <div class="indec-actions">
-          <a class="indec-action indec-love" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Open in maps</a>
-          ${it.website     ? `<a class="indec-action" href="${escapeAttr(it.website)}"     target="_blank" rel="noopener">🌐 Website</a>` : ''}
-          ${it.reservation ? `<a class="indec-action" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
-          <button class="indec-action indec-keep" id="indecKeepSwiping" type="button">→ Keep swiping</button>
+          <button class="indec-action indec-love" id="indecRestart" type="button">🔄 Start over</button>
+          <button class="indec-action indec-keep" data-indec-close type="button">Close</button>
         </div>`;
-      document.getElementById('indecKeepSwiping').addEventListener('click', () => {
-        indec.queueIdx++; indecShowCard();
-      });
-    }, 300);
+      const r = document.getElementById('indecRestart');
+      if (r) r.addEventListener('click', openIndecision);
+      return;
+    }
+
+    const rows = liked.map(it => {
+      const eyebrow = indec.ctx.eyebrow(it);
+      const name    = indecItemName(it);
+      const mapHref = mapUrl(indecMapQuery(it));
+      const links = [`<a class="indec-liked-link" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>`];
+      if (it.website)     links.push(`<a class="indec-liked-link" href="${escapeAttr(it.website)}" target="_blank" rel="noopener">🌐 Site</a>`);
+      if (it.reservation) links.push(`<a class="indec-liked-link" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>`);
+      return `<div class="indec-liked-item">
+        ${eyebrow ? `<div class="indec-liked-eyebrow">${escapeHtml(eyebrow)}</div>` : ''}
+        <div class="indec-liked-name">${escapeHtml(name)}</div>
+        <div class="indec-liked-links">${links.join('')}</div>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <button class="add-close" data-indec-close aria-label="Close">✕</button>
+      <div class="indec-results-head">
+        <div style="font-size:1.6rem">🎉</div>
+        <div class="indec-results-title">Your ${liked.length} pick${liked.length === 1 ? '' : 's'}</div>
+        <div class="indec-results-sub">Everything you swiped yes on${indec.ctx.label ? ' · ' + escapeHtml(indec.ctx.label) : ''}</div>
+      </div>
+      <div class="indec-liked-list">${rows}</div>
+      <div class="indec-actions">
+        <button class="indec-action indec-love" id="indecRestart" type="button">🔄 Start over</button>
+        <button class="indec-action indec-keep" data-indec-close type="button">Done</button>
+      </div>`;
+    const r = document.getElementById('indecRestart');
+    if (r) r.addEventListener('click', openIndecision);
   }
 
   // Attach touch + mouse swipe handlers to the card wrap.
@@ -4760,10 +4805,11 @@
   function openIndecision() {
     const overlay = document.getElementById('indecOverlay');
     if (overlay) overlay.classList.add('open');
-    indec.ctx       = discoverContext();
-    indec.noGroups  = new Set();
-    indec.total     = indec.ctx.pool.length;
-    indecBuildQueue();
+    indec.ctx      = discoverContext();
+    indec.liked    = [];
+    indec.noGroups = new Set();
+    indec.total    = indec.ctx.pool.length;
+    indecBuildRemaining();
     indecShowCard();
   }
 
