@@ -5059,7 +5059,7 @@
   // food vibe — that builds a walkable, time-sequenced itinerary weaving
   // Goings On calendar events together with restaurants, dessert & ideas.
 
-  const PL_STEPS = ['day', 'time', 'compose', 'transit', 'occasion', 'food'];
+  const PL_STEPS = ['day', 'time', 'compose', 'transit', 'neighborhood', 'occasion', 'food'];
   const PL = {
     step: 0,
     dayIdx: 0,
@@ -5067,6 +5067,7 @@
     endHour: 22,
     comp: { meal: 1, activity: 1, dessert: 0 },
     transit: 'walk',
+    neighborhood: null,
     occasion: 'date',
     food: 'any',
     stops: [],
@@ -5407,8 +5408,10 @@
     const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]
       // Drop day-restricted spots (e.g. Sunday-only dim sum) when planning another day.
       .filter(r => !Array.isArray(r.days) || r.days.includes(dayName))
-      // Honor the Discover scope (citywide, or one chosen neighborhood).
-      .filter(inDiscoverScope);
+      // PL neighborhood takes precedence; fall back to the global Discover scope.
+      .filter(r => PL.neighborhood
+        ? placeNeighborhoods(r.location).includes(PL.neighborhood)
+        : inDiscoverScope(r));
     const restaurantList = allR.map(r =>
       '"' + r.name + '" | ' + (r.cuisine || '') + ' | ' + (r.location ? r.location.split(',').slice(-1)[0].trim() : 'Philly') + ' | ' + (r.price || '') + ' | tags:' + (r.tags || []).join(',') + ' | ' + (r.desc || '').slice(0, 70)
     ).join('\n');
@@ -5437,6 +5440,7 @@
 
 OUTING:
 - Day: ${dayName}, ${plHourLabel(PL.startHour)}-${plHourLabel(PL.endHour)}
+- Area: ${PL.neighborhood || 'anywhere in Philadelphia'}
 - Occasion: ${occasionLabel}
 - Food preference: ${foodLabel} (steer restaurant picks to match, or ignore if "any")
 - Transit: ${transitLabel} — ${transitNote}
@@ -5788,6 +5792,7 @@ Valid types: "meal", "activity", "dessert"`;
     else if (key === 'time') plStepTime(body);
     else if (key === 'compose') plStepCompose(body);
     else if (key === 'transit') plStepChips(body, 'transit', PL_TRANSIT_MODES, 'How are you getting around?', 'Stops will be picked within range for your mode.');
+    else if (key === 'neighborhood') plStepNeighborhood(body);
     else if (key === 'occasion') plStepChips(body, 'occasion', PL_OCCASIONS, "What's the occasion?", 'Tune the vibe of the picks.');
     else if (key === 'food') plStepChips(body, 'food', PL_FOODS, 'Any food vibe?', "We'll steer the food choices to match.");
   }
@@ -5877,6 +5882,22 @@ Valid types: "meal", "activity", "dessert"`;
       <button class="pl-next" id="plNext" type="button">${last ? '✨ Plan it' : 'Next →'}</button>`;
     body.querySelectorAll('.pl-chip').forEach(c => c.addEventListener('click', () => {
       PL[field] = c.dataset.id;
+      body.querySelectorAll('.pl-chip').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('plNext').addEventListener('click', plAdvance);
+  }
+
+  function plStepNeighborhood(body) {
+    document.getElementById('plHeadline').textContent = 'Where in the city?';
+    const last = PL.step === PL_STEPS.length - 1;
+    body.innerHTML = `
+      <div class="pl-q">Stops will be picked in this area.</div>
+      <div class="pl-chip-grid">
+        ${OB_NEIGHBORHOODS.map(n => `<button class="pl-chip${PL.neighborhood === n.id ? ' active' : ''}" data-id="${n.id === null ? '' : escapeAttr(n.id)}" type="button"><span class="pl-chip-emoji">${n.emoji}</span>${escapeHtml(n.label)}</button>`).join('')}
+      </div>
+      <button class="pl-next" id="plNext" type="button">${last ? '✨ Plan it' : 'Next →'}</button>`;
+    body.querySelectorAll('.pl-chip').forEach(c => c.addEventListener('click', () => {
+      PL.neighborhood = c.dataset.id || null;
       body.querySelectorAll('.pl-chip').forEach(x => x.classList.toggle('active', x === c));
     }));
     document.getElementById('plNext').addEventListener('click', plAdvance);
