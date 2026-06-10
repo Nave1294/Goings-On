@@ -5179,6 +5179,18 @@
     }
     return `~${transitMins} min transit`;
   }
+  // For "walk + transit" mix mode: recommend walking a short leg and taking
+  // SEPTA for a longer one, decided purely by straight-line distance. Mirrors
+  // the transit math above (~3 mph walk vs ~10 min transit overhead + ride).
+  // Returns the emoji, badge label, and Google Maps travel mode for one leg.
+  function mixLegRec(mi) {
+    const walkMins = Math.round(mi * 24);
+    const transitMins = Math.round(10 + mi * 5);
+    if (walkMins <= transitMins) {
+      return { emoji: '🚶', label: walkMins <= 1 ? 'Walk · < 1 min' : `Walk · ~${walkMins} min`, mode: 'walking' };
+    }
+    return { emoji: '🚇', label: `Transit · ~${transitMins} min`, mode: 'transit' };
+  }
   const PL_TIME_OPTS = [
     { hr: 9, label: '9 AM' }, { hr: 10, label: '10 AM' }, { hr: 11, label: '11 AM' },
     { hr: 12, label: 'Noon' }, { hr: 13, label: '1 PM' }, { hr: 14, label: '2 PM' },
@@ -7095,11 +7107,20 @@ Return ONLY valid JSON (no markdown fences):
       let connector = '';
       if (next) {
         if (s.coords && next.coords) {
-          const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? '🚇' : '🚶';
-          const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : OB.transitMode === 'mix' ? 'Walk or transit' : 'Walk';
-          const dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? 'transit' : 'walking';
+          let badge, dm;
+          if (OB.transitMode === 'mix') {
+            // Recommend walk vs transit for THIS leg based on the actual distance.
+            const rec = mixLegRec(haversineMiles(s.coords.lat, s.coords.lon, next.coords.lat, next.coords.lon));
+            badge = `${rec.emoji} ${rec.label}`;
+            dm = rec.mode;
+          } else {
+            const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
+            const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : 'Walk';
+            badge = `${modeEmoji} ${modeWord} to next`;
+            dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
+          }
           const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=${dm}`;
-          connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${modeWord} to next</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
+          connector = `<div class="pl-connector"><span class="dn-walk-badge">${badge}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
