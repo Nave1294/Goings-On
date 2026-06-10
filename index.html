@@ -2643,6 +2643,17 @@
 
   function stripTags(s) { return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
 
+  // Pull the first real URL out of an event's description (raw, before tag
+  // stripping, so a link inside an <a href> survives too). Calendar events
+  // have no dedicated website field, so the description is the only place an
+  // organizer's link reliably appears. Returns '' when there is none — used to
+  // decide whether to show a Website button at all.
+  function eventSiteUrl(ev) {
+    const raw = (ev && ev.description) ? String(ev.description) : '';
+    const m = raw.match(/https?:\/\/[^\s<>"')]+/);
+    return m ? m[0] : '';
+  }
+
   function setupAddModal() {
     const btn = document.getElementById('addBtn');
     const overlay = document.getElementById('addOverlay');
@@ -5554,7 +5565,7 @@ Valid types: "meal", "activity", "dessert"`;
             desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
             actions: [
               ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
-              { label: '🎟️ Find tickets', href: `https://www.google.com/search?q=${encodeURIComponent((ev.summary || '') + ' tickets Philadelphia')}` },
+              eventSiteUrl(ev) && { label: '🌐 Website', href: eventSiteUrl(ev) },
               ev.location && { label: '🗺️ Map', href: mapUrl(ev.location) },
             ].filter(Boolean),
             coords: c || null,
@@ -7049,7 +7060,8 @@ Return ONLY valid JSON (no markdown fences):
     const actions = [];
     if (s.type === 'event') {
       if (it.htmlLink) actions.push({ label: '📅 Details', href: it.htmlLink });
-      actions.push({ label: '🎟️ Find tickets', href: `https://www.google.com/search?q=${encodeURIComponent((it.summary || s.label) + ' tickets Philadelphia')}` });
+      const site = eventSiteUrl(it);
+      if (site) actions.push({ label: '🌐 Website', href: site });
       const loc = it.location || it._foundLocation;
       if (loc) actions.push({ label: '🗺️ Map', href: mapUrl(loc) });
       else if (s.coords) actions.push({ label: '🗺️ Map', href: mapUrl(s.label) });
