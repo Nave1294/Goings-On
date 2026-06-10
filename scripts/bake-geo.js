@@ -176,7 +176,9 @@ async function main() {
   ];
 
   const log = { filled: [], refreshed: [], stillLive: 0, notFound: [], unchanged: 0 };
+  let quotaReached = false;
 
+  outer:
   for (const section of sections) {
     console.log(`\n── ${section.label} (${MODE}) ──`);
     const places = extractPlaceLines(html, section.start, section.end);
@@ -192,7 +194,12 @@ async function main() {
         const live = await photoIsLive(place.geo.ph);
         if (live) { log.stillLive++; continue; }
         process.stdout.write(`  Stale photo: ${place.name} … `);
-        const fresh = await lookupGeo(place.name, place.location);
+        let fresh;
+        try { fresh = await lookupGeo(place.name, place.location); }
+        catch (e) {
+          if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break outer; }
+          throw e;
+        }
         if (fresh && fresh.ph) {
           const updated = withGeo(place.raw, { ...place.geo, ph: fresh.ph });
           lines[place.lineIndex] = updated;
@@ -207,7 +214,12 @@ async function main() {
 
       // No geo yet → look it up (both modes).
       process.stdout.write(`  Baking: ${place.name} … `);
-      const geo = await lookupGeo(place.name, place.location);
+      let geo;
+      try { geo = await lookupGeo(place.name, place.location); }
+      catch (e) {
+        if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break outer; }
+        throw e;
+      }
       if (!geo) { console.log('not found'); log.notFound.push(place.name); }
       else {
         const updated = withGeo(place.raw, geo);
@@ -219,15 +231,19 @@ async function main() {
     }
   }
 
+  // Always write progress — even a partial run saves whatever was baked so the
+  // next run skips those places and picks up where this one left off.
   fs.writeFileSync(INDEX_PATH, lines.join('\n'), 'utf8');
 
   const today = new Date().toISOString().slice(0, 10);
-  console.log(`\n══ bake-geo ${MODE} complete (${today}) ══`);
+  const status = quotaReached ? 'partial (quota reached)' : 'complete';
+  console.log(`\n══ bake-geo ${MODE} ${status} (${today}) ══`);
   console.log(`  Filled:     ${log.filled.length}  — ${log.filled.join(', ') || 'none'}`);
   console.log(`  Refreshed:  ${log.refreshed.length} — ${log.refreshed.join(', ') || 'none'}`);
   console.log(`  Still live: ${log.stillLive}`);
   console.log(`  Not found:  ${log.notFound.length} — ${log.notFound.join(', ') || 'none'}`);
   console.log(`  Unchanged:  ${log.unchanged}`);
+  if (quotaReached) console.log('  ⚠ Daily quota reached — partial progress saved. Re-run to continue.');
 
   fs.writeFileSync(path.join(__dirname, '..', '.bake-summary.json'), JSON.stringify({
     date: today, mode: MODE,
