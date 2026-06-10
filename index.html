@@ -6352,6 +6352,32 @@ Valid types: "meal", "activity", "dessert"`;
     return hr == null || (hr >= OB.startHour && hr <= OB.endHour + 1);
   }
 
+  // The meals (breakfast/lunch/dinner) the chosen outing window spans.
+  function obWindowMeals() {
+    const meals = new Set();
+    for (let h = OB.startHour; h <= OB.endHour; h++) {
+      const m = plMealTypeAt(h);
+      if (m) meals.add(m);
+    }
+    return meals;
+  }
+
+  // Keep a restaurant only if its meal tags overlap the window's meals. Spots
+  // with no breakfast/lunch/dinner signal (bars, all-day cafés, dessert) always
+  // pass, as does everything when the window sits outside normal meal hours.
+  function obRestaurantFitsTime(r, windowMeals) {
+    if (!windowMeals.size) return true;
+    const mealTags = new Set();
+    (r.tags || []).forEach(t => {
+      const tag = String(t).toLowerCase();
+      if (tag === 'breakfast' || tag === 'brunch') mealTags.add('breakfast');
+      if (tag === 'lunch' || tag === 'brunch') mealTags.add('lunch');
+      if (tag === 'dinner') mealTags.add('dinner');
+    });
+    if (!mealTags.size) return true; // no meal signal → keep (bar, café, dessert)
+    return [...mealTags].some(m => windowMeals.has(m));
+  }
+
   function obRawPool(catId) {
     if (catId === 'event') {
       return plEventsForDay(obActiveDayIdx()).filter(obEventInWindow).map(ev => ({
@@ -6365,7 +6391,9 @@ Valid types: "meal", "activity", "dessert"`;
         .map(r => ({ type: 'dessert', emoji: '🍦', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
     }
     if (catId === 'restaurant') {
-      return allR.map(r => ({ type: 'restaurant', emoji: '🍽️', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
+      const meals = obWindowMeals();
+      return allR.filter(r => obRestaurantFitsTime(r, meals))
+        .map(r => ({ type: 'restaurant', emoji: '🍽️', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
     }
     if (catId === 'bookstore') {
       const seen = new Set();
