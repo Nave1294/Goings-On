@@ -5207,6 +5207,7 @@
     { hr: 21, label: '9 PM' }, { hr: 22, label: '10 PM' }, { hr: 23, label: '11 PM' },
   ];
   const PL_DESSERT_RE = /dessert|ice cream|gelato|bakery|pastry|patisserie|chocolate|cafe|coffee|donut|cookie|cake|custard|water ice|sweet|sorbet/i;
+  const PL_DRINKS_RE = /\b(bars?|cocktails?|brewery|breweries|brewpub|brewing|taprooms?|tap rooms?|wine|beer|biergarten|pubs?|lounges?|speakeas(?:y|ies)|distiller(?:y|ies)|taverns?|saloons?|aperitivo|spritz)\b/i;
 
   // ── data helpers ──
   function plDays() { return (lastRender && lastRender.days) || []; }
@@ -6313,7 +6314,8 @@ Valid types: "meal", "activity", "dessert"`;
 
   const OB_CATS = [
     { id: 'event',      emoji: '📅', label: 'Event',      desc: 'Goings On calendar' },
-    { id: 'restaurant', emoji: '🍽️', label: 'Restaurant', desc: 'Dining & drinks' },
+    { id: 'restaurant', emoji: '🍽️', label: 'Restaurant', desc: 'Dining & food' },
+    { id: 'drinks',     emoji: '🍸', label: 'Drinks',     desc: 'Bars & cocktails' },
     { id: 'bookstore',  emoji: '📚', label: 'Bookstore',  desc: 'Indie bookshops' },
     { id: 'market',     emoji: '🛒', label: 'Market',     desc: 'Farmers markets' },
     { id: 'dessert',    emoji: '🍦', label: 'Dessert',    desc: 'Ice cream & sweets' },
@@ -6389,6 +6391,12 @@ Valid types: "meal", "activity", "dessert"`;
     if (catId === 'dessert') {
       return allR.filter(r => PL_DESSERT_RE.test(r.cuisine || '') || PL_DESSERT_RE.test(r.name || '') || PL_DESSERT_RE.test((r.tags || []).join(' ')))
         .map(r => ({ type: 'dessert', emoji: '🍦', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
+    }
+    if (catId === 'drinks') {
+      // Bars, cocktail lounges, breweries, wine bars, beer gardens. Bars keep
+      // flexible hours, so they're not subject to meal-time filtering.
+      return allR.filter(r => PL_DRINKS_RE.test(r.cuisine || '') || PL_DRINKS_RE.test(r.name || '') || PL_DRINKS_RE.test((r.tags || []).join(' ')))
+        .map(r => ({ type: 'drinks', emoji: '🍸', label: r.name, sublabel: r.location || '', item: r, coords: undefined }));
     }
     if (catId === 'restaurant') {
       const meals = obWindowMeals();
@@ -7113,7 +7121,7 @@ Rules:
 1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there, keeping everything within the ${startLabel}–${endLabel} window.
 2. Write 2–3 engaging sentences per stop: what makes it special and why it fits.
 3. One short practical tip per stop (hours, reservations, etc.), or null if nothing useful.
-4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Bookstore", "Market", "Dessert", etc.
+4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Drinks", "Bookstore", "Market", "Dessert", etc.
 5. "summary" = fun 6–10 word tagline for the full outing.
 
 Return ONLY valid JSON (no markdown fences):
