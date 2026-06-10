@@ -5111,15 +5111,16 @@
     { id: 'drinks',      emoji: '🍸', label: 'Drinks-forward' },
   ];
   const PL_TRANSIT_MODES = [
-    { id: 'walk',    emoji: '🚶', label: 'Walking',        desc: 'Keeps stops within ~20 min on foot' },
-    { id: 'bike',    emoji: '🚲', label: 'Biking',         desc: 'Up to ~15 min by bike' },
-    { id: 'transit', emoji: '🚇', label: 'Public transit', desc: 'Up to ~20 min, direct service' },
-    { id: 'drive',   emoji: '🚗', label: 'Driving',        desc: 'Up to ~10 min by car' },
+    { id: 'walk',    emoji: '🚶',   label: 'Walking',        desc: 'Keeps stops within ~20 min on foot' },
+    { id: 'mix',     emoji: '🚶🚇', label: 'Walk + transit', desc: 'Short legs on foot, longer by SEPTA' },
+    { id: 'bike',    emoji: '🚲',   label: 'Biking',         desc: 'Up to ~15 min by bike' },
+    { id: 'transit', emoji: '🚇',   label: 'Public transit', desc: 'Up to ~20 min, direct service' },
+    { id: 'drive',   emoji: '🚗',   label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
   function plTransitDirHref(from, to, forceWalk) {
     const mode = forceWalk ? 'walking'
       : PL.transit === 'drive' ? 'driving'
-      : PL.transit === 'transit' ? 'transit'
+      : (PL.transit === 'transit' || PL.transit === 'mix') ? 'transit'
       : PL.transit === 'bike' ? 'bicycling'
       : 'walking';
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
@@ -5130,7 +5131,7 @@
     const pts = PL.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
     if (pts.length < 2) return null;
     const mode = PL.transit === 'drive' ? 'driving'
-      : PL.transit === 'transit' ? 'transit'
+      : (PL.transit === 'transit' || PL.transit === 'mix') ? 'transit'
       : PL.transit === 'bike' ? 'bicycling'
       : 'walking';
     const origin = encodeURIComponent(pts[0]);
@@ -5450,12 +5451,14 @@
     const slotDesc = order.map((type, i) => type + ' around ' + plHourLabel(times[i])).join(', ');
     const transitNote = PL.transit === 'walk'
       ? 'Walking only — every leg between consecutive stops MUST be 20 minutes or under (roughly 0.9 mi straight-line, ~1.1 mi by actual streets). Keep stops in the same or directly adjacent neighborhood. Where possible, avoid retracing ground — favor a route that feels like a natural progression through the city rather than doubling back, but this is a preference not a requirement.'
+      : PL.transit === 'mix'
+      ? 'Mix of walking and SEPTA transit — walk short legs (under ~12 min / ~0.5 mi), take transit for longer ones. Total door-to-door travel between consecutive stops should be 20 minutes or less. Stops can span adjacent neighborhoods but should not scatter across the city.'
       : PL.transit === 'bike'
       ? 'Biking — every leg should be a 15-minute bike ride or less (about 2 miles). Keep stops in the same or nearby neighborhoods so the ride between them is short and flows in one direction — do not zigzag across the city.'
       : PL.transit === 'drive'
       ? 'Driving — every leg must be a 10-minute drive or less. Route stops progressively; avoid sending the driver back and forth across the same area.'
       : 'Public transit — every leg should be reachable in ~25 minutes or less, ideally with no transfers. Transit has real overhead (walk to the stop, wait, ride, walk from the stop), so a single short SEPTA hop is roughly 15-25 min door to door. If two stops are within about a 12-minute walk, just walk that leg instead of taking transit.';
-    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'bike' ? 12 : PL.transit === 'drive' ? 10 : 18;
+    const transitMinutes = PL.transit === 'walk' ? 15 : PL.transit === 'mix' ? 15 : PL.transit === 'bike' ? 12 : PL.transit === 'drive' ? 10 : 18;
 
     const prompt = `You are a sharp, opinionated Philadelphia local planning a great outing. Think it through carefully before answering: consider the occasion, what's actually worth doing, how the stops flow together into ONE coherent experience, and which real Goings-On events make the night special. Then return ONLY a raw JSON object — no prose, no markdown fences.
 
@@ -6254,6 +6257,7 @@ Valid types: "meal", "activity", "dessert"`;
   function obRadiusMiles() {
     return OB.transitMode === 'bike' ? 1.5     // ~10 min bike
       : OB.transitMode === 'transit' ? 1.8     // ~nearby transit stop
+      : OB.transitMode === 'mix' ? 1.2         // ~20 min walk or one SEPTA hop
       : OB.transitMode === 'drive' ? 2.5       // ~8 min drive
       : 0.5;                                   // ~10 min walk
   }
@@ -6965,15 +6969,18 @@ Valid types: "meal", "activity", "dessert"`;
       return `${i + 1}. ${s.emoji} [${s.type}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}`;
     }).join('\n');
 
-    const startLabel = plHourLabel(OB.startHour);
-    const nbhdLabel  = OB.neighborhood || 'Philadelphia';
+    const startLabel  = plHourLabel(OB.startHour);
+    const nbhdLabel   = OB.neighborhood || 'Philadelphia';
+    const transitNote = OB.transitMode === 'mix'
+      ? 'Walk + transit (SEPTA) — walk short legs, take transit for longer ones'
+      : modeLbl;
 
     const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
 
 Day: ${dayName}
 Start time: ${startLabel}
 Area: ${nbhdLabel}
-Transit: ${modeLbl}
+Transit: ${transitNote}
 
 Stops (in order):
 ${stopLines}
@@ -7028,7 +7035,7 @@ Return ONLY valid JSON (no markdown fences):
   function obAllStopsDirHref() {
     const pts = OB.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
     if (pts.length < 2) return null;
-    const mode = OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : OB.transitMode === 'bike' ? 'bicycling' : 'walking';
+    const mode = OB.transitMode === 'drive' ? 'driving' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? 'transit' : OB.transitMode === 'bike' ? 'bicycling' : 'walking';
     const origin = encodeURIComponent(pts[0]), dest = encodeURIComponent(pts[pts.length - 1]);
     const wps = pts.slice(1, -1).map(encodeURIComponent).join('|');
     let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
@@ -7076,9 +7083,9 @@ Return ONLY valid JSON (no markdown fences):
       let connector = '';
       if (next) {
         if (s.coords && next.coords) {
-          const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
-          const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : 'Walk';
-          const dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
+          const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? '🚇' : '🚶';
+          const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : OB.transitMode === 'mix' ? 'Walk or transit' : 'Walk';
+          const dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? 'transit' : 'walking';
           const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=${dm}`;
           connector = `<div class="pl-connector"><span class="dn-walk-badge">${modeEmoji} ${modeWord} to next</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
         } else {
@@ -7122,7 +7129,7 @@ Return ONLY valid JSON (no markdown fences):
     const dayLabel = day ? `${DAYS_LONG[day.getDay()]}, ${MONTHS[day.getMonth()].slice(0, 3)} ${day.getDate()}` : '';
     OB.shareText = (() => {
       const modeLbl = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
-      const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
+      const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? '🚇' : '🚶';
       const lines = [`🗺️ ${obVibeLabel()}`];
       if (dayLabel) lines.push(dayLabel);
       lines.push(`${modeEmoji} ${modeLbl} · Starting ${plHourLabel(OB.startHour)}`);
