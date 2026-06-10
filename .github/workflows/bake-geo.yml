@@ -4,8 +4,9 @@ name: Bake Geo (coords + photo refs)
 # site never spends a paid Places Text Search call.
 #  • push to main (index.html changed) → "fill" mode: only NEW places are
 #    looked up, so freshly-added items get baked automatically and cheaply.
-#  • monthly schedule → "validate" mode: re-checks every photo reference and
-#    re-fetches any that have gone stale (the broken-code scan).
+#  • daily schedule → "validate" mode: re-checks a small rolling slice of photo
+#    references (auto-sized so every photo is verified about once a month) and
+#    re-fetches any that have gone stale — no single big burst.
 #  • manual run → choose the mode.
 
 on:
@@ -13,7 +14,7 @@ on:
     branches: [main]
     paths: ['index.html']
   schedule:
-    - cron: '0 13 1 * *'   # 1st of every month, 13:00 UTC (offset from the audit)
+    - cron: '0 13 * * *'   # daily, 13:00 UTC (offset from the audit at 11:00)
   workflow_dispatch:
     inputs:
       mode:

@@ -13,9 +13,11 @@
  *   --fill      (default) Only look up places that have NO geo yet. Cheap —
  *               this is what runs on every push, so newly-added places get
  *               baked automatically and existing ones cost nothing.
- *   --validate  Fill missing AND re-check every existing photo reference;
- *               anything that no longer loads is re-fetched. This is the
- *               "scan for broken codes" pass, run on a schedule.
+ *   --validate  Fill missing, then re-check a ROLLING DAILY SLICE of existing
+ *               photo references and re-fetch any that no longer load. Runs
+ *               daily; the slice auto-sizes so every photo is checked about
+ *               once a month with no single big burst, and keeps sweeping
+ *               within a month no matter how large the list grows.
  *
  * Coordinates never expire, so they're only ever fetched once per place.
  * Only photo references can go stale, which is what --validate repairs.
@@ -162,6 +164,10 @@ function withGeo(raw, geo) {
   return before + sep + geoStr + ' ' + after;
 }
 
+// Day of the month in UTC (1–31). Picks which slice of photos to validate so
+// the monthly photo scan is spread evenly across days instead of one burst.
+function dayOfMonth(d = new Date()) { return d.getUTCDate(); }
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -175,57 +181,67 @@ async function main() {
     { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
   ];
 
+  // Gather every place across both marked sections in stable file order, so a
+  // rolling validate slice can span restaurants and bookstores uniformly.
+  const allPlaces = [];
+  for (const section of sections) {
+    for (const p of extractPlaceLines(html, section.start, section.end)) allPlaces.push(p);
+  }
+
   const log = { filled: [], refreshed: [], stillLive: 0, notFound: [], unchanged: 0 };
+  log.unchanged = allPlaces.filter(p => p.geo).length;
   let quotaReached = false;
 
-  outer:
-  for (const section of sections) {
-    console.log(`\n── ${section.label} (${MODE}) ──`);
-    const places = extractPlaceLines(html, section.start, section.end);
-    console.log(`   ${places.length} entries`);
+  // ── 1. FILL — bake coords + photo for any place that has no geo yet. Runs in
+  //    both modes; it's free for already-baked places (skipped), so this is what
+  //    catches newly-added places.
+  for (const place of allPlaces) {
+    if (place.geo) continue;
+    process.stdout.write(`  Baking: ${place.name} … `);
+    let geo;
+    try { geo = await lookupGeo(place.name, place.location); }
+    catch (e) {
+      if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break; }
+      throw e;
+    }
+    if (!geo) { console.log('not found'); log.notFound.push(place.name); }
+    else {
+      lines[place.lineIndex] = withGeo(place.raw, geo);
+      place.geo = geo;                       // visible to the validate pass below
+      log.filled.push(place.name);
+      console.log(`baked (${geo.lat}, ${geo.lon}${geo.ph ? ', +photo' : ', no photo'})`);
+    }
+    await new Promise(r => setTimeout(r, 150));
+  }
 
-    for (const place of places) {
-      // FILL: already has geo → nothing to do (unless validating).
-      if (place.geo && MODE === 'fill') { log.unchanged++; continue; }
-
-      // VALIDATE: has geo → check the photo reference is still live.
-      if (place.geo && MODE === 'validate') {
-        if (!place.geo.ph) { log.unchanged++; continue; } // coords only, never expires
-        const live = await photoIsLive(place.geo.ph);
-        if (live) { log.stillLive++; continue; }
-        process.stdout.write(`  Stale photo: ${place.name} … `);
-        let fresh;
-        try { fresh = await lookupGeo(place.name, place.location); }
-        catch (e) {
-          if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break outer; }
-          throw e;
-        }
-        if (fresh && fresh.ph) {
-          const updated = withGeo(place.raw, { ...place.geo, ph: fresh.ph });
-          lines[place.lineIndex] = updated;
-          log.refreshed.push(place.name);
-          console.log('refreshed');
-        } else {
-          console.log('could not refetch — kept');
-        }
-        await new Promise(r => setTimeout(r, 150));
-        continue;
-      }
-
-      // No geo yet → look it up (both modes).
-      process.stdout.write(`  Baking: ${place.name} … `);
-      let geo;
-      try { geo = await lookupGeo(place.name, place.location); }
+  // ── 2. VALIDATE (rolling) — re-check one daily slice of existing photo refs,
+  //    re-fetching any that have gone stale. The slice auto-sizes to the list so
+  //    every photo is verified about once a month with no single big burst, and
+  //    it keeps sweeping within a month no matter how large the list grows.
+  if (MODE === 'validate' && !quotaReached) {
+    const withPhotos = allPlaces.filter(p => p.geo && p.geo.ph);
+    const SWEEP_DAYS = 28;                                  // always finish within a month
+    const batch = Math.max(1, Math.ceil(withPhotos.length / SWEEP_DAYS));
+    const start = (dayOfMonth() - 1) * batch;
+    const slice = withPhotos.slice(start, start + batch);
+    const range = slice.length ? `${start}–${start + slice.length - 1}` : 'none today';
+    console.log(`\n── Validating photos — day ${dayOfMonth()}: ${slice.length} of ${withPhotos.length} [${range}] ──`);
+    for (const place of slice) {
+      const live = await photoIsLive(place.geo.ph);
+      if (live) { log.stillLive++; continue; }
+      process.stdout.write(`  Stale photo: ${place.name} … `);
+      let fresh;
+      try { fresh = await lookupGeo(place.name, place.location); }
       catch (e) {
-        if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break outer; }
+        if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break; }
         throw e;
       }
-      if (!geo) { console.log('not found'); log.notFound.push(place.name); }
-      else {
-        const updated = withGeo(place.raw, geo);
-        lines[place.lineIndex] = updated;
-        log.filled.push(place.name);
-        console.log(`baked (${geo.lat}, ${geo.lon}${geo.ph ? ', +photo' : ', no photo'})`);
+      if (fresh && fresh.ph) {
+        lines[place.lineIndex] = withGeo(place.raw, { ...place.geo, ph: fresh.ph });
+        log.refreshed.push(place.name);
+        console.log('refreshed');
+      } else {
+        console.log('could not refetch — kept');
       }
       await new Promise(r => setTimeout(r, 150));
     }
