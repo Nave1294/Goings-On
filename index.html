@@ -2401,7 +2401,9 @@
     const byDay = {};
     days.forEach(d => { byDay[dayKey(d)] = []; });
 
+    calendarMarketEvents = [];
     events.forEach(ev => {
+      if (isFarmersMarketEvent(ev)) { calendarMarketEvents.push(ev); return; }
       const isAllDay = !ev.start.dateTime;
       const start = parseEventDate(ev.start);
       const end   = parseEventDate(ev.end);
@@ -2439,6 +2441,10 @@
     if (endpoint.dateTime) return new Date(endpoint.dateTime);
     const [y, m, d] = endpoint.date.split('-').map(Number);
     return new Date(y, m - 1, d);
+  }
+
+  function isFarmersMarketEvent(ev) {
+    return /farmers?\s+market/i.test(ev.summary || '');
   }
 
   let lastRender = null;
@@ -4047,6 +4053,7 @@
   // ── Geolocation & distance ──
   let userLoc = null;          // { lat, lon } once granted
   let proximityActive = false; // sort-by-distance toggle (shared across views)
+  let calendarMarketEvents = []; // farmers market events pulled from calendar
 
   function getUserLocation() {
     if (userLoc) return Promise.resolve(userLoc);
@@ -6026,6 +6033,42 @@ Valid types: "meal", "activity", "dessert"`;
   const FM_DAY_TABS = ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   let currentFmDay = 'All';
 
+  const FM_CAL_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const FM_CAL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function fmCalEventHTML(ev) {
+    const date = parseEventDate(ev.start);
+    const isAllDay = !ev.start.dateTime;
+    const timeStr = isAllDay ? 'All day' : fmtTime(ev.start.dateTime);
+    const dateStr = `${FM_CAL_DAYS[date.getDay()]}, ${FM_CAL_MONTHS[date.getMonth()]} ${date.getDate()}`;
+    const loc = ev.location || ev._foundLocation || '';
+    const siteUrl = eventSiteUrl(ev);
+    const mapHref = loc ? mapUrl(loc) : '';
+    return `
+      <div class="resto-tile fm-tile fm-cal-tile">
+        <div class="resto-main">
+          <div class="resto-img-placeholder">📅</div>
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(ev.summary || 'Farmers Market')}</div>
+            <div class="resto-meta">
+              ${loc ? `<span class="resto-meta-item">📍 ${escapeHtml(loc)}</span>` : ''}
+              <span class="resto-meta-item">🕒 ${timeStr}</span>
+            </div>
+            <div class="fm-season-pill fm-yearround">${dateStr}</div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${ev.description ? `<div class="resto-desc">${escapeHtml(stripTags(ev.description).slice(0, 140))}</div>` : ''}
+            <div class="resto-actions">
+              ${siteUrl ? `<a class="resto-action" href="${escapeAttr(siteUrl)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              ${mapHref ? `<a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function fmTileHTML(m) {
     const mapHref = mapUrl(m.name + ', ' + m.location);
     return `
@@ -6060,39 +6103,49 @@ Valid types: "meal", "activity", "dessert"`;
     document.querySelectorAll('#fmDayTabs .sub-tab').forEach(t =>
       t.classList.toggle('active', t.dataset.day === day));
     const filtered = day === 'All' ? FARMERS_MARKETS : FARMERS_MARKETS.filter(m => m.days.includes(day));
-    const count = filtered.length;
+    const calFiltered = day === 'All'
+      ? calendarMarketEvents
+      : calendarMarketEvents.filter(ev => FM_CAL_DAYS[parseEventDate(ev.start).getDay()] === day);
+    const totalCount = filtered.length + calFiltered.length;
+
     document.getElementById('fmTitle').textContent = day === 'All' ? 'All Markets' : `${day}s`;
-    document.getElementById('fmSubtitle').textContent = count
-      ? `${count} market${count === 1 ? '' : 's'}${day === 'All' ? ' across Philly & the region' : ` open on ${day}s`}`
+    document.getElementById('fmSubtitle').textContent = totalCount
+      ? `${totalCount} market${totalCount === 1 ? '' : 's'}${day === 'All' ? ' across Philly & the region' : ` open on ${day}s`}`
       : `No markets open on ${day}s`;
 
     const list = document.getElementById('fmList');
-    if (!filtered.length) {
+    if (!totalCount) {
       list.innerHTML = `<div class="eat-content eat-empty"><div class="eat-empty-icon">🌽</div><div class="eat-empty-text">No markets on ${day}s — try another day!</div></div>`;
       return;
     }
 
-    if (proximityActive && userLoc) {
-      await Promise.all(filtered.map(ensurePlaceCoords));
-      const sorted = [...filtered].sort((a, b) => {
-        const da = (a._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, a._coords.lat, a._coords.lon) : Infinity;
-        const db = (b._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, b._coords.lat, b._coords.lon) : Infinity;
-        return da - db;
-      });
-      list.innerHTML = `<div class="eat-content"><div class="eat-section-header">📍 Nearest first</div>${sorted.map(fmTileHTML).join('')}</div>`;
-    } else {
-      // Group year-round vs seasonal
-      const yr = filtered.filter(m => !m.seasonal);
-      const seas = filtered.filter(m => m.seasonal);
-      let html = '<div class="eat-content">';
-      if (yr.length) html += `<div class="eat-section-header">🗓️ Year-round</div>${yr.map(fmTileHTML).join('')}`;
-      if (seas.length) html += `<div class="eat-section-header">🌸 Seasonal</div>${seas.map(fmTileHTML).join('')}`;
-      html += '</div>';
-      list.innerHTML = html;
+    let html = '<div class="eat-content">';
+
+    if (calFiltered.length) {
+      html += `<div class="eat-section-header">📅 This week</div>${calFiltered.map(fmCalEventHTML).join('')}`;
     }
 
-    list.querySelectorAll('.fm-tile').forEach(tile => {
-      // Enrich with coords once rendered
+    if (filtered.length) {
+      if (proximityActive && userLoc) {
+        await Promise.all(filtered.map(ensurePlaceCoords));
+        const sorted = [...filtered].sort((a, b) => {
+          const da = (a._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, a._coords.lat, a._coords.lon) : Infinity;
+          const db = (b._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, b._coords.lat, b._coords.lon) : Infinity;
+          return da - db;
+        });
+        html += `<div class="eat-section-header">📍 Nearest first</div>${sorted.map(fmTileHTML).join('')}`;
+      } else {
+        const yr = filtered.filter(m => !m.seasonal);
+        const seas = filtered.filter(m => m.seasonal);
+        if (yr.length) html += `<div class="eat-section-header">🗓️ Year-round</div>${yr.map(fmTileHTML).join('')}`;
+        if (seas.length) html += `<div class="eat-section-header">🌸 Seasonal</div>${seas.map(fmTileHTML).join('')}`;
+      }
+    }
+
+    html += '</div>';
+    list.innerHTML = html;
+
+    list.querySelectorAll('.fm-tile[data-place]').forEach(tile => {
       const m = FARMERS_MARKETS.find(x => x.name === tile.dataset.place);
       if (m && m._coords) {
         tile.dataset.lat = m._coords.lat;
