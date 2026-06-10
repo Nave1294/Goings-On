@@ -1737,39 +1737,51 @@
     .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
     .ob-far-details summary { outline: none; }
     .ob-far-details summary::-webkit-details-marker { color: var(--text-secondary); }
+    .indec-swipe-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .indec-count-badge { font-size: 0.75rem; font-weight: 700; background: #1a7a6e; color: #fff; border-radius: 999px; padding: 0.22rem 0.7rem; letter-spacing: 0.02em; }
+    .indec-swipe-wrap { position: relative; user-select: none; margin-bottom: 1.2rem; cursor: grab; touch-action: pan-y; }
+    .indec-swipe-wrap:active { cursor: grabbing; }
+    .indec-swipe-card {
+      background: var(--surface); border-radius: 20px;
+      padding: 1.4rem 1.2rem 1.4rem;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.13);
+      border: 1.5px solid var(--divider);
+      position: relative; overflow: hidden;
+      will-change: transform;
+      transition: transform 0.25s cubic-bezier(.4,.2,.2,1), opacity 0.25s ease;
+      min-height: 160px;
+    }
+    .indec-swipe-card.fly-right { transform: translateX(115%) rotate(20deg) !important; opacity: 0 !important; transition: transform 0.32s ease-in, opacity 0.28s ease-in !important; pointer-events: none; }
+    .indec-swipe-card.fly-left  { transform: translateX(-115%) rotate(-20deg) !important; opacity: 0 !important; transition: transform 0.32s ease-in, opacity 0.28s ease-in !important; pointer-events: none; }
+    .indec-stamp {
+      position: absolute; top: 18px; border: 3px solid; border-radius: 8px;
+      padding: 3px 12px; font-weight: 800; font-size: 0.95rem; opacity: 0;
+      pointer-events: none; letter-spacing: 0.06em;
+    }
+    .indec-stamp-yes { right: 16px; color: #1a7a6e; border-color: #1a7a6e; transform: rotate(12deg); }
+    .indec-stamp-no  { left: 16px;  color: #c0392b; border-color: #c0392b; transform: rotate(-12deg); }
+    .indec-swipe-eyebrow { font-size: 0.72rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.5rem; }
+    .indec-swipe-name { font-size: 1.32rem; font-weight: 800; line-height: 1.2; color: var(--text); margin-bottom: 0.55rem; letter-spacing: -0.02em; }
+    .indec-swipe-desc { font-size: 0.87rem; line-height: 1.46; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .indec-swipe-meta { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+    .indec-swipe-meta .indec-swipe-dist { color: #1a7a6e; }
+    .indec-yesno-row { display: flex; justify-content: center; gap: 2.8rem; margin-bottom: 0.2rem; }
+    .indec-btn-no, .indec-btn-yes {
+      width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
+      font-size: 1.35rem; display: flex; align-items: center; justify-content: center;
+      font: inherit; transition: transform 0.12s ease, box-shadow 0.12s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.13);
+    }
+    .indec-btn-no  { background: var(--surface); color: #c0392b; border: 2px solid #f0c0b8; }
+    .indec-btn-yes { background: #1a7a6e; color: #fff; }
+    .indec-btn-no:hover  { transform: scale(1.09); box-shadow: 0 6px 18px rgba(192,57,43,0.18); }
+    .indec-btn-yes:hover { transform: scale(1.09); box-shadow: 0 6px 18px rgba(26,122,110,0.28); }
+    .indec-btn-no:active, .indec-btn-yes:active { transform: scale(0.95); }
+    .indec-hint { text-align: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; margin-top: 0.5rem; }
+    .indec-result-wrap { text-align: center; padding: 0.5rem 0 0.75rem; animation: spinPop 0.3s ease; }
+    .indec-result-name { font-size: 1.3rem; font-weight: 800; color: var(--text); margin: 0.4rem 0 0.3rem; letter-spacing: -0.02em; }
+    .indec-result-desc { font-size: 0.87rem; line-height: 1.45; color: var(--text-secondary); margin-bottom: 1rem; }
     .indec-prompt { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; }
-    .indec-grid { display: flex; align-items: flex-start; gap: 0.6rem; justify-content: center; margin-bottom: 1rem; }
-    .indec-card {
-      flex: 1 1 0; min-width: 0; aspect-ratio: 3 / 4.2; perspective: 900px;
-      background: none; border: none; padding: 0; cursor: pointer; font: inherit;
-    }
-    .indec-card-inner {
-      display: block; position: relative; width: 100%; height: 100%;
-      transition: transform 0.55s cubic-bezier(0.4, 0.15, 0.2, 1);
-      transform-style: preserve-3d;
-    }
-    .indec-card.flipped .indec-card-inner { transform: rotateY(180deg); }
-    .indec-card.dimmed { opacity: 0.32; pointer-events: none; transition: opacity 0.4s ease; }
-    .indec-card:not(.flipped):not(.dimmed) .indec-card-inner:hover { transform: translateY(-4px); }
-    .indec-face {
-      position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-      border-radius: 14px; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 0.55rem; text-align: center; overflow: hidden;
-    }
-    .indec-front {
-      background: linear-gradient(150deg, #2d6a4f, #45926c);
-      color: rgba(255,255,255,0.92); font-size: 1.7rem;
-      box-shadow: 0 6px 16px rgba(45,106,79,0.28);
-      border: 1.5px solid rgba(255,255,255,0.18);
-    }
-    .indec-back {
-      background: var(--surface); transform: rotateY(180deg);
-      border: 1.5px solid var(--accent-soft); box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-    }
-    .indec-back-name { font-size: 0.86rem; font-weight: 700; line-height: 1.15; color: var(--text); margin-bottom: 0.3rem; }
-    .indec-back-meta { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.3; }
-    .indec-detail { min-height: 0; }
-    .indec-detail-desc { font-size: 0.92rem; line-height: 1.45; color: var(--text-secondary); text-align: center; margin-bottom: 1rem; animation: spinPop 0.3s ease; }
     .indec-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
     .indec-action {
       font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text);
@@ -1780,7 +1792,7 @@
     .indec-action:hover { filter: brightness(0.96); }
     .indec-action:active { transform: scale(0.96); }
     .indec-action.indec-love { color: #fff; background: var(--accent); }
-    .indec-action.indec-reshuffle { color: #fff; background: linear-gradient(135deg, #b5742a, #d49a3c); }
+    .indec-action.indec-keep { color: var(--text-secondary); }
 
     /* ── Discover scope step (citywide vs neighborhood) ── */
     .eat-scope { animation: spinPop 0.25s ease; }
@@ -4502,10 +4514,9 @@
   }
 
   // ── "Indecision" — pick-a-card game ──
-  // Three face-down cards; flip one to reveal a pick. Don't like it? Reshuffle
-  // into three more that lean away from what you just turned down. The pool
-  // follows whatever view you're in: events, restaurants, bookstores, markets.
-  const indec = { pool: [], trio: [], chosen: null, seen: new Set(), ctx: null };
+  // Swipe-style indecision: one card at a time, thumbs up/down. Rejected items'
+  // cuisine groups are deprioritised so later cards feel meaningfully different.
+  const indec = { queue: [], queueIdx: 0, noGroups: new Set(), ctx: null, total: 0 };
 
   // A unified accessor so one card UI works across events/eats/books/markets.
   function indecItemName(it) { return it.name || it.summary || 'Untitled'; }
@@ -4527,15 +4538,14 @@
     return Infinity; // unknown timing → keep it
   }
 
-  // Per-view context shared by Indecision and the random spin: label for the
-  // title suffix, the pool to draw from, the meta line under each item's name,
-  // and how to group items for the "make it different" reshuffle.
+  // Per-view context: label, pool, eyebrow line, and group key for filtering.
   function discoverContext() {
     const view = document.body.dataset.view || 'home';
     if (view === 'bookstores') {
       return {
         label: 'Bookstores',
         pool: dedupeByName(BOOKSTORES.flatMap(c => c.sections.flatMap(s => s.places))),
+        eyebrow: it => [it.specialty, indecItemHood(it)].filter(Boolean).join(' · ').toUpperCase(),
         meta: it => `${it.specialty ? escapeHtml(it.specialty) + '<br>' : ''}📍 ${escapeHtml(indecItemHood(it))}`,
         group: it => it.specialty || indecItemHood(it),
       };
@@ -4544,13 +4554,13 @@
       return {
         label: 'Farmers Markets',
         pool: [...FARMERS_MARKETS],
+        eyebrow: it => [indecItemHood(it), Array.isArray(it.days) && it.days[0]].filter(Boolean).join(' · ').toUpperCase(),
         meta: it => `📍 ${escapeHtml(indecItemHood(it))}${Array.isArray(it.days) && it.days.length ? '<br>' + escapeHtml(it.days.join(', ')) : ''}`,
         group: it => indecItemHood(it),
       };
     }
     if (view === 'home') {
       const now = Date.now();
-      // Only the currently selected day's events, and only ones not yet over.
       let evs = [];
       if (lastRender && lastRender.byDay && lastRender.days) {
         const activeDay = lastRender.days[lastRender.activeIdx];
@@ -4560,6 +4570,10 @@
       return {
         label: 'Goings On',
         pool: evs,
+        eyebrow: it => {
+          const when = (it.start && it.start.dateTime) ? fmtTime(it.start.dateTime) : 'All day';
+          return [when, it.location ? indecItemHood(it) : ''].filter(Boolean).join(' · ').toUpperCase();
+        },
         meta: it => {
           const when = (it.start && it.start.dateTime) ? fmtTime(it.start.dateTime) : 'All day';
           return `🕑 ${escapeHtml(when)}${it.location ? '<br>📍 ' + escapeHtml(indecItemHood(it)) : ''}`;
@@ -4567,109 +4581,190 @@
         group: it => (it.summary || '').toLowerCase().slice(0, 12) || Math.random().toString(),
       };
     }
-    // default — Places to Eat (respects the citywide / neighborhood scope step)
+    // default — Places to Eat
     return {
       label: 'Places to Eat',
       pool: discoverPool(),
+      eyebrow: it => {
+        const parts = [it.cuisine];
+        const interestingTags = (it.tags || []).filter(t => /^(byob|outdoor|rooftop|date-night|unique|cheap-eats)$/.test(t));
+        if (interestingTags[0]) parts.push(interestingTags[0].replace(/-/g, ' '));
+        if (it.price) parts.push(it.price);
+        return parts.filter(Boolean).join(' · ').toUpperCase();
+      },
       meta: it => `${it.cuisine ? escapeHtml(it.cuisine) + '<br>' : ''}📍 ${escapeHtml(indecItemHood(it))}${it.price ? ' · ' + escapeHtml(it.price) : ''}`,
       group: it => cuisineGroupLabel(it),
     };
   }
 
-  // Pick 3 items, biased to differ from `avoid` (the just-rejected pick) and to
-  // span distinct groups so the three cards feel meaningfully different.
-  function indecPickTrio(avoid) {
-    const pool = indec.pool;
+  // Build (or rebuild) the swipe queue from the pool, deprioritising rejected groups.
+  function indecBuildQueue() {
+    const pool = indec.ctx.pool;
     const groupOf = indec.ctx.group;
-    const avoidGroup = avoid ? groupOf(avoid) : null;
-    const avoidName = avoid ? indecItemName(avoid) : null;
-    const nameOf = indecItemName;
-    let cand = pool.filter(r => nameOf(r) !== avoidName && !indec.seen.has(nameOf(r)) &&
-      (!avoidGroup || groupOf(r) !== avoidGroup));
-    if (cand.length < 3) cand = pool.filter(r => nameOf(r) !== avoidName &&
-      (!avoidGroup || groupOf(r) !== avoidGroup));
-    if (cand.length < 3) cand = pool.filter(r => nameOf(r) !== avoidName);
-    if (cand.length < 3) cand = [...pool];
-    const shuffled = [...cand].sort(() => Math.random() - 0.5);
-    const trio = [], usedGroups = new Set();
-    for (const r of shuffled) {
-      const g = groupOf(r);
-      if (!usedGroups.has(g)) { trio.push(r); usedGroups.add(g); }
-      if (trio.length === 3) break;
-    }
-    for (const r of shuffled) {
-      if (trio.length === 3) break;
-      if (!trio.includes(r)) trio.push(r);
-    }
-    trio.forEach(r => indec.seen.add(nameOf(r)));
-    if (indec.seen.size > pool.length - 3) indec.seen.clear();
-    return trio;
+    const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+    const preferred     = pool.filter(it => !indec.noGroups.has(groupOf(it)));
+    const deprioritised = pool.filter(it =>  indec.noGroups.has(groupOf(it)));
+    indec.queue    = [...shuffle(preferred), ...shuffle(deprioritised)];
+    indec.queueIdx = 0;
   }
 
-  function indecCardFaceHTML(it, idx) {
-    return `
-      <button class="indec-card" data-indec-idx="${idx}" type="button" aria-label="Flip card ${idx + 1}">
-        <span class="indec-card-inner">
-          <span class="indec-face indec-front">🎴</span>
-          <span class="indec-face indec-back">
-            <span class="indec-back-name">${escapeHtml(indecItemName(it))}</span>
-            <span class="indec-back-meta">${indec.ctx.meta(it)}</span>
-          </span>
-        </span>
-      </button>`;
-  }
-
-  function indecDeal(avoid) {
+  // Render the current swipe card.
+  function indecShowCard() {
     const card = document.getElementById('indecCard');
-    const overlay = document.getElementById('indecOverlay');
-    if (!card || !overlay) return;
-    overlay.classList.add('open');
-    indec.chosen = null;
-    const suffix = indec.ctx ? ` · ${indec.ctx.label}` : '';
+    if (!card) return;
 
-    if (!indec.pool.length) {
+    // Exhausted queue → rebuild (preferred items first again after full cycle).
+    if (indec.queueIdx >= indec.queue.length) {
+      indec.noGroups.clear();
+      indecBuildQueue();
+    }
+
+    const it = indec.queue[indec.queueIdx];
+    if (!it) {
       card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
-        <div class="spin-eyebrow">🃏 Indecision${escapeHtml(suffix)}</div>
-        <div class="spin-name">Nothing to pick</div>
-        <div class="indec-prompt">Nothing here to choose from right now. Switch tabs and try again.</div>
+        <div class="spin-eyebrow">🃏 Indecision</div>
+        <div class="indec-prompt">Nothing to pick from here. Switch tabs and try again.</div>
         <div class="indec-actions"><button class="indec-action" data-indec-close type="button">Got it</button></div>`;
       return;
     }
 
-    indec.trio = indecPickTrio(avoid);
-    card.innerHTML = `<button class="add-close" data-indec-close aria-label="Close">✕</button>
-      <div class="spin-eyebrow">🃏 Indecision${escapeHtml(suffix)}</div>
-      <div class="indec-prompt">${avoid ? "Alright — three fresh ones. Pick a card." : 'Pick a card, any card.'}</div>
-      <div class="indec-grid">${indec.trio.map((r, i) => indecCardFaceHTML(r, i)).join('')}</div>
-      <div class="indec-detail"></div>`;
+    const label     = indec.ctx.label;
+    const eyebrow   = indec.ctx.eyebrow(it);
+    const name      = indecItemName(it);
+    const desc      = indecItemDesc(it);
+    const remaining = indec.queue.length - indec.queueIdx;
+    const countStr  = `${indec.queueIdx + 1} of ${indec.total}`;
+
+    card.innerHTML = `
+      <button class="add-close" data-indec-close aria-label="Close">✕</button>
+      <div class="indec-swipe-header">
+        <div class="spin-eyebrow" style="margin:0">🃏 ${escapeHtml(label)}</div>
+        <div class="indec-count-badge">${escapeHtml(countStr)}</div>
+      </div>
+      <div class="indec-swipe-wrap" id="indecSwipeWrap">
+        <div class="indec-swipe-card" id="indecSwipeCardEl">
+          <div class="indec-stamp indec-stamp-yes" id="indecStampYes">YES ✓</div>
+          <div class="indec-stamp indec-stamp-no"  id="indecStampNo">NOPE ✗</div>
+          ${eyebrow ? `<div class="indec-swipe-eyebrow">${escapeHtml(eyebrow)}</div>` : ''}
+          <div class="indec-swipe-name">${escapeHtml(name)}</div>
+          ${desc ? `<div class="indec-swipe-desc">${escapeHtml(desc.slice(0, 200))}</div>` : ''}
+          <div class="indec-swipe-meta">${indec.ctx.meta(it).replace(/<br>/g, ' · ').replace(/<[^>]+>/g,'')}</div>
+        </div>
+      </div>
+      <div class="indec-yesno-row">
+        <button class="indec-btn-no"  id="indecBtnNo"  type="button" aria-label="No">✕</button>
+        <button class="indec-btn-yes" id="indecBtnYes" type="button" aria-label="Yes">✓</button>
+      </div>
+      <div class="indec-hint">swipe or tap</div>`;
+
+    document.getElementById('indecBtnNo' ).addEventListener('click', indecDoNo);
+    document.getElementById('indecBtnYes').addEventListener('click', indecDoYes);
+    indecAttachSwipe();
   }
 
-  function indecReveal(idx) {
-    const card = document.getElementById('indecCard');
-    const it = indec.trio[idx];
-    if (!card || !it) return;
-    indec.chosen = it;
-    card.querySelectorAll('.indec-card').forEach((c, i) => {
-      c.classList.add(i === idx ? 'flipped' : 'dimmed');
-    });
-    const mapHref = mapUrl(indecMapQuery(it));
-    const desc = indecItemDesc(it);
-    const detail = card.querySelector('.indec-detail');
-    detail.innerHTML = `
-      <div class="indec-detail-desc">${desc ? escapeHtml(desc) : ''}</div>
-      <div class="indec-actions">
-        <a class="indec-action indec-love" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">❤️ Love it — map it</a>
-        ${it.website ? `<a class="indec-action" href="${escapeAttr(it.website)}" target="_blank" rel="noopener">🌐 Site</a>` : ''}
-        ${it.reservation ? `<a class="indec-action" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
-        <button class="indec-action indec-reshuffle" data-indec-reshuffle type="button">🔀 Not quite — 3 more</button>
-      </div>`;
+  // Reject current card: record its group, animate left, advance.
+  function indecDoNo() {
+    const it = indec.queue[indec.queueIdx];
+    if (!it) return;
+    const group = indec.ctx.group(it);
+    if (group) indec.noGroups.add(group);
+    const cardEl = document.getElementById('indecSwipeCardEl');
+    if (cardEl) {
+      cardEl.classList.add('fly-left');
+      setTimeout(() => { indec.queueIdx++; indecShowCard(); }, 330);
+    } else {
+      indec.queueIdx++; indecShowCard();
+    }
+  }
+
+  // Accept current card: animate right, show result screen.
+  function indecDoYes() {
+    const it = indec.queue[indec.queueIdx];
+    if (!it) return;
+    const card    = document.getElementById('indecCard');
+    const cardEl  = document.getElementById('indecSwipeCardEl');
+    if (cardEl) cardEl.classList.add('fly-right');
+    setTimeout(() => {
+      const name    = indecItemName(it);
+      const desc    = indecItemDesc(it);
+      const mapHref = mapUrl(indecMapQuery(it));
+      card.innerHTML = `
+        <button class="add-close" data-indec-close aria-label="Close">✕</button>
+        <div class="indec-result-wrap">
+          <div style="font-size:1.9rem">🎉</div>
+          <div class="indec-result-name">${escapeHtml(name)}</div>
+          ${desc ? `<div class="indec-result-desc">${escapeHtml(desc.slice(0, 220))}</div>` : ''}
+        </div>
+        <div class="indec-actions">
+          <a class="indec-action indec-love" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Open in maps</a>
+          ${it.website     ? `<a class="indec-action" href="${escapeAttr(it.website)}"     target="_blank" rel="noopener">🌐 Website</a>` : ''}
+          ${it.reservation ? `<a class="indec-action" href="${escapeAttr(it.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : ''}
+          <button class="indec-action indec-keep" id="indecKeepSwiping" type="button">→ Keep swiping</button>
+        </div>`;
+      document.getElementById('indecKeepSwiping').addEventListener('click', () => {
+        indec.queueIdx++; indecShowCard();
+      });
+    }, 300);
+  }
+
+  // Attach touch + mouse swipe handlers to the card wrap.
+  function indecAttachSwipe() {
+    const wrap   = document.getElementById('indecSwipeWrap');
+    const cardEl = document.getElementById('indecSwipeCardEl');
+    if (!wrap || !cardEl) return;
+    const THRESHOLD = 72;
+    let startX = 0, dragging = false;
+
+    function onStart(x) { startX = x; dragging = true; cardEl.style.transition = 'none'; }
+    function onMove(x) {
+      if (!dragging) return;
+      const d = x - startX;
+      const rot = d * 0.07;
+      cardEl.style.transform = `translateX(${d}px) rotate(${rot}deg)`;
+      const yesEl = document.getElementById('indecStampYes');
+      const noEl  = document.getElementById('indecStampNo');
+      if (yesEl) yesEl.style.opacity = Math.min(1, Math.max(0, d / THRESHOLD)).toFixed(2);
+      if (noEl)  noEl.style.opacity  = Math.min(1, Math.max(0, -d / THRESHOLD)).toFixed(2);
+    }
+    function onEnd(x) {
+      if (!dragging) return;
+      dragging = false;
+      cardEl.style.transition = '';
+      const d = x - startX;
+      if (d >  THRESHOLD) { indecDoYes(); return; }
+      if (d < -THRESHOLD) { indecDoNo();  return; }
+      // Snap back
+      cardEl.style.transform = '';
+      const yesEl = document.getElementById('indecStampYes');
+      const noEl  = document.getElementById('indecStampNo');
+      if (yesEl) yesEl.style.opacity = '0';
+      if (noEl)  noEl.style.opacity  = '0';
+    }
+
+    wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+    wrap.addEventListener('touchmove',  e => { onMove(e.touches[0].clientX); }, { passive: true });
+    wrap.addEventListener('touchend',   e => onEnd(e.changedTouches[0].clientX));
+    wrap.addEventListener('mousedown',  e => { onStart(e.clientX); e.preventDefault(); });
+    // Use the overlay (parent) for mouse move/up so fast drags don't escape
+    const overlay = document.getElementById('indecOverlay');
+    const mm = e => onMove(e.clientX);
+    const mu = e => onEnd(e.clientX);
+    if (overlay) {
+      overlay.addEventListener('mousemove', mm);
+      overlay.addEventListener('mouseup',   mu);
+      // Clean up after one interaction cycle
+      overlay.addEventListener('mouseleave', () => { if (dragging) onEnd(startX); }, { once: true });
+    }
   }
 
   function openIndecision() {
-    indec.ctx = discoverContext();
-    indec.pool = indec.ctx.pool;
-    indec.seen = new Set();
-    indecDeal(null);
+    const overlay = document.getElementById('indecOverlay');
+    if (overlay) overlay.classList.add('open');
+    indec.ctx       = discoverContext();
+    indec.noGroups  = new Set();
+    indec.total     = indec.ctx.pool.length;
+    indecBuildQueue();
+    indecShowCard();
   }
 
   async function renderEatCategory(catId) {
@@ -5020,9 +5115,6 @@
         });
         indecOverlay.addEventListener('click', e => {
           if (e.target === indecOverlay || e.target.closest('[data-indec-close]')) { indecOverlay.classList.remove('open'); return; }
-          if (e.target.closest('[data-indec-reshuffle]')) { indecDeal(indec.chosen); return; }
-          const cardBtn = e.target.closest('[data-indec-idx]');
-          if (cardBtn && indec.chosen === null) indecReveal(parseInt(cardBtn.dataset.indecIdx, 10));
         });
       }
 
