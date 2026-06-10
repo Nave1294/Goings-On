@@ -1699,14 +1699,35 @@
     /* Outing Builder: pick item list */
     .ob-pick-list { margin-top: 0.25rem; }
     .ob-pick-item {
-      display: flex; align-items: flex-start; gap: 0.6rem;
-      padding: 0.75rem 0.85rem; border-radius: 12px;
+      border-radius: 12px;
       background: var(--surface); border: 1.5px solid var(--divider);
       border-left-width: 5px;
-      margin-bottom: 0.4rem; cursor: pointer; width: 100%; font: inherit; text-align: left;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      margin-bottom: 0.4rem; overflow: hidden;
+      transition: border-color 0.15s ease;
     }
-    .ob-pick-item:hover, .ob-pick-item:active { border-color: #2aa89a; background: rgba(42,168,154,0.07); }
+    .ob-pick-item:hover { border-color: #2aa89a; }
+    .ob-pick-row { display: flex; align-items: stretch; }
+    .ob-pick-add {
+      flex: 1; display: flex; align-items: flex-start; gap: 0.6rem;
+      padding: 0.75rem 0.5rem 0.75rem 0.85rem;
+      background: none; border: none; cursor: pointer; font: inherit; text-align: left; color: inherit;
+      transition: background 0.15s ease;
+    }
+    .ob-pick-add:hover, .ob-pick-add:active { background: rgba(42,168,154,0.07); }
+    .ob-pick-more {
+      flex-shrink: 0; padding: 0 0.7rem;
+      background: none; border: none; border-left: 1px solid var(--divider);
+      cursor: pointer; font-size: 0.88rem; color: var(--text-secondary);
+      transition: background 0.15s, color 0.15s;
+    }
+    .ob-pick-more:hover { color: #1a7a6e; background: rgba(42,168,154,0.07); }
+    .ob-pick-detail {
+      padding: 0.45rem 0.85rem 0.7rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.8rem;
+    }
+    .ob-pick-detail-desc { color: var(--text-secondary); line-height: 1.45; margin-bottom: 0.4rem; }
+    .ob-pick-detail-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .ob-pick-emoji { font-size: 1.35rem; flex-shrink: 0; margin-top: 1px; }
     .ob-pick-info { flex: 1 1 0; min-width: 0; }
     .ob-pick-name { font-size: 0.87rem; font-weight: 700; color: var(--text); }
@@ -6791,14 +6812,31 @@ Valid types: "meal", "activity", "dessert"`;
 
     function itemHTML(p, rank, total, isFar) {
       const idx = pool.indexOf(p);
-      return `<button class="ob-pick-item" data-ob-pidx="${idx}" type="button"
-          style="${accentStyle(rank, total, isFar)}">
-        <span class="ob-pick-emoji">${p.emoji}</span>
-        <span class="ob-pick-info">
-          <span class="ob-pick-name">${escapeHtml(p.label)}</span>
-          ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(p.sublabel.split(',').slice(0, 2).join(',').trim())}</span>` : ''}
-        </span>
-      </button>`;
+      const it = p.item || {};
+      const desc = it.desc || (p.type === 'event' && it.description ? stripTags(it.description).slice(0, 200) : '');
+      const metaParts = [
+        it.cuisine && ('🍴 ' + it.cuisine),
+        it.price,
+      ].filter(Boolean);
+      const detailLinks = obStopActions(p).filter(a => !/Map/.test(a.label));
+      const hasMore = !!(desc || metaParts.length || detailLinks.length);
+      return `<div class="ob-pick-item" style="${accentStyle(rank, total, isFar)}">
+        <div class="ob-pick-row">
+          <button class="ob-pick-add" data-ob-pidx="${idx}" type="button">
+            <span class="ob-pick-emoji">${p.emoji}</span>
+            <span class="ob-pick-info">
+              <span class="ob-pick-name">${escapeHtml(p.label)}</span>
+              ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(p.sublabel.split(',').slice(0, 2).join(',').trim())}</span>` : ''}
+            </span>
+          </button>
+          ${hasMore ? `<button class="ob-pick-more" data-ob-more="${idx}" type="button" aria-label="More info">ⓘ</button>` : ''}
+        </div>
+        ${hasMore ? `<div class="ob-pick-detail" id="ob-detail-${idx}" hidden>
+          ${desc ? `<div class="ob-pick-detail-desc">${escapeHtml(desc)}</div>` : ''}
+          ${metaParts.length ? `<div style="display:flex;gap:0.5rem;flex-wrap:wrap;color:var(--text-secondary);margin-bottom:0.35rem">${metaParts.map(m => `<span>${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+          ${detailLinks.length ? `<div class="ob-pick-detail-links">${detailLinks.map(a => `<a class="dn-pair-action" href="${escapeAttr(a.href)}" target="_blank" rel="noopener">${escapeHtml(a.label)}</a>`).join('')}</div>` : ''}
+        </div>` : ''}
+      </div>`;
     }
 
     const approxNote = (lastCoords && !anchorExact && anchorNbhd)
@@ -6831,6 +6869,16 @@ Valid types: "meal", "activity", "dessert"`;
           coordsExact: p.type === 'event' ? !!p.coords : (p._precision === 'api' || p._precision === 'grid'),
         });
         OB.step = 'equation'; obRender();
+      });
+    });
+    body.querySelectorAll('[data-ob-more]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const detail = document.getElementById('ob-detail-' + btn.dataset.obMore);
+        if (!detail) return;
+        const open = !detail.hidden;
+        detail.hidden = open;
+        btn.textContent = open ? 'ⓘ' : '✕';
+        btn.setAttribute('aria-label', open ? 'More info' : 'Close info');
       });
     });
   }
