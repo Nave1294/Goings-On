@@ -1659,6 +1659,105 @@
     }
     .eat-sheet-ob-btn:hover { filter: brightness(1.06); }
     .eat-sheet-ob-btn:active { transform: scale(0.98); }
+    /* Picnic Planner button in Discover sheet */
+    .eat-sheet-picnic-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
+      letter-spacing: -0.01em; color: #fff;
+      background: linear-gradient(135deg, #4a8c3f, #79b84a);
+      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
+      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .eat-sheet-picnic-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-picnic-btn:active { transform: scale(0.98); }
+
+    /* Picnic tab: planner CTA + sub-tabs */
+    .picnic-planner-cta {
+      display: flex; align-items: center; gap: 0.7rem; width: 100%;
+      text-align: left; font: inherit; cursor: pointer; color: #fff;
+      background: linear-gradient(135deg, #4a8c3f, #79b84a);
+      border: none; border-radius: 16px; padding: 0.9rem 1rem; margin: 0.25rem 0 0.9rem;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .picnic-planner-cta:hover { filter: brightness(1.05); }
+    .picnic-planner-cta:active { transform: scale(0.99); }
+    .picnic-cta-emoji { font-size: 1.7rem; }
+    .picnic-cta-text { display: flex; flex-direction: column; flex: 1; }
+    .picnic-cta-text strong { font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
+    .picnic-cta-text span { font-size: 0.78rem; opacity: 0.92; }
+    .picnic-cta-arrow { font-size: 1.3rem; font-weight: 700; }
+    .picnic-subtabs { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
+    .picnic-subtab {
+      flex: 1; font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      color: var(--text-secondary); background: var(--surface);
+      border: 1.5px solid var(--divider); border-radius: 999px; padding: 0.55rem 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .picnic-subtab.active { color: #fff; background: linear-gradient(135deg, #4a8c3f, #79b84a); border-color: transparent; }
+    .picnic-bring {
+      font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem;
+      padding: 0.55rem 0.7rem; background: rgba(121,184,74,0.1);
+      border-radius: 10px; line-height: 1.45;
+    }
+    .picnic-bring strong { color: var(--text); }
+
+    /* Picnic Planner result */
+    .picnic-seed-note { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+    .picnic-result { display: flex; flex-direction: column; gap: 0.85rem; }
+    .picnic-pair-head {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      flex-wrap: wrap; margin-bottom: 0.1rem;
+    }
+    .picnic-pair-chip {
+      font-size: 0.92rem; font-weight: 800; color: var(--text);
+      background: var(--surface); border: 1.5px solid var(--divider);
+      border-radius: 999px; padding: 0.4rem 0.8rem;
+    }
+    .picnic-pair-plus { font-size: 1.1rem; font-weight: 800; color: #79b84a; }
+    .picnic-map { width: 100%; border-radius: 16px; display: block; border: 1.5px solid var(--divider); }
+    .picnic-wx {
+      display: flex; flex-direction: column; gap: 0.15rem; align-items: flex-start;
+      padding: 0.7rem 0.9rem; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(121,184,74,0.16), rgba(74,140,63,0.1));
+      border: 1.5px solid rgba(121,184,74,0.35);
+    }
+    .picnic-wx-main { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .picnic-wx-advice { font-size: 0.82rem; color: var(--text-secondary); }
+    .picnic-wx--na { font-size: 0.85rem; color: var(--text-secondary); }
+    .picnic-card {
+      background: var(--surface); border: 1.5px solid var(--divider);
+      border-radius: 16px; padding: 0.85rem 1rem;
+    }
+    .picnic-card--quiet { background: transparent; }
+    .picnic-why { background: rgba(121,184,74,0.07); border-color: rgba(121,184,74,0.3); }
+    .picnic-card-title { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; letter-spacing: -0.01em; }
+    .picnic-card-meta { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+    .picnic-card-desc { font-size: 0.86rem; color: var(--text); line-height: 1.5; margin-top: 0.25rem; }
+    .picnic-card-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem; }
+    .picnic-event {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0;
+      border-top: 1px solid var(--divider); font-size: 0.84rem;
+    }
+    .picnic-event:first-of-type { border-top: none; }
+    .picnic-event-time { font-weight: 700; color: var(--text); white-space: nowrap; }
+    .picnic-event-name { flex: 1; color: var(--text); }
+    .picnic-event-dist { font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; }
+    .picnic-event-map { text-decoration: none; }
+    .picnic-event-note { font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic; }
+    .picnic-shuffle-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+    .picnic-shuffle-btn {
+      flex: 1; font: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+      color: #fff; background: linear-gradient(135deg, #4a8c3f, #79b84a);
+      border: none; border-radius: 12px; padding: 0.75rem 0.5rem;
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .picnic-shuffle-btn:hover { filter: brightness(1.06); }
+    .picnic-shuffle-btn:active { transform: scale(0.98); }
+    .picnic-restart-btn {
+      width: 100%; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+      color: var(--text); background: var(--surface);
+      border: 1.5px solid var(--divider); border-radius: 12px; padding: 0.7rem; margin-top: 0.1rem;
+    }
     /* Outing Builder: category grid */
     .ob-cat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
     .ob-cat-btn {
@@ -1991,6 +2090,7 @@
       <button class="eat-sheet-indec-btn" id="eatIndecisionBtn" type="button">🃏 Indecision — pick a card</button>
       <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ AI Outing Planner</button>
       <button class="eat-sheet-ob-btn" id="eatOutingBuilderBtn" type="button">🧱 Outing Builder</button>
+      <button class="eat-sheet-picnic-btn" id="eatPicnicPlannerBtn" type="button">🧺 Picnic Planner</button>
       <button class="eat-sheet-mood-btn" id="eatMoodWizardBtn" type="button">🙅 Not in the mood for something?</button>
       <div class="eat-sheet-post-quiz" id="eatPostQuiz" hidden>
         <button class="eat-sheet-view-btn" id="eatViewPicksBtn" type="button">📋 View picks</button>
@@ -2052,6 +2152,16 @@
     <div class="eat-rec-headline" id="obHeadline">Build your outing</div>
   </div>
   <div class="dn-body" id="obBody"></div>
+</div>
+
+<!-- Picnic Planner view -->
+<div class="eat-rec-overlay" id="picnicOverlay" hidden>
+  <div class="eat-rec-header">
+    <button class="eat-rec-back" id="picnicBack" type="button">← Back</button>
+    <div class="eat-rec-eyebrow">🧺 Picnic Planner</div>
+    <div class="eat-rec-headline" id="picnicHeadline">Plan a picnic</div>
+  </div>
+  <div class="dn-body" id="picnicBody"></div>
 </div>
 
 <script>
@@ -3738,7 +3848,7 @@
 
     // ── Quick, casual & fast-casual lunch ──
     { name: 'Dig', location: '1616 Chestnut St, Rittenhouse · 140 S 36th St, University City', cuisine: 'Salads & Bowls', price: '$', website: 'https://www.diginn.com', desc: 'Go-to for really delicious salads made to order. They bring in a lot of regional produce so the options feel seasonal, and the space is nice enough that you actually enjoy eating there.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.953666, lon: -75.195042, ph: 'places/ChIJ1dOB57nHxokR4NcCha3sVrY/photos/AaVGc3kgHRQnbz7xIrc9jDxlB2CFLLnqpoXZjdyW18Pj3T6ce5zgSLma8_KuEKB_vraoa2cmWApdRn7MpUjkmRBOGcJFpn5tiPWWenfNAf8HmjviCvx2qAXwBBR_rhmUM132qoCAB8hj7ABKVIRp6vOsv2iCvtqhT6ZeUR6I15EcZGpgXgpfKZt82ul20RItMSKjhIFw4cWhCD_mUVirsqY9g-ruFwaSGtxXtpfaV4cMQJTK0NVUQYEyLA-N7-tYdyZh5hs9s50kBnwLbHlQG7Recqt0o9XAc1ub7HPAqqulghLWVTaQW_a7RrnU83DtScCnhkAL81S3bgsIOLjBeQ-SVVEEbKMDwq4Pa-wolspL6dGnWsUGdEkHwMNBeqIXr_mUoDxNyUE3pK4LXX02YriYU-O5ZAO2J0VzqUqJYWXP8bev5itN' } },
-    { name: 'Goldie', location: 'Multiple locations', cuisine: 'Israeli Fast Casual', price: '$', website: 'https://www.goldiefalafel.com', desc: "Michael Solomonov's falafel-and-tahini fast-casual counter — the vegan tahini shakes make blah Mondays and Tuesdays feel more special.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.951224, lon: -75.172554, ph: 'places/ChIJjUm0GjDGxokRohcjlFpPKvc/photos/AaVGc3n4QMp3018DFB5gj4PEjIu1gJ9uaeDJ_Jq91eQYZtAdUHrxqXkurFi4ITL_WYkWWmlZjW-hW2hB8bDr53TssAiB7b3S1hNn-n2Jytba2gq6GiODUF3jLJl6WpwlKdZGe966rKlIYXrF3mE4fFCRyI74Vreez_g89F0SEz5O_OjmI69wW-9h5DMO_zw4iO4VnVEM8SNkoJkvkgmxwGnvs_BM6N97FlXZdRqfkP4DOn0oMrV7q1He4KsepL5IQI5QzLDemwG1WwsQgs6Kq6hKNAEg6T-rAbwz1vewsl8-jvX9TQSscipfTz873XqX53PQyVB4_5I_uA-xFwIhGrS4iyxfW7IsoRK2IRIN8HvLo_CNBuffCAGEvPSJhYsANxqYWu9rF5FnuCuh5FwsTJMVmNsdrnILT6rL4kyYFh4PBM5uL8hdM008iMSFHlF0wrmQ' } },
+    { name: 'Goldie', location: 'Multiple locations', cuisine: 'Israeli Fast Casual', price: '$', website: 'https://www.goldiefalafel.com', desc: "Michael Solomonov's falafel-and-tahini fast-casual counter — the vegan tahini shakes make blah Mondays and Tuesdays feel more special.", tags: ['lunch', 'cheap-eats', 'picnic'], geo: { lat: 39.951224, lon: -75.172554, ph: 'places/ChIJjUm0GjDGxokRohcjlFpPKvc/photos/AaVGc3n4QMp3018DFB5gj4PEjIu1gJ9uaeDJ_Jq91eQYZtAdUHrxqXkurFi4ITL_WYkWWmlZjW-hW2hB8bDr53TssAiB7b3S1hNn-n2Jytba2gq6GiODUF3jLJl6WpwlKdZGe966rKlIYXrF3mE4fFCRyI74Vreez_g89F0SEz5O_OjmI69wW-9h5DMO_zw4iO4VnVEM8SNkoJkvkgmxwGnvs_BM6N97FlXZdRqfkP4DOn0oMrV7q1He4KsepL5IQI5QzLDemwG1WwsQgs6Kq6hKNAEg6T-rAbwz1vewsl8-jvX9TQSscipfTz873XqX53PQyVB4_5I_uA-xFwIhGrS4iyxfW7IsoRK2IRIN8HvLo_CNBuffCAGEvPSJhYsANxqYWu9rF5FnuCuh5FwsTJMVmNsdrnILT6rL4kyYFh4PBM5uL8hdM008iMSFHlF0wrmQ' } },
     { name: 'Hip City Veg', location: 'Multiple locations', cuisine: 'Vegan Fast Casual', price: '$', website: 'https://hipcityveg.com', desc: 'Your neighborhood fast-casual, fast-food restaurant. But vegan.', tags: ['lunch', 'cheap-eats'] },
     { name: 'Suya Suya West African Grill', location: '400 Fairmount Ave #2808, Northern Liberties', cuisine: 'West African', price: '$', website: '', desc: 'Build-your-own bowls with a West African twist and much nicer ingredients than a typical chain. Meat is marinated in Nigerian yaji, served over jollof rice, topped with plantains or cornbread.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.962624, lon: -75.144794, ph: 'places/ChIJq5pkNmPJxokRjj-cM-jmrD4/photos/AaVGc3kJ7dquj_whBtLGWosMpW3DQB8A27ysTmvGd0vKs8xmN_5E98Ir9n5kINIITkXnVX4oIqLlBdoCGmoRhHB5mW1dd-a9HsoCwKLFK4GL27ZpsUCehqytyIR7HQk9cP12JKF6mA_az7agzTwAWxrtzf-fhVwpwGK-p6h_2DM8kAHKyp8Tr916vH4IFYSbl9IYCIamoYSKz2IIoUvnwZCy3XptWr_zqLTDo6nObh6LpdwieF0If483oXr5DMjoUsIc0omgbN_a29_Xrquz3CzhknDk6aMYkfGTfG1jFGUOREVdKvA9PZq-qKG_ID8MVmt2-otqnp0jDLIt-DHrAA41KGuSKHREkV_8sWbD0W-R4ejk6sL-3gewrjtyBZgoj-0nYTzVgDrx7QnkBCOEAQdhABIzcFCn-4_Lu3Cp4qaeCHWmkxE' } },
     { name: 'El Merkury', location: '2104 Chestnut St, Rittenhouse · 51 N 12th St, Center City', cuisine: 'Central American', price: '$', website: '', desc: 'Get a pupusa, a tostada, and two sides for less than $15 — a great way to break out of the salad grind for about the price of Sweetgreen.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.953429, lon: -75.159191, ph: 'places/ChIJkx2remPHxokR50f1K6nV2Pg/photos/AaVGc3mehpqjkeVpb1dXB4jTTpAQU7OeMYJqFEm-BY9gHEgl06yDHqchqhK3FlAXLNF08BaCInSpyekYB8Nlinoh57MN2vYBRnqVbZZ1k_guBRFZIn5eVjQMKXdRs6i7inULoRMKKAAqQ39QoU3zq6Fv9jIWT-awdkdju3o38Bqn_oz3R3JUw9XdomwQe9sAYIO_m9YLT5sC7a5bWb5xcRztqlD1VX-nOENkAi0qUVvQle8jNcV6bJ9Cww8r4aaQwYnVayWNWPlgaIfSf9yBmu4TZqkvv1Bw3joJGSDRRhwfZMgQu6VtERXhu4iBWF4sr_KCFgkpICf_S3TmVRcUlcNPgkB4P0dhyPr4mzCZU1JxVlIwrugLYcfaAUwcXvQipwS2KKamoWgo2xZ4kWgMyKz0SmQmX2z8iR6T8xroCeTRiZpoHQ' } },
@@ -3746,23 +3856,23 @@
     { name: 'Reap Mini Mart', location: '1325 Frankford Ave, Fishtown', cuisine: 'Plant-Based', price: '$', website: '', desc: "Plant-based glow bowls — basically not-boring salads — that will keep you well-fed. Great for those who can't be bothered with meal prep.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.970987, lon: -75.134277, ph: 'places/ChIJOa-M2sjJxokRbwX6pIknLWM/photos/AaVGc3k0O7rU9I5X9CQ8z44dDAW8XSOt6_5vYC5PgtlABAuJee2_UZjpgiZ2ZldIQmBtC-JAUfgfFcWoxyV3azy7JWNoDhFEjgcUkrjbTJQLa6MfLstxEJz90-JPrmhgyCHsbSdaoyWLfxzEk5Bxeyr7N6mdL1H6nwxvMpFxzAyF1bsW4Gp2iJrwZC0i74EY7ltncaeMMHntCpha9iyWiwRx_3agE6biTxTdMnxpY6SqPOMGU00eySlbZdL0dxm3ESz8LtVxhbkqVHhJsUZjltt7NJemBAABc6Rx06apHeWLVI-ODX_DYD_vM4vQcCRGjfVtWNH8_ml-gf5bTbd-lGu1_aGKXfIF6mFdhaZAruwbg93ftEthr7yaTPxHgl7DO8it1lfb7xGBSpgK_nihohB_N4TBQ_Uli3zx0ai0orWKrRah8EVe' } },
     { name: 'Liberty Kitchen', location: '1400 N Front St, Fishtown · 3675 Market St, University City', cuisine: 'Hoagies', price: '$', website: '', desc: "A hulking hoagie stuffed with hot capicola, roasted eggplant and fresh mozzarella. Maybe it's Friday and productivity isn't so important.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.972033, lon: -75.135421, ph: 'places/ChIJm66zTvnJxokR7JBLBewUZ40/photos/AaVGc3mF4mNWKNY_WH8eDIwZA3lCzwTOcuV_3IvyuKWF9aLWCN8BwJHI8N0jvUa2oDIFd0sCwf_nnj4QPNHtlvVH93EiFgtVGP9qAzVowp2uihnatxWdDVtnkr_Oq52Voy7vAcvU9XALGe5ntDtBqhUwwApKo8Yh1qyGgaZW9DmDsv3oXKyjJxlPGba_0boHMiRSGYpJf1JDx-8RHvNUavbpscS15FZB60yePZi73fM42ZZwHuIqarzHm7tVHSGzlFFiEJYMlYE9nVtxPnATdNyvb_60gUBKH57eneuoffZKC9Csg-Khtdm6Z87FHv4_P4QylxNOZmT4bflBSaYu0qRy8jEj93jbg38H6WYZoUXv5mnAO7dii6nUErHYXXvEzXpbMvFgZExoZ_m7EV2QbCmMrZTdvU_RmlcEvlJ697k7GNhxnw' } },
     { name: 'Stargazy', location: '1838 East Passyunk Ave, East Passyunk', cuisine: 'British Pies', price: '$', website: '', desc: 'Sam Jacobson makes British-style meat pies out of this small East Passyunk storefront. Get a savory pie with mash and parsley liquor, or grab a sausage roll for your walk back.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.926781, lon: -75.167354, ph: 'places/ChIJoZYFdA_GxokRix-Wdpw7nO4/photos/AaVGc3lt_tfH6ZtXPKmfccWcY_R8-I_YK328SDW_R5PhC3LdNWzAR9KAfbpxXhdB4ediGaAsPN1KtGCG_zZoQjTpyL9vb0Gka_bLktG3TL5HsjJTSBufz-4Q-sSd0E7vxhDAqM6qr4UQ3y_K84leEqBd8hhsOWIsBxgnCaXUV6asFpLzsRGmk3bwerb2rhp-AxAceK_UFxAoCu1dNzAcbFiDyIadhgkHlnbV_SASI9Q2mKGunsMRq6sHNjcmEpqRaRaFYpfNPMvRWnCbwPQJ8RahThB8YJT3ORGW-yGA1f4WnBrYFDYVeHWOTPpus1FTWYoixxk9n42wf8ziH90PN6-TOiStuYr4UfzpxYOeaEzI2lHJT6dVaY17Ba1BP743c7aj9ZDeTW3V374sO45arGTDqYeakECTgklt5wM6OTxNi4g' } },
-    { name: 'Gilda', location: '300 East Girard Ave, Fishtown', cuisine: 'Portuguese Café', price: '$', website: '', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.969594, lon: -75.131551, ph: 'places/ChIJp8QWF0jJxokRchGZ5KcNzKQ/photos/AaVGc3k071SFJagMfxJaX8nqvd3NiNQd1IscCfsKFXvmDAsdUcclQngUIDQ9y14sh1jnkJOiUMo7UYj7lTiJC0pvDxhJ6bdGEriZBJHbUoIHX3LJUVypIXl0FSxLc3HDxFAxfiR3uxeH86FQI0lvEMU7pMvR12zws4CHYRS9J0q7DesBF0iqRQygU7eACNUngtktED8_IOq9dMaPcQ630x7k7ShnrWj21xPFrWSTrQCWlpN6Eg-W2DYoYHXMVHyrgsJ0__SBf5PZBt9n9SUz3pWV7-IIUtPGgD9asaBmaKrhBwZljOwjeu-oOH1BjrQuzPFFVFw9lJoDwfDtXiW97FS8IFmvN1GQpPiSVqGbsBbDbGzd2kUqPR8mgR-Zp33y89NLc2hPqE1RA7qG5iF-7lKpanl8jcox78q60iVzTRq07hmRFiNeG0Zwd0iwZT_9jg' } },
+    { name: 'Gilda', location: '300 East Girard Ave, Fishtown', cuisine: 'Portuguese Café', price: '$', website: '', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich.", tags: ['lunch', 'cheap-eats', 'picnic'], geo: { lat: 39.969594, lon: -75.131551, ph: 'places/ChIJp8QWF0jJxokRchGZ5KcNzKQ/photos/AaVGc3k071SFJagMfxJaX8nqvd3NiNQd1IscCfsKFXvmDAsdUcclQngUIDQ9y14sh1jnkJOiUMo7UYj7lTiJC0pvDxhJ6bdGEriZBJHbUoIHX3LJUVypIXl0FSxLc3HDxFAxfiR3uxeH86FQI0lvEMU7pMvR12zws4CHYRS9J0q7DesBF0iqRQygU7eACNUngtktED8_IOq9dMaPcQ630x7k7ShnrWj21xPFrWSTrQCWlpN6Eg-W2DYoYHXMVHyrgsJ0__SBf5PZBt9n9SUz3pWV7-IIUtPGgD9asaBmaKrhBwZljOwjeu-oOH1BjrQuzPFFVFw9lJoDwfDtXiW97FS8IFmvN1GQpPiSVqGbsBbDbGzd2kUqPR8mgR-Zp33y89NLc2hPqE1RA7qG5iF-7lKpanl8jcox78q60iVzTRq07hmRFiNeG0Zwd0iwZT_9jg' } },
     { name: 'Paffuto', location: '1009 S 8th St, Bella Vista', cuisine: 'Italian Café', price: '$', website: '', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.936848, lon: -75.156488, ph: 'places/ChIJi8N5IoHHxokRWKWtl8SjHWs/photos/AaVGc3nga5awmwm1cAUUflTa-GRIMYlV7OLTDN5dSllrwwrWg-DoozQNMO5nNFtJAcm6PLFggXX2JZpO9yVsNNhZbOfEWtTWDI1uFnoGgFxKoCTnN9t1a1TvYiBp_kP6rddUImIDOHNGVuv0kx4kFoVuMrNC4keuEZWPIGhiKI-61ynGITt2IYHM_wVcobaHyKVqJCLXtdbumW_eEjMCWR9lVLFl58svaGMGAopJT-n02eWGl8nitRufghfv2vUpReUGFml8U7acJKpHyuyqW8wkDp_UPXMCbsqJAR8y4O31-Ei01NzrQ1kZ6TdJBWEXlk1lZQfGN9VKgCKpl1NvhaUaYRI43u5hnOzViiq9JIkPvBan6X5jMs6fW4UNi1YW4rFWh5CGOK6S5ZvIhaqAiaTs6142X7wdcdG9ng0Gl0LJE-xmog' } },
     { name: "Schlesinger's", location: '1521 Locust St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.', tags: ['lunch'], geo: { lat: 39.948777, lon: -75.167192, ph: 'places/ChIJt5BHIDLGxokR_Qs88HLiAmM/photos/AaVGc3lNVOjbARhVdN8C3mxZze1TpsQQyqR69Yc3g-zYXpTVhPm7i2benJh7BaTReG0NpDBF4KKJoJbRy6X8HEgr9_jR1xlnvaJda-4-76Ev-CGb24zwLxBWelu6iFQMntkZumMeqDpwQbhC3NwFB_-7AdyrtWCWDkzT-UpeuvMlNcb9-xXX7JVTdZEq-fFZJ0mV73S8byopNnCqc2XP69c_gEwcUUgM5oob0UJib1IKJCA92Q8Ev7AQIG_FtowXLHJDD-Mshe5SFFVagX7DEc7YG-iTLZPi3hv5fjrYVNSEmQ7dPvCMbhInQfhbjHyF6OTKUxW4-mqqefaxw4lKxtzjtcdCW0fgrs-127WnI7pstFQKvR_9pdK9_8r3C8pFaylgSvlIwVeLCoRMIJO3k3LgbfiwG1ZsdvF02_4-FEziK57gv3o' } },
     { name: 'Huda', location: '32 S 18th St, Center City', cuisine: 'Sandwiches', price: '$', website: '', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.952158, lon: -75.170464, ph: 'places/ChIJl375cgDHxokRqPDOzYGqAC0/photos/AaVGc3lv_zskNT_6lUpKGZw72gZE9e8Ylc1rHKj-bx4Nv4BDoDxCjjiMt4OdUcZ5w3Yh9NXFK_sWdRKzUq1tOqt7vlgqR8hmnx_iKNtixuYRLvR5pnV1m7qGLLS_ij2mIBM5-yLST2FKFTxb1fuSYTvjKQ01jmp-sQUZ5lMMxXF5sjLevhKhhNU-7imdTuApgJyMhzDcZUw8rN5ShBZoAweShQ4voBKsz7t1vbfgDJSUOhnTD-dknOMpb4MB_Yt6RfGB1B71u91_7N9RXN8stzeltAdas10-oRnnM3nqseHslOVaH5QJiJHh_W0yiSzfJywwulRYmZ0jIy7P0Fi22hclco23ZsG8hfFq_OpoprSnwQOn6Lr9xb-YfaZTByT1zyHcMWnJsK4OpAKGLGXaR0ksLIYXxsT8HnYHLOWHad1o7TU_hvzK' } },
     { name: 'Ocean Harbor', location: '1023 Race St, Chinatown', cuisine: 'Dim Sum', price: '$$', website: '', desc: 'Cart-style dim sum, served Sundays only. Count us in.', tags: ['lunch'], days: ['Sunday'], season: 'Dim sum Sundays only', geo: { lat: 39.955666, lon: -75.156812, ph: 'places/ChIJq9ZHVyrGxokRWi39t4yVIYo/photos/AaVGc3kywhiEwCxH3h0jNLS47WLguOTsUeecnO-ySoMvC5B62GCqRS0f95DgMIb06ht1yFdC9xfKGLdjsVcO60b39nKXl013cukrVHDFs21IfjvUYvYhDRQR8qbYN_SYg7Z_YmYenOrdx3O1w2Qlbeo4-sqyEIf5WC6SMSj37jLtWim0m3UsdSMmQ1rPHCQPou9PDn_R09iKMW1mmHUEFNZc7TPs7Yx0b5o5LaykD3WwuPVdCh6X9mDVv2IaBhecsLYSw93XskIXXXZ2ne_jdONLTMLH7ssTthwW3-HomL_xIsSHE9oA5Mh8Tkx8jIiVM6navDj7ojD3-NGlriLZld0XZ6aEgO8w_cjmR2w3pfDXfOErhjIUW0hjPEwb23uQTJb6jn8nIQ-VTclPao8M83c1UvBSJIYbj6l2Cug-rlaQqQC3UD7Z' } },
-    { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: 'A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. One of the best work-from-cafe setups in the city.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.954939, lon: -75.2119, ph: 'places/ChIJ0-SKvkbGxokRxmlWepQWThM/photos/AaVGc3lZpPJc7MevtBeGhWxUtvBJFwZ43skGc5Gtly-pIo4acd8Gc5Lh7PmZlBHniJ-SgF-ecz8BF_wWdoTO74M4uM8s06dANDn_gbbe9hy7k6wBBnTojXs63m4ErCAm-x1FHy_C_kGA6xbWMxOEEz37BFR1nXtc45ll8fRbh0Ll4imdfFm7_gcMAhoAFd3T9Az_if2RZHnio8h6nify7zO9tiKczFmHT13QcvEEIf6Fi6xxA-okboCUhc-dq3OTILojT0zDU0ob7GUD8mX04OAXh_MlIMfQcd-_o-BSXbYsSswN2jursHV4ddSahgvUY4l5wz_W8iiaEfh0ZPNQ0RKGFVwFP9CGJt6U34LB9sPXnoAdUweRZnCdkf7nJ-YNRjUJ6_1-lFVSWwZJiu9LTb4h-p9FEt8U8-Wk2YlXRZSSdnB0_xa1rI5FrTW0KeHENv--' } },
-    { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "An even bigger staple than before in its new spot. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong.", tags: ['lunch', 'dinner'], geo: { lat: 39.949461, lon: -75.155468, ph: 'places/ChIJjaJHUYTIxokR6hUWfTrQpu4/photos/AaVGc3mNFKlDjMwYo-rHf96k-aRPZz7B3d_-Xw0MJLwKW9Tq1OcYPSx7FSWnn6Lt7wddcnUqhL3LJrx0GtJCoIb91pPD5_p6i_PPF7iZzkvR1C_-6W6FeQJuc2R5WWs9Ei6NQQkGvW8k7YEeeReowlAa8Eo587Xiz6UiBBxUlIjsHYmeVqD9eE0bnGhJ9JHd3wym6Kl3fwhVjyEQ2GHIehtsrptZs722zjN1ODRJnYBBSoyKxxyPZ37v7b1HvOrojjlWRTifKFDU6mw6W-dlBmKWhVFcPdKiOzwo_cnet7cIABkTFYT0Hlcyzo9rOi542oy6D4qHUpkj-IDqzYYJsTv3rBMzRFkxO_ejkriZIqaH17EED30AhoZh3r6wGaXrHLpEUkVK7gc4NpHy7WwGhDWCF2I1WqJy3qtoZTjChsswDDRDMQ' } },
-    { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth it. Lunch salads here are definitively better than ones you'd make at home.", tags: ['lunch'], geo: { lat: 39.947344, lon: -75.153486, ph: 'places/ChIJ9dMsT53IxokRU5PGb-IozYc/photos/AaVGc3lN3UTrBhxKtesCkB_0PTTjxjws1CntD6K-GmzVa7c7D3Ys9RrREzD311haojQgtLwNYu_IjWxZv_-bKZrG55pBssLugsVkP0ugOauEDVHxU3okBxVlV9sY2W4qUcjDT61ng7vF2EXWI_hg0wFe1ljRntIGH4Lsk6RHKU3o81pqN5UOQy-s6zwLCnA83SCykJnfyerXDd1m8QFiVAVrUQa-MHO_7zoce140y2bU5S5fRYDIHgG9ok0K7dzTmDiZPrfahhOBd2uSRrffRJsBEep2yKjxsyGD7kyYg72r-TeqdNccUsEhllbiez5e0Q1bgHZ6-G2by0IYWkgBDh3DbXpCjoaKqvU1ipYeniEhKIocqB7A4rDu3Ow6HtYiAmHwpTJuQzO5DlcBtRGxNOCpZD3Pl2LVXiUvWymQIBTfETV9H9al' } },
+    { name: "Jezabel's", location: '206-208 S 45th St, West Philadelphia', cuisine: 'Argentinean', price: '$', website: '', desc: 'A sun-filled spot with Argentinean empanadas, seasonal soup, and dulce-de-leche-filled alfajores. The empanadas are handheld and picnic-perfect — pre-order a box of your favorites for the blanket at nearby Clark Park.', tags: ['lunch', 'cheap-eats', 'picnic'], geo: { lat: 39.954939, lon: -75.2119, ph: 'places/ChIJ0-SKvkbGxokRxmlWepQWThM/photos/AaVGc3lZpPJc7MevtBeGhWxUtvBJFwZ43skGc5Gtly-pIo4acd8Gc5Lh7PmZlBHniJ-SgF-ecz8BF_wWdoTO74M4uM8s06dANDn_gbbe9hy7k6wBBnTojXs63m4ErCAm-x1FHy_C_kGA6xbWMxOEEz37BFR1nXtc45ll8fRbh0Ll4imdfFm7_gcMAhoAFd3T9Az_if2RZHnio8h6nify7zO9tiKczFmHT13QcvEEIf6Fi6xxA-okboCUhc-dq3OTILojT0zDU0ob7GUD8mX04OAXh_MlIMfQcd-_o-BSXbYsSswN2jursHV4ddSahgvUY4l5wz_W8iiaEfh0ZPNQ0RKGFVwFP9CGJt6U34LB9sPXnoAdUweRZnCdkf7nJ-YNRjUJ6_1-lFVSWwZJiu9LTb4h-p9FEt8U8-Wk2YlXRZSSdnB0_xa1rI5FrTW0KeHENv--' } },
+    { name: 'High Street', location: '101 S 9th St (door 1), Center City', cuisine: 'American', price: '$$', website: '', desc: "An even bigger staple than before in its new spot. From crudités with green goddess to rigatoni with braised chicken or a spicy crab pizza — you can't go wrong.", tags: ['lunch', 'dinner', 'picnic'], geo: { lat: 39.949461, lon: -75.155468, ph: 'places/ChIJjaJHUYTIxokR6hUWfTrQpu4/photos/AaVGc3mNFKlDjMwYo-rHf96k-aRPZz7B3d_-Xw0MJLwKW9Tq1OcYPSx7FSWnn6Lt7wddcnUqhL3LJrx0GtJCoIb91pPD5_p6i_PPF7iZzkvR1C_-6W6FeQJuc2R5WWs9Ei6NQQkGvW8k7YEeeReowlAa8Eo587Xiz6UiBBxUlIjsHYmeVqD9eE0bnGhJ9JHd3wym6Kl3fwhVjyEQ2GHIehtsrptZs722zjN1ODRJnYBBSoyKxxyPZ37v7b1HvOrojjlWRTifKFDU6mw6W-dlBmKWhVFcPdKiOzwo_cnet7cIABkTFYT0Hlcyzo9rOi542oy6D4qHUpkj-IDqzYYJsTv3rBMzRFkxO_ejkriZIqaH17EED30AhoZh3r6wGaXrHLpEUkVK7gc4NpHy7WwGhDWCF2I1WqJy3qtoZTjChsswDDRDMQ' } },
+    { name: "Talula's Daily", location: '208 W Washington Square, Washington Square West', cuisine: 'American', price: '$$', website: '', desc: "Even the grab-and-go selection has enough chef-y touches to make the extra effort worth it. Lunch salads here are definitively better than ones you'd make at home — and the curated cheese boards are picnic-ready, right on Washington Square.", tags: ['lunch', 'picnic'], geo: { lat: 39.947344, lon: -75.153486, ph: 'places/ChIJ9dMsT53IxokRU5PGb-IozYc/photos/AaVGc3lN3UTrBhxKtesCkB_0PTTjxjws1CntD6K-GmzVa7c7D3Ys9RrREzD311haojQgtLwNYu_IjWxZv_-bKZrG55pBssLugsVkP0ugOauEDVHxU3okBxVlV9sY2W4qUcjDT61ng7vF2EXWI_hg0wFe1ljRntIGH4Lsk6RHKU3o81pqN5UOQy-s6zwLCnA83SCykJnfyerXDd1m8QFiVAVrUQa-MHO_7zoce140y2bU5S5fRYDIHgG9ok0K7dzTmDiZPrfahhOBd2uSRrffRJsBEep2yKjxsyGD7kyYg72r-TeqdNccUsEhllbiez5e0Q1bgHZ6-G2by0IYWkgBDh3DbXpCjoaKqvU1ipYeniEhKIocqB7A4rDu3Ow6HtYiAmHwpTJuQzO5DlcBtRGxNOCpZD3Pl2LVXiUvWymQIBTfETV9H9al' } },
     { name: 'DaMo Pasta Lab', location: '105 S 12th St, Washington Square West', cuisine: 'Italian', price: '$$', website: '', desc: 'All pastas cooked to order — the experience of a sit-down Italian restaurant without the time commitment. Orders come in whole and half sizes so you can try multiple dishes.', tags: ['lunch', 'dinner'] },
     { name: 'Paprica', location: '811 Sansom St, Washington Square West', cuisine: 'Mediterranean', price: '$$$', website: '', desc: 'Take a real sit-down meal: share a spread of lamb chops, octopus salad, grilled halloumi and falafel with whoever was smart enough to play hooky with you.', tags: ['lunch', 'dinner'], geo: { lat: 39.94898, lon: -75.154584, ph: 'places/ChIJvXsrSzrHxokRDUGCALVvpCs/photos/AaVGc3nr79GLTyU34bKbtytGSuWuNU-weTFnM_NSIJ_byHcF3w8FhTN1mXTtoWQJI7FIEU2lIad3mwH3q6JHGNjvFvH7pHzeJBCl1eITCzDXukylRK6ufn20eDS7WKAsvHWoXf6DDvCaqjRj-Sjou5NaKtvqNBAgHnmffSNDIPsR5GSrbTjRlWf30DbEuydfkIdNsza6N7ToG9T7hYyTecgy1arkCssi2XH2qD2xVXvaEem6hbupMq_cCxPA8QVlridYWAesY0yFJrSIte7RdGWR5CLTs_tY7fK0tb0IuYwaDjvXD-Oki0uIkWlr-U7ydFGb_sHJE_roWWw8M4MecJFzs3CxNSU07Rwn1YtGnqr2-fE-1-UE-nzSHeS6ef_RPQJIKJzXLChe1unIq33I2jxN8L3zXXdXVAjRLjwp2D_Dz_SWGFQ3' } },
-    { name: 'Parc', location: '227 S 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: '', desc: 'Parc basically never closes. All walks of life come here — enjoy the people watching on Rittenhouse Square over steak frites and a carafe of wine.', tags: ['lunch', 'dinner', 'date-night'], geo: { lat: 39.949122, lon: -75.170749, ph: 'places/ChIJTXp5cjrGxokRLfPNjcDBQRs/photos/AaVGc3kWYsWPmIwFzqIGpF460myKTvE78hEyqul5r7fCwRDPhcfCUhaDRHLJxrE73tx40MkakWyntkgon5vux2tlkrXmvvJYJW3IKUH8AgB57UxVhA3q3tATuJqTgN0n2ES1yn1kDjpghOXfrrjgFgynGs2NX5PO36TlN9IiULpdCnUL07cwndZuzrZ1OnsujEV5oPmIDcISutR9YwlDu6UmCrnDxbqrv48BfkVpFHbJHHPtJCIoo9jVJBhRVdIbqmcFrmGj61vzfozLG4PKmiFm6DaZc5vUd86KqauqYukrkxMghF7vsT9uwLrX-UjQ_eJwWJx4pz98-aEEa9WQsRgRLAubd99FrWrQ7UIXRIN8GwM9Ht616f-GL70nBzxLfy2BUoWwdSxddw-n5gHD70pZH483olJ8gqQbSRcqAoTONzUZc4HexKjG6yS_odPfX-qp' } },
+    { name: 'Parc', location: '227 S 18th St, Rittenhouse', cuisine: 'French Brasserie', price: '$$$', website: '', desc: 'Parc basically never closes. All walks of life come here — enjoy the people watching on Rittenhouse Square over steak frites and a carafe of wine. Their iconic crusty baguettes and butter are sold to-go at a dedicated bread window — an instant picnic upgrade.', tags: ['lunch', 'dinner', 'date-night', 'picnic'], geo: { lat: 39.949122, lon: -75.170749, ph: 'places/ChIJTXp5cjrGxokRLfPNjcDBQRs/photos/AaVGc3kWYsWPmIwFzqIGpF460myKTvE78hEyqul5r7fCwRDPhcfCUhaDRHLJxrE73tx40MkakWyntkgon5vux2tlkrXmvvJYJW3IKUH8AgB57UxVhA3q3tATuJqTgN0n2ES1yn1kDjpghOXfrrjgFgynGs2NX5PO36TlN9IiULpdCnUL07cwndZuzrZ1OnsujEV5oPmIDcISutR9YwlDu6UmCrnDxbqrv48BfkVpFHbJHHPtJCIoo9jVJBhRVdIbqmcFrmGj61vzfozLG4PKmiFm6DaZc5vUd86KqauqYukrkxMghF7vsT9uwLrX-UjQ_eJwWJx4pz98-aEEa9WQsRgRLAubd99FrWrQ7UIXRIN8GwM9Ht616f-GL70nBzxLfy2BUoWwdSxddw-n5gHD70pZH483olJ8gqQbSRcqAoTONzUZc4HexKjG6yS_odPfX-qp' } },
     { name: 'SkyHigh', location: '1 N 19th St, 60th floor, Center City', cuisine: 'American', price: '$$$', website: '', desc: 'The sexy, stunning 60th-floor lounge at the Comcast Technology Center, paired with sunlit views of the whole city. Perfect for a special occasion.', tags: ['lunch', 'date-night'], geo: { lat: 39.954992, lon: -75.17089, ph: 'places/ChIJBXexubHHxokR-vJPttmO90M/photos/AaVGc3mIwaiHOy8dVWeuCaHyuR3an6oc_spYW7ELZq9XkRdvVn_s3U63KfHbHV4sMpusLoP1plfW2wbWjxYIM6vl7r5OnclywpzXFMm5L3ovBI4L_Qn3xke83QFxxjJhyV9vR7pknGpQ-t-IVLWW4ui3zDtVIhPlz6M8_fQy6GCqaYiZJOc-Br9-CofXsNh2CNzpQU8WBuk817yv2kfgaDAMoC9JsUc5q4jk1GFWRYcTTpqAyI8fFv8nDJtgKtryGemhvMSgEIm1MB8TmfJGp7S5oBU0nn4kpjpgi8BcQKeHbUFNIMw3ukBCG2Caa2YTJFHswQaPbETEsRK8Ih6WrE_UzFXNTUQpppgePAX8Apg7BWzhp3Y0gHjCLg-WtEkagpGvwEtpha0_miQA4NzcHWKfEfohvWD5yb6q8cJzsRc2Z-J5O-EBOW6YYfScld_-XKFp' } },
 
     // ── Neighborhood spots ──
     { name: 'Fishtown Tavern', location: '1301 Frankford Ave, Fishtown', cuisine: 'Bar & American', price: '$$', website: 'https://www.fishtowntavern.com', desc: 'Easygoing Frankford Ave neighborhood bar with American pub fare, weekend brunch, and a laid-back local crowd.', tags: ['neighborhood'], geo: { lat: 39.970542, lon: -75.134254, ph: 'places/ChIJJVZpfmnIxokRvE6E70-YbyU/photos/AaVGc3mBbtv8x37xU7-VlhIBnEcACvGRRWdSnci7lp460mbgKoogWZpOhuXm4fbwLndFNzANoltUAgVGqoP-9rFH92Ebb5X_BvqpZDPTmucg-tlSMzwO7x_AaxUB5rqQt0Eb2DrOt5vm0ORwcbGMgLc4S6lGUM4qpmmI5oE0A7Gzpo_D96rWdAcQdI7BfbJsachGGIZc409PR8ryJOCj1THBe44qTDlz_yAOLVqB68t9iqvbh2bDVGu9nZdGYdsINOXBceEkJiwflqHqGOqptSKcUd495xVRTKVajQASe4sRPp7U3ULWlXr5F_Mems468nji9Y81WhqEfoQ9ekAemotUwx33-xbSD59jnkIvuAlIgMlVaAvyox8lUI8QSZpWXzx_-rOtbcmj4VhdNQBX_rZnxNSfFQXoF2EBgNqJ4sEbRV4Baf5e' } },
     { name: "Johnny Brenda's", location: '1201 Frankford Ave, Fishtown', cuisine: 'Gastropub & Music Venue', price: '$$', website: 'https://www.johnnybrendas.com', reservation: 'https://www.johnnybrendas.com', desc: 'Beloved Fishtown institution at Frankford & Girard — a gastropub with local beer and elevated bar food downstairs and a legendary live-music venue upstairs.', tags: ['neighborhood'], geo: { lat: 39.969037, lon: -75.134323, ph: 'places/ChIJS9ygjXvGxokREtJ_5jT7A5Q/photos/AaVGc3lJkEptPufy0kxVR-rRtrTAkopfnc5ctCdqfYcbWTQ1vPr6sEHDly-mkVyKhFPFRV4wZg-h8CInddCyLd5oUPDtQ-A1_DnYl_WliTbLBovpJQe8VR-V8lmg2RiEl6FJ9n4D2EqQWxmecCX4DlxwKReh4ZnS8_U7S-gjlezLjMiHFxGHebjLTEZRHGAl7Aaq1SWr2EfWw8sh_qbxeOFxU3Z7xauuwW3JRcqrenE70EKfIftJpRBC-2TkQBACDj6Vs688u8zt74pIdkqxXPx74TxyP4i56x9NUX3AF7sKH4w7qFHPGusGE2zb7xq6mY2VcXdJnrEfeuSbnJABG2VjIzbVPBYtG2noRDQIaPPbCBIWxzaaZ780ydPM6mNt5i5VsjhUutqFQrAhNYnFtqcs65dREWvncp91DuhUvHlU9poO829R' } },
-    { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Neighborhood Fishtown pizza joint for a quick, no-fuss slice.', tags: ['neighborhood', 'cheap-eats'], geo: { lat: 39.969258, lon: -75.133958, ph: 'places/ChIJoU95PYHJxokRJF0i5mb7Sao/photos/AaVGc3l85C6tHikNLEgN1_qtvHIanJOIrw1aUc6aSGjgG--T7T1SE8h4843JGteSJPPr54c39ndcEKXZd-0GACk2xqO3kd51-vWcvMXnjbCPVA57nTcEoZroX6x5mWU2rniv7vavSZhac4jduQr_A5UClzFgRTrRsLQUVddrITKoh8o5TPD3EQl25Ii3UeAOhoWVzKc3p1kabKof3HtIUrCI86fzjUW5jgXmxQ-gyPM4f-cjPAqx6N70bsgcnBXE7D2sBn37luBvmpFZd_9AIMV5KGIj9AgDsmatHWROWV920qVPGY7NYuoTJSqSgbPmd8MlarpAQ-3C0wZGaEdPtzwbhMWaLiLQ81q68knQSRL8_6xW6huYtIHbFdZv9sJ1_UdTkb7H0pVZduglYO_GBmAUbSyUSZhXauglEgUycWOcu1XCTMZZvi6US2yzNN5J9A' } },
+    { name: 'Pizza Shackamaxon', location: 'Shackamaxon St, Fishtown', cuisine: 'Pizza', price: '$', website: '', desc: 'Some of the best pizza in the city comes out of that little window, all charred and perfectly cheesy. Resist eating it on the sidewalk and carry a few slices to your blanket instead.', tags: ['neighborhood', 'cheap-eats', 'picnic'], geo: { lat: 39.969258, lon: -75.133958, ph: 'places/ChIJoU95PYHJxokRJF0i5mb7Sao/photos/AaVGc3l85C6tHikNLEgN1_qtvHIanJOIrw1aUc6aSGjgG--T7T1SE8h4843JGteSJPPr54c39ndcEKXZd-0GACk2xqO3kd51-vWcvMXnjbCPVA57nTcEoZroX6x5mWU2rniv7vavSZhac4jduQr_A5UClzFgRTrRsLQUVddrITKoh8o5TPD3EQl25Ii3UeAOhoWVzKc3p1kabKof3HtIUrCI86fzjUW5jgXmxQ-gyPM4f-cjPAqx6N70bsgcnBXE7D2sBn37luBvmpFZd_9AIMV5KGIj9AgDsmatHWROWV920qVPGY7NYuoTJSqSgbPmd8MlarpAQ-3C0wZGaEdPtzwbhMWaLiLQ81q68knQSRL8_6xW6huYtIHbFdZv9sJ1_UdTkb7H0pVZduglYO_GBmAUbSyUSZhXauglEgUycWOcu1XCTMZZvi6US2yzNN5J9A' } },
     { name: 'Italian Family Pizza', location: '1701 Benjamin Franklin Pkwy, Fairmount', cuisine: 'Pizza', price: '$', website: '', desc: 'A neighborhood pizza spot on the Ben Franklin Pkwy with a perfect 5-star Yelp rating — classic pies with generous toppings and a welcoming, no-fuss vibe steps from the Art Museum.', tags: ['lunch', 'dinner', 'cheap-eats'], geo: { lat: 39.959, lon: -75.174 } },
 
     // ── Dessert & late-night sweets ──
@@ -3802,7 +3912,7 @@
     { name: 'La Baja', location: 'Philadelphia', cuisine: 'Baja Mexican', price: '$$', website: '', desc: "Baja California comes to Philly — seafood tacos, aguachile, and ceviches that taste like a trip down the peninsula.", tags: ['dinner', 'unique'], geo: { lat: 40.154082, lon: -75.224051, ph: 'places/ChIJp5_ewMC7xokRdBBC5czM8Ds/photos/AaVGc3lrsbU6JmbpOLstoF56lEwchmVIaZ-DZ6eujkqVoxW2Y_MHYmk6vWh9pxqmW4LCjrLbCe9W7Eoe6Vt54dSvDql5dzhM5oHakVJFG16zeaRGnf2w82gapkzTpliywfqxt-pNV9Q-1-RSo36k9m0ZWm8g6kqniVZTLREmKJ1Iz6VgsUPHytgmsvDB7YOtj8Sg4rI21_cyjXVkdRNt5w-SH1Ijl6bmAtAckAg6WuuACfvloa_l7r1_VKAgDXEtuq3AfHHF0DiSC9FaT2DOCHDmo7Pd9JbEKtT7mzH-sBMGJN5OwihMIgBzkxbfRA2qYzRwHPbj8e1SG8MmUIQrp1teFJDdVzLzki7RPyJY19iwkPILzTM0rwljMUzLyHxjNm50fMeDpkI4vNzENDGZBAKhzoaw1HNPjTpkfHIgP0nWkiT5-cye4a_QNtMA-L4yFAtQ' } },
     { name: 'Bolo', location: 'Philadelphia', cuisine: 'Venezuelan', price: '$$', website: '', desc: "Arepas and Venezuelan comfort food with big, bright flavors. One of Philly's rare Venezuelan restaurants and one of its very best.", tags: ['dinner', 'unique'], geo: { lat: 39.95161, lon: -75.174545, ph: 'places/ChIJnbEpcxzHxokRGpPRH98wePo/photos/AaVGc3kuCS1A9hXxono8LV8rgyabJs9wJ9gngd2qpX6UMWmSahSzJGaSEhPK7QrhahXA-ab5O9gnPm3rqdZNKRdy0f1qXkqFcyvn7Q4N6w75fVYz241ftOb-PHZcUUvZqGjqLLqPTr35h3YvX_C-YHv6C7DhAG6MyVTSO1KWoVlv9n1eB-ZnUYkRcIicRdt0rbS4nl6yh4zLvGuTuF02I8wclTj5j92exPQu68zeniwY7ln7VDIEO9MEW95OdFpwW4x4v9bzY7FwXDvq5wtxXP_CCuPeTYW04yBvSvgU3jUgZtAy232Bd6vNvXC4i_x8Eq065wruUzmVPgVIxM8T6RBopHBqqFS-142GK0scMnwH59I21eOCuta3Z4BwwqUAw8DHkVTIyo0TECpkhFppHJ_k2GWetkTY9NHcO8WvxsT08WHfuA' } },
     { name: 'Laser Wolf', location: 'Philadelphia', cuisine: 'Israeli', price: '$$$', website: '', desc: "Charcoal-grilled meats and vegetables, lavish mezze spreads, and stunning views — this rooftop Israeli is one of Philly's most exciting and fun experiences.", tags: ['dinner', 'date-night'], geo: { lat: 39.970621, lon: -75.136533, ph: 'places/ChIJOTvGJdPJxokRp_q9VSqZivo/photos/AaVGc3nAKUigHdjfp_q1qnvv1zcJ7ItgJBT_uk4s9IyFNosGV3_tcfTGPV9CsIwvbxXWFDj602QZZF83dVr1UOgp8X7OySaBCVR6_HFSRtoCs6PpTMAM__2kP_cfzT5msqUEDw7kQW0Wv11H8fD4gw2B7XZNmHRIbKnsrbp8d7Ii0Kd11TmBun4dudIsrgd4yA5SavqoZFxlklEsMNLqX6wH29yqF6HguN5re8dpf5mqIA737IHhJnmtuNrafFJKJ9_i3phvWb1GHmp6EWn-GgnD7lUPp7P2MMfpDyCX0GRBnmLuvUUmLwTzWYKhFscuzZpDoi3JScpQTSYlLKbncRZngMtfQqLQfJDu6oeHNQpCAA5hwfroRQ-yJhxsC7lfzvnKv_mAxZ5JRugkI4sVmyrBxTpxapfD7T1S5t3MhyEcbLg' } },
-    { name: 'Alif Brew', location: '4501 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian & East African', price: '$', website: '', desc: "A rare and special spot for Ethiopian and East African cooking — injera platters and wraps, fragrant stews, and warm hospitality. Grab a platter for lunch or settle in for dinner.", tags: ['dinner', 'lunch', 'unique', 'cheap-eats'], geo: { lat: 39.949178, lon: -75.21315, ph: 'places/ChIJ_XbAOqfHxokRzkjlzHaCYsg/photos/AaVGc3m8p7xW8dCAVSo9XAm74LLbos9hllDIR85l6qC1aHxG-7BGTEMndFT1pj1v-c_-19pyPG09oAcZl1jbAbFdgKqcERv7h0GuG8xt0pXXow4hofGBawY3tHtwPqaeXNkt6OvRxbaRgWF2A2tYsoUTxeb2RoU9NLIqcehsMUU3tNT51W2v811qU4GhGqUu2RkVZEarsQq8Akimb21jsBdtDG_4_0vU46lHdyqqdBg6R04pV7i0EKtaDerc4jLuklpyOFBkoD7UgBIOT3bpZMDV6maQ94A9TdOl8NEx7E9xHr1iEQzlOMUIENZLK9pPvRt3EfEDjrws1X1UC_bEa2m6E_sRt3rnnFP-ko6y1GfrgnIfA5wkuyOfrrclAn5PzJ8lSFxwM5PJUahrMCHmR3uxujsI2aAl7yy8722wk7wgGmUpaw' } },
+    { name: 'Alif Brew', location: '4501 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian & East African', price: '$', website: '', desc: "A rare and special spot for Ethiopian and East African cooking — injera platters and wraps, fragrant stews, and warm hospitality. Grab injera wraps to-go — spongy, self-contained, and picnic-perfect — or settle in for dinner. Right by Clark Park.", tags: ['dinner', 'lunch', 'unique', 'cheap-eats', 'picnic'], geo: { lat: 39.949178, lon: -75.21315, ph: 'places/ChIJ_XbAOqfHxokRzkjlzHaCYsg/photos/AaVGc3m8p7xW8dCAVSo9XAm74LLbos9hllDIR85l6qC1aHxG-7BGTEMndFT1pj1v-c_-19pyPG09oAcZl1jbAbFdgKqcERv7h0GuG8xt0pXXow4hofGBawY3tHtwPqaeXNkt6OvRxbaRgWF2A2tYsoUTxeb2RoU9NLIqcehsMUU3tNT51W2v811qU4GhGqUu2RkVZEarsQq8Akimb21jsBdtDG_4_0vU46lHdyqqdBg6R04pV7i0EKtaDerc4jLuklpyOFBkoD7UgBIOT3bpZMDV6maQ94A9TdOl8NEx7E9xHr1iEQzlOMUIENZLK9pPvRt3EfEDjrws1X1UC_bEa2m6E_sRt3rnnFP-ko6y1GfrgnIfA5wkuyOfrrclAn5PzJ8lSFxwM5PJUahrMCHmR3uxujsI2aAl7yy8722wk7wgGmUpaw' } },
     { name: 'Vernick Fish', location: '1 N 19th St, Center City', cuisine: 'Seafood', price: '$$$', website: '', desc: "Greg Vernick's elegant seafood restaurant — pristine oysters, crudo, and whole roasted fish. The mid-day menu goes more casual; dinner is a refined Center City treat.", tags: ['dinner', 'lunch', 'date-night'], geo: { lat: 39.955288, lon: -75.170766, ph: 'places/ChIJF4my1InHxokRTPC-VFN4RxE/photos/AaVGc3lrbQJxsLJYNOka1-5Ly928AOL1Z3eBn5tXceUjTI_srubceMUmHXkAWsH24FL-U77OUDCSLDO2ziuCWdwt9kWDstpE-W0myPSrQ-w0pRIDt0Yx06ipXJ26fUpfvdo5NDkR0Uef1dEfcixM4ZalqKoqIb1czfb04zDgJp5MgftH2NG4BFovvAG0wAGod8EI-_Y8CfzXVF5Zs9Z6rg94N334gjgM1loNTrs-QLhvOjobiJyhDk3taE4zTaXF8lo4StfP3vjwGJTr5SOhBjuOtYQHOOD--E-P3oAOyDWhEkcWf1oYDLSbcBQRvNY4fY24SawrN9TL3eU8y1k3N_Ris5GBAvvk2eUkutsy7457blJXTeJfZehJ83io2WICv-gBo72cDYqLuJwYts_FWrj85k9QugxVyCrqBRpmpDVadm8w9v9OZBsgGwN0-iLuHxzu' } },
     { name: 'Little Water', location: 'Philadelphia', cuisine: 'Seafood', price: '$$$', website: '', desc: "A tight, well-curated seafood menu with creative preparations — one of Philly's best destinations for fish and shellfish done right.", tags: ['dinner'], geo: { lat: 39.948608, lon: -75.174032, ph: 'places/ChIJbxwrQdLHxokROKx-NHJAoZg/photos/AaVGc3kAZOFmB-tCJoErwMaEqAEf09IKklzjoPmv1ZdS3eA_nvy4B_WDd5dpThr-ivF6Xhk-7EvXlHYwDlRGR_wgzlUBJ9SFo6SYCrmzSWbkYkuFd9a0_JInXN6_HcNQAsVrdrGGTfLVuUOi0dAw2_MmReHLZ50hrWYURnRz8d6e9ulG6TASDeXCOlIF1_XjGGI6sPnpznJNAeWzhqXB0b0toFLjnutnokx8XwZLD9wFlkLVk6k2M_EWDF0qZ4IWUCXqlY5R1k1yOXyd7jM-1c_87RnQHD-rNfPRPhNfkUgQTlaQ0u6kDB8uREWs8K37RQwSpYtjhhZDDXOLZZWwm_vSjtrTxxh4AAWazrLlMV5thHT0EbC5681sx4DOxV6_z77Fgsd0PfR-71IfPmDqFIy_06xbv-tjIZuPhjcEHLUuqSlb425F91n881AnaSNrphDW' } },
     { name: 'Little Fish', location: '600 Catharine St, Queen Village', cuisine: 'Seafood', price: '$$$', website: '', desc: "Tiny, beloved Queen Village BYOB with an exceptional seafood menu that changes nightly. Reserve well in advance and bring your absolute best bottle.", tags: ['dinner', 'date-night', 'byob'], geo: { lat: 39.939984, lon: -75.152948, ph: 'places/ChIJwTNAtJ_IxokRRk7dk_j0DR8/photos/AaVGc3nFzEJ12AqwtXxsTIo1Pfcn04HL1A3Hf5Ni5DtBG5TDUopT_6EfExlpP7hPHsFu9_BIgEueWmx068PhT-V3QB-xI3E333_Q-nDL1yZnDl9xOxUtCfBRMBhq2GH5x2DX88s3C_BkCPJMNqP62NRpvmI4Tlp5poVUoq41Idbwuubzxaj8TLlF4gb6RDXHDobOrtc73fnw4cJeQaZoLCozd0L-1rixaGJ0Wl0l52N7mDjQA6bgNm9c644w8Ph8Cb2xf2tKuRb_a0iavUMIWZkFPY6HyaAeGCtgPwvPAywyaGhRbiLk1yr8PxA7jeP1FA6dy53eGOeiLNYZzgbZ8F0xDPIDYkHclrpHZp7kOltI4Jn4xiNf-8c24nlcGsSOZDCHscvvKmDf2SvZQXif8_KtHRgZ_oTWu6AnGz_2hnPHdCpYlkQ6DwDCeFchMDWI-8-T' } },
@@ -3828,6 +3938,41 @@
     { name: 'Mish Mish', location: 'Philadelphia', cuisine: 'Israeli', price: '$$', website: '', desc: "Casual Israeli street food done right — hummus, shakshuka, and shawarma with the same seriousness as Philly's grander Israeli restaurants.", tags: ['dinner', 'neighborhood'], geo: { lat: 39.929648, lon: -75.163009, ph: 'places/ChIJ4TpSfn_HxokRNJgy0rTJKVQ/photos/AaVGc3mLWrPsgxklR5F8kMGU1W6V_5O3uW3q_zvAsf8VOaVf-0fTKUjrtCxVk11fFrrEHdEZGpQq0QXDkwNnc4M_BPl-vrhy7ZYFH3xeTB1_lzG09EnVkGlF4gw9Z6mnRdnn3QAWBPT0gmQfGM0rXnU8swV55MtMqJFJRWSODwfWka7uEU9QbnAL930G2_5DL2ddKCAMwNXtlJmpuJnZf7iACxacDhBRNf6UazABGCww3dK4El3UxyzFQzuAzMFzOz-S8seovn7V1L_BC1AT74AbWQVFOWqfYVE1GZrw3Ju_HFck1h23xTZhFK4zEOrXzZ3DVIS10l0SaD6k4EgXonxWQHbjTp8dmxF-HRt6UvArRbuj2tK8bqUoFDVZIL-S_Lu3E2lT8bhtGUeopXwER2i0rTYhmjHZEg96zz-caB38KrxRFctp' } },
     { name: 'Bastia', location: 'Philadelphia', cuisine: 'Corsican', price: '$$$', website: '', desc: "Philly's only Corsican restaurant — hearty island charcuterie, brocciu cheese dishes, and wines from the French island. Utterly unique in the city.", tags: ['dinner', 'date-night', 'unique'], geo: { lat: 39.97525, lon: -75.126379, ph: 'places/ChIJgeivYmHJxokR5i0O3dV6vq4/photos/AaVGc3lc3ySwZO4slFHO_9C8Vh5v0aYZR4oGU7aB-OSg0l2St-h9Ba6fuUPaiHpi47IQ98vySXebyDHfF1x8maBwUsIjf_PJ_wKnj34Tw0_vQxE4HNi8GVevUdaSd-OGQUC79GJQPvhQOZWD0h9RkAvZf2ounp0jyf1Gt1iAOY2uehdeKXEO9tyvYlYWGf-WRXQ75suSxahcE7GilF2nVztddCaPpw1BvE0TxUvrHCPppjaPgwgDsiOKxb1ZXeOd8ro5HAgBPo8xsJEOeVhQzSwMQFZz49bEUt_PHS4ejyjJvFlBkB0e9js_Bh9bWxf65l-fDrUcVJK82kph3cws59emckn9sGiO9QX3y4PHlhTDhLBU9VhphMAYB4T2enwBh6HrmW9o8N8KspQNLjqOTDiCHhGPQ8Mr5rcD6wuBaDYa5105bQ' } },
     { name: 'Pietramala', location: 'Philadelphia', cuisine: 'Italian', price: '$$$', website: '', desc: "Modern Italian with exceptional handmade pasta and refined preparations — a newer addition to Philly's dining scene that's already earned its reputation.", tags: ['dinner', 'date-night'], geo: { lat: 39.961435, lon: -75.141472, ph: 'places/ChIJU7EN0vTJxokRmSuoPgt_idI/photos/AaVGc3ng_QKf9a1Tg-wGxHi1M7O5nnvVTrR3RRhxnpdPh6ZnGi_wcOFP5ZBCMg4g0eOQMkbeDvp7dEZCLwyPSBNDkoihayp9Qd1Cjs3Qef8KUh4UKVN84F-2mxuXZD32A4rdlmvaV7nxWXsohIC7XcX19XkjMU98GlqMJjDwFq_2ZvcBB1-1h-bfz0X2buOJ5RWu1OEhT-zlRvmmcvijJCzd-ZbImtW9ha557PY-_w0K2E02Vw9VX4XLPPQoB-49S1_Rjje2Sr32okdN770I8BPPYilV_EdVE-W3ooP3hRI6b7RoriuOaK5XkIAtLr_5Ey4DARq-dK4eM5eI6BB-u3yW0IFBy9PRbXtxMjMMiUwfgdw3bh7CuOv9DcLZvC1BD26rrioL5r5JXnA5zUfCnLZO6-t-7tnNgSTw7tOZmoI1z9QpbQ' } },
+
+    // ── Picnic takeout — pack-and-go spots for a blanket in the park ──
+    { name: 'Oyster House', location: '1516 Sansom St, Rittenhouse', cuisine: 'Seafood', price: '$$$', website: 'https://oysterhousephilly.com', desc: 'Their luxe lobster roll kit ($168, 24-hour notice) packs everything for six rolls — buns, fresh Maine lobster, dressing, and clarified butter — for a picnic that flexes. Call (215) 567-7683 to order. Also a classic raw bar in-house.', tags: ['picnic', 'lunch', 'dinner', 'date-night'], geo: { lat: 39.950447, lon: -75.166447 } },
+    { name: "Biederman's", location: '276 S 20th St, Rittenhouse', cuisine: 'Jewish Deli', price: '$$', website: '', desc: 'Hand-sliced smoked salmon, cream cheese, bagels, and all the briny fixings for a Jewish deli–style picnic, straight from their new Rittenhouse location.', tags: ['picnic', 'breakfast', 'lunch'], geo: { lat: 39.947, lon: -75.176 } },
+    { name: 'Di Bruno Bros.', location: '1730 Chestnut St, Rittenhouse', cuisine: 'Cheese & Specialty', price: '$$', website: 'https://dibruno.com', desc: 'Grab a pre-made cheese tray — or have the cheesemonger build a picnic-perfect board personalized to you, with jams, charcuterie, candied nuts, and more.', tags: ['picnic', 'lunch'], geo: { lat: 39.951, lon: -75.169 } },
+    { name: 'Picnic', location: '2421 Martha St, Fishtown', cuisine: 'Prepared Foods & Wine', price: '$$', website: '', desc: 'Premade picnic baskets that have perfected the art: Peruvian chicken salad, mussels escabeche, cheese and charcuterie with cherry mostarda, homemade chips with onion dip, and chocolate chip cookies — all in a cute tote. Upgrade with a bottle from their stellar wine selection.', tags: ['picnic', 'lunch'], geo: { lat: 39.978, lon: -75.124 } },
+    { name: "Weckerly's Ice Cream", location: '9 W Girard Ave, Fishtown', cuisine: 'Ice Cream', price: '$', website: 'https://www.weckerlys.com', desc: 'Freshly made $6 seasonal ice cream sandwiches, wrapped just right with that satisfying cookie crunch — the sweet finish to a Penn Treaty Park spread.', tags: ['picnic', 'dessert'], geo: { lat: 39.96796, lon: -75.13399 } },
+    { name: 'Cafe Walnut', location: '703 Walnut St, Washington Square West', cuisine: 'Korean', price: '$', website: '', desc: 'Samgak kimbap — little nori-wrapped rice triangles with kimchi, spicy tuna, or chicken — were made for on-the-go eating. Little and fun enough to try every kind.', tags: ['picnic', 'lunch', 'cheap-eats'], geo: { lat: 39.94757, lon: -75.15239 } },
+    { name: 'Thank You Thank You', location: '700 Sansom St, Washington Square West', cuisine: 'Coffee', price: '$', website: '', desc: 'A cozy coffee window perfect for a grab-and-go cold brew or iced latte to sip while you lounge under the trees on Washington Square.', tags: ['picnic', 'breakfast'], geo: { lat: 39.94806, lon: -75.15273 } },
+    { name: 'High Street Bakery', location: '101 S 9th St, suite 350, Center City', cuisine: 'Bakery', price: '$', website: '', desc: "Freshly baked daily — the Epi Baguette pulls apart for easy picnic snacking, and the garlic-rosemary boule is so good you won't be impolite for tearing at it like a raccoon on the porch.", tags: ['picnic', 'breakfast', 'lunch'], geo: { lat: 39.94946, lon: -75.15547 } },
+    { name: 'Doro Bet', location: '4533 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian Fried Chicken', price: '$$', website: '', desc: "Arguably the best and most unique fried chicken in the city — go for the Alicha, all lemony and spicy, and get extra for later. Right by Clark Park.", tags: ['picnic', 'lunch', 'dinner', 'unique', 'cheap-eats'], geo: { lat: 39.94896, lon: -75.21262 } },
+    { name: 'Four Worlds Bakery', location: '4634 Woodland Ave, West Philly', cuisine: 'Bakery', price: '$', website: '', desc: 'A low-key West Philly gem with some of the best croissants in the city — pistachio cream swirl, savory spinach-ricotta, plus chocolate and almond for the purists. A short walk from Clark Park or The Woodlands.', tags: ['picnic', 'breakfast', 'lunch'], geo: { lat: 39.943428, lon: -75.210517 } },
+    { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', desc: 'The Lebanese market and all-day cafe packs a picnic crying out to happen — fluffy pita, pomegranate-laced baba ganoush, creamy hummus, and even creamier labneh from the market counter.', tags: ['picnic', 'lunch', 'dinner', 'date-night'], geo: { lat: 39.973713, lon: -75.133928 } },
+  ];
+
+  // ── Picnic spots — scenic parks to spread a blanket (Philly Mag) ──
+  // lat/lon power the Picnic Planner's pairings, map, weather, and nearby-events.
+  const PICNIC_PARKS = [
+    { name: 'Azalea Garden', neighborhood: 'Fairmount', location: 'Behind the Art Museum, Fairmount', lat: 39.9676, lon: -75.1810, website: '', desc: 'A lovely four-acre garden behind the Art Museum filled with over 150 species of azaleas and rhododendrons — a flower-lover’s lunchtime escape.', bring: 'A light blanket, a baguette and cheese, and your camera for the blooms. Limited shade, so add a hat on sunny days.' },
+    { name: "Bartram's Garden", neighborhood: 'Southwest Philly', location: '5400 Lindbergh Blvd, Southwest Philly', lat: 39.9320, lon: -75.2120, website: 'https://www.bartramsgarden.org', desc: 'America’s oldest living botanical garden — 45 riverfront acres on the Schuylkill with Center City views and three designated picnic areas with tables.', bring: 'A blanket or claim a picnic table by the river. Pack a full spread; you’ll want to linger. Sunscreen for the open meadow.' },
+    { name: 'Belmont Plateau', neighborhood: 'West Philly', location: 'Belmont Mansion Dr, West Fairmount Park', lat: 39.9905, lon: -75.2090, website: '', desc: 'Wide-open space with one of the best skyline views in the city. Grills and tables sit down the hill if you want to cook your spread.', bring: 'A blanket, frisbee or kite for the open field, and charcoal if you’re grilling down the hill. Golden-hour timing for the skyline.' },
+    { name: 'Clark Park', neighborhood: 'West Philly', location: '4300 Baltimore Ave, West Philly', lat: 39.9490, lon: -75.2100, website: '', desc: 'A big, green West Philly park with giant shade trees — and a year-round Saturday farmers’ market right there, so you can grab farm-fresh picnic fare feet from your blanket.', bring: 'A blanket and a tote for market finds. Saturdays are best — shop the market, then post up under the trees.' },
+    { name: 'FDR Park', neighborhood: 'South Philly', location: '1500 Pattison Ave, South Philly', lat: 39.8990, lon: -75.1850, website: 'https://fdrparkphilly.org', desc: 'A lake-filled South Philly gem with 21 reservable picnic sites and the weekend Southeast Asian Market (Sat–Sun, 10–6) full of Lao, Khmer, Thai, Vietnamese, and Indonesian vendors.', bring: 'A blanket, or reserve a picnic site ($35/day, BYO grill). Cash for the Southeast Asian Market and an appetite.' },
+    { name: 'Glen Foerd', neighborhood: 'Northeast Philly', location: '5001 Grant Ave, Northeast Philly', lat: 40.0760, lon: -75.0140, website: 'https://glenfoerd.org', desc: 'A grand riverfront estate with 18 acres of trees, Delaware River views, a rose garden, and an old tennis lawn down the hill. Dog-friendly grounds; free self-guided mansion tours Fri–Sun.', bring: 'A blanket for the tennis lawn, water for the pup, and a book — this one’s for slow afternoons by the river.' },
+    { name: 'Kelly Drive', neighborhood: 'Fairmount Park', location: 'Kelly Dr along the Schuylkill, Fairmount Park', lat: 39.9760, lon: -75.1880, website: '', desc: 'Stellar spots all along the river — we’re partial to the Ellen Phillips Samuel Memorial sculpture garden just south of the Girard Avenue Bridge for its artwork and prime Schuylkill view.', bring: 'A compact blanket, snacks to share, and comfortable shoes if you’re strolling the sculpture garden first.' },
+    { name: 'Navy Yard', neighborhood: 'South Philly', location: 'Central Green, S Broad St, Navy Yard', lat: 39.8910, lon: -75.1690, website: 'https://navyyard.org', desc: 'Giant boats and ascending planes to gawk at, plus Central Green with a hammock grove and bocce courts. Food trucks roll in Tue–Thu on the Marine Parade Grounds.', bring: 'A blanket or claim a hammock, a bocce set if you have one, and check the food-truck lineup on their Instagram.' },
+    { name: 'Pastorius Park', neighborhood: 'Chestnut Hill', location: 'Abington Ave & Roanoke St, Chestnut Hill', lat: 40.0760, lon: -75.2090, website: '', desc: 'A peaceful 16-acre Chestnut Hill park with a turtle pond and free summertime concerts — a quiet, reflective respite a world apart from the city.', bring: 'A blanket and takeout from nearby Germantown Avenue. Time it to a Wednesday-evening summer concert if you can.' },
+    { name: 'Penn Treaty Park', neighborhood: 'Fishtown', location: '1301 N Beach St, Fishtown', lat: 39.9665, lon: -75.1290, website: '', desc: 'Right on the Delaware, so you get river views plus a breeze and plenty of open grass — and hammock-friendly trees. The Delaware River Trail makes it easy to bike or walk in.', bring: 'A blanket or a hammock for the trees, a windbreaker for the river breeze, and something cold to sip.' },
+    { name: 'Pennypack on the Delaware', neighborhood: 'Northeast Philly', location: 'State Rd & Rhawn St, Northeast Philly', lat: 40.0360, lon: -75.0090, website: '', desc: '1,300 acres of trails, wetlands, and meadows. Snag a designated picnic area (some with grills) or plop onto the wide grassy pier that extends out over the water.', bring: 'A blanket for the pier, bug spray for the wetlands, and a grill kit if you’re claiming a fire site.' },
+    { name: 'Race Street Pier', neighborhood: 'Old City', location: 'N Christopher Columbus Blvd & Race St, Old City', lat: 39.9540, lon: -75.1390, website: '', desc: 'Grass, concrete, or wooden benches on a Delaware River pier under the Ben Franklin Bridge — great river views, and Cherry Street Pier next door for art-viewing.', bring: 'A blanket or grab a bench, layers for the open-water breeze, and grab-and-go bites from Old City nearby.' },
+    { name: 'Rittenhouse Square', neighborhood: 'Rittenhouse', location: '18th & Walnut St, Rittenhouse', lat: 39.9495, lon: -75.1715, website: '', desc: 'The classic Philly picnic: prime people- and dog-watching, street performers, and countless restaurants ringing the square. No planning needed — pick up lunch on arrival, or hit the Sat/Tue farmers’ market.', bring: 'A small blanket (grass goes fast), and barely anything else — Parc’s bread window and the surrounding spots have you covered.' },
+    { name: 'Schuylkill Banks', neighborhood: 'Fitler Square', location: 'Schuylkill River Trail, Fitler Square', lat: 39.9510, lon: -75.1810, website: 'https://www.schuylkillbanks.org', desc: 'Grassy stretches along the river with a never-ending stream of runners and cyclists for fitness motivation — or turn toward the Schuylkill for a calmer view.', bring: 'A blanket, plenty of water, and a hat — the riverside stretches are sunny and exposed.' },
+    { name: 'Washington Square', neighborhood: 'Washington Square West', location: '210 W Washington Square, Washington Square West', lat: 39.9470, lon: -75.1520, website: '', desc: 'The quieter Rittenhouse — same city-park vibe minus the noise and the competition for grass. Talula’s Daily is right there for bread and fancy cheese.', bring: 'A blanket, a cheese board from Talula’s Daily, and a book for the calm.' },
+    { name: 'Wissahickon Valley Park', neighborhood: 'Northwest Philly', location: 'Forbidden Dr, Northwest Philly', lat: 40.0510, lon: -75.2120, website: 'https://fow.org', desc: '1,800 glorious acres of hiking, biking, and nature, with designated picnic areas, grills, and benches. (Grilling is only allowed at those sites.)', bring: 'Sturdy shoes, a daypack with your spread, water, and bug spray. Pick a designated picnic area if you want a grill.' },
+    { name: 'The Woodlands', neighborhood: 'West Philly', location: '4000 Woodland Ave, West Philly', lat: 39.9485, lon: -75.2010, website: 'https://www.woodlandsphila.org', desc: 'A serene 19th-century cemetery and arboretum — for those with a penchant for the macabre, groups under 10 can pick a plot and take in a quiet found only at a final resting place. (Don’t sit on the gravestones.)', bring: 'A blanket, a quiet mindset, and respect for the grounds. Lovely light through the old trees at dusk.' },
   ];
 
   // Cuisine buckets used to auto-group a tab's restaurants (checked in order).
@@ -3993,14 +4138,15 @@
     { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', tag: 'dessert' },
     { id: 'bakeries', emoji: '🥐', label: 'Bakeries', subtitle: "Philly's best neighborhood bakeries", sections: BAKERY_SECTIONS },
     { id: 'outdoor-dining', emoji: '🌿', label: 'Outdoor Dining', subtitle: 'Rooftops, gardens, waterfronts &amp; patios', sections: OUTDOOR_DINING_SECTIONS },
+    { id: 'picnic', emoji: '🧺', label: 'Picnic', subtitle: 'Takeout for your basket &amp; scenic spots to spread out', picnic: true },
     { id: 'unique', emoji: '✨', label: 'Unique', subtitle: 'Only-in-Philly experiences', tag: 'unique' },
     { id: 'cheap-eats', emoji: '💵', label: 'Cheap Eats', subtitle: 'Big flavor, small tab', tag: 'cheap-eats' },
     { id: 'all', emoji: '🍽️', label: 'All Restaurants', subtitle: 'Everything in one place — filter to taste', all: true },
   ];
 
   const PLACES_TO_EAT = EAT_TABS.map(t => ({
-    id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle,
-    sections: t.sections || (t.all ? sectionsForAll() : sectionsForTag(t.tag)),
+    id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle, picnic: !!t.picnic,
+    sections: t.sections || (t.all ? sectionsForAll() : sectionsForTag(t.picnic ? 'picnic' : t.tag)),
   }));
 
   // EAT-PLACES-END
@@ -4365,6 +4511,7 @@
 
   // ── Places to Eat: sub-category tabs ──
   let currentEatCat = null;
+  let picnicSub = 'takeout'; // which sub-tab of the Picnic tab is showing
 
   function placeQuery(r) { return r.location ? `${r.name}, ${r.location}` : r.name; }
 
@@ -4874,6 +5021,74 @@
     indecShowCard();
   }
 
+  function parkTileHTML(p) {
+    const query = `${p.name}, ${p.location || 'Philadelphia'}`;
+    const mapHref = mapUrl(query);
+    return `
+      <div class="resto-tile picnic-park-tile" data-place="${escapeAttr(p.name)}" data-query="${escapeAttr(query)}">
+        <div class="resto-main">
+          <div class="resto-img-placeholder">🌳</div>
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(p.name)}</div>
+            <div class="resto-meta">
+              <span class="resto-meta-item">🧺 Picnic spot</span>
+              ${p.neighborhood ? `<span class="resto-meta-item">📍 ${escapeHtml(p.neighborhood)}</span>` : ''}
+            </div>
+            <div class="resto-dist"></div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            <div class="resto-desc">${escapeHtml(p.desc)}</div>
+            ${p.bring ? `<div class="picnic-bring"><strong>🎒 Bring:</strong> ${escapeHtml(p.bring)}</div>` : ''}
+            <div class="resto-actions">
+              <button class="resto-action picnic-action--plan" data-plan-park="${escapeAttr(p.name)}" type="button">🧺 Plan a picnic here</button>
+              ${p.website ? `<a class="resto-action" href="${escapeAttr(p.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // The Picnic tab: a planner launcher + a Takeout / Picnic-spots sub-tab toggle.
+  function renderPicnicTab(cat) {
+    const list = document.getElementById('eatList');
+    const sub = picnicSub;
+    list.innerHTML = `
+      <div class="eat-content">
+        <button class="picnic-planner-cta" id="picnicTabPlannerBtn" type="button">
+          <span class="picnic-cta-emoji">🧺</span>
+          <span class="picnic-cta-text"><strong>Picnic Planner</strong><span>Pair a park with takeout — weather, map &amp; nearby events</span></span>
+          <span class="picnic-cta-arrow">→</span>
+        </button>
+        <div class="picnic-subtabs">
+          <button class="picnic-subtab${sub === 'takeout' ? ' active' : ''}" data-picnic-sub="takeout" type="button">🥖 Takeout</button>
+          <button class="picnic-subtab${sub === 'spots' ? ' active' : ''}" data-picnic-sub="spots" type="button">🌳 Picnic spots</button>
+        </div>
+        <div id="picnicSubBody"></div>
+      </div>`;
+    const body = document.getElementById('picnicSubBody');
+    if (sub === 'spots') {
+      body.innerHTML = `<div class="eat-section-header">🌳 Scenic spots to spread a blanket</div>${PICNIC_PARKS.map(parkTileHTML).join('')}`;
+    } else {
+      const groups = cat.sections
+        .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
+        .filter(s => s.places.length);
+      body.innerHTML = groups.length
+        ? groups.map(section => `
+            ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
+            ${section.places.map(restoTileHTML).join('')}`).join('')
+        : `<div class="eat-empty"><div class="eat-empty-text">No takeout spots match your current filters.</div></div>`;
+      loadRestoImages(list);
+    }
+    document.getElementById('picnicTabPlannerBtn').addEventListener('click', () => openPicnicPlanner());
+    list.querySelectorAll('[data-picnic-sub]').forEach(b =>
+      b.addEventListener('click', () => { picnicSub = b.dataset.picnicSub; renderPicnicTab(cat); }));
+    list.querySelectorAll('[data-plan-park]').forEach(b =>
+      b.addEventListener('click', e => { e.stopPropagation(); openPicnicPlanner(b.dataset.planPark); }));
+  }
+
   async function renderEatCategory(catId) {
     const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
     currentEatCat = cat.id;
@@ -4883,6 +5098,8 @@
     document.getElementById('eatEyebrow').textContent = 'Places to Eat';
     document.getElementById('eatTitle').textContent = cat.label;
     document.getElementById('eatSubtitle').innerHTML = cat.subtitle || '';
+
+    if (cat.picnic) { renderPicnicTab(cat); return; }
 
     const list = document.getElementById('eatList');
     const allPlaces = cat.sections.flatMap(s => s.places);
@@ -5233,6 +5450,10 @@
 
       const obBtn = document.getElementById('eatOutingBuilderBtn');
       if (obBtn) obBtn.addEventListener('click', () => { closeSheet(); openOutingBuilder(); });
+
+      const picnicBtn = document.getElementById('eatPicnicPlannerBtn');
+      if (picnicBtn) picnicBtn.addEventListener('click', () => { closeSheet(); openPicnicPlanner(); });
+      setupPicnicPlanner();
     }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
@@ -7513,6 +7734,285 @@ Return ONLY valid JSON (no markdown fences):
       }
     });
     document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+  }
+
+  // ── Picnic Planner ──────────────────────────────────────────────
+  // Pairs a scenic park with a nearby picnic-takeout spot, with weather for the
+  // chosen time, a map of the two, what to bring, and any events near the park.
+  const PICNIC = { step: 'when', dayIdx: 0, hour: 12, parkIdx: 0, foodIdx: 0, order: [], seed: null };
+
+  function picnicDays() {
+    const d = obDays();
+    if (d.length) return d;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, i) => { const x = new Date(today); x.setDate(x.getDate() + i); return x; });
+  }
+
+  function picnicGeo(food) {
+    if (food && food.geo && food.geo.lat != null) return { lat: food.geo.lat, lon: food.geo.lon };
+    return null;
+  }
+
+  // Build a shuffled park order; if seeded from a specific park, pin it first.
+  function picnicBuildOrder() {
+    const idx = PICNIC_PARKS.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    if (PICNIC.seed != null) {
+      const pos = idx.indexOf(PICNIC.seed);
+      if (pos > 0) { idx.splice(pos, 1); idx.unshift(PICNIC.seed); }
+    }
+    PICNIC.order = idx;
+    PICNIC.parkIdx = 0;
+    PICNIC.foodIdx = 0;
+  }
+
+  function picnicCurrentPark() {
+    if (!PICNIC.order.length) picnicBuildOrder();
+    return PICNIC_PARKS[PICNIC.order[PICNIC.parkIdx % PICNIC.order.length]];
+  }
+
+  // Picnic-takeout spots, nearest to the park first (geo-located ones rank).
+  function picnicFoodCandidates(park) {
+    const tagged = RESTAURANTS.filter(r => (r.tags || []).includes('picnic'));
+    const withGeo = tagged.filter(r => picnicGeo(r)).map(r => ({
+      r, d: haversineMiles(park.lat, park.lon, r.geo.lat, r.geo.lon),
+    })).sort((a, b) => a.d - b.d);
+    const withoutGeo = tagged.filter(r => !picnicGeo(r)).map(r => ({ r, d: Infinity }));
+    // Pair from the 6 nearest so shuffling stays sensible (close to the blanket).
+    return [...withGeo, ...withoutGeo].slice(0, Math.max(6, withGeo.length ? 6 : tagged.length)).map(x => x.r);
+  }
+
+  async function picnicWeatherAt(lat, lon, dayIdx, hour) {
+    const wx = await fetchWeatherForCoord(lat, lon);
+    if (!wx) return null;
+    const d = picnicDays()[dayIdx] || new Date();
+    const cursor = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour);
+    const key = nyHourKey(cursor);
+    const hi = wx.hourly?.time?.indexOf(key);
+    if (hi != null && hi >= 0) return { code: wx.hourly.weather_code[hi], temp: Math.round(wx.hourly.temperature_2m[hi]) };
+    const dk = ymd(d);
+    const di = wx.daily?.time?.indexOf(dk);
+    if (di != null && di >= 0) return { code: wx.daily.weather_code[di], hi: Math.round(wx.daily.temperature_2m_max[di]), lo: Math.round(wx.daily.temperature_2m_min[di]), daily: true };
+    return null;
+  }
+
+  function picnicWeatherChipHTML(w) {
+    if (!w) return `<div class="picnic-wx picnic-wx--na">⛅ Forecast not available this far out</div>`;
+    const icon = WEATHER_ICONS[w.code] || '⛅';
+    const temp = w.daily ? `${w.hi}° / ${w.lo}°` : `${w.temp}° at ${plHourLabel(PICNIC.hour)}`;
+    const rainy = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(w.code);
+    const snowy = [71,73,75,77,85,86].includes(w.code);
+    let advice = 'Looks picnic-friendly — go enjoy it. ☀️';
+    if (snowy) advice = 'Snow in the forecast — maybe an indoor backup. ❄️';
+    else if (rainy) advice = 'Rain likely — pack a backup plan or a big umbrella. 🌧️';
+    else if (!w.daily && w.temp >= 88) advice = 'Hot one — find shade, bring extra water. 🥵';
+    else if (!w.daily && w.temp <= 45) advice = 'Chilly — layer up and bring a thermos. 🧣';
+    return `<div class="picnic-wx"><span class="picnic-wx-main">${icon} ${temp}</span><span class="picnic-wx-advice">${advice}</span></div>`;
+  }
+
+  function picnicMapUrl(park, food) {
+    const fc = picnicGeo(food);
+    const m1 = `markers=${encodeURIComponent(`color:0x2e7d32|label:P|${park.lat},${park.lon}`)}`;
+    const m2 = fc ? `&markers=${encodeURIComponent(`color:0x9b5fa0|label:F|${fc.lat},${fc.lon}`)}` : '';
+    const path = fc ? `&path=${encodeURIComponent('color:0x9b5fa0cc|weight:4|' + park.lat + ',' + park.lon + '|' + fc.lat + ',' + fc.lon)}` : '';
+    return `https://maps.googleapis.com/maps/api/staticmap?size=640x300&scale=2&maptype=roadmap&${m1}${m2}${path}&key=${PLACES_API_KEY}`;
+  }
+
+  function picnicDirUrl(park, food) {
+    const fc = picnicGeo(food);
+    const origin = `${park.lat},${park.lon}`;
+    const dest = fc ? `${fc.lat},${fc.lon}` : encodeURIComponent(`${food.name}, ${food.location || 'Philadelphia'}`);
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking`;
+  }
+
+  async function picnicEventsNearPark(park, dayIdx) {
+    if (!lastRender) return [];
+    const day = picnicDays()[dayIdx];
+    if (!day) return [];
+    const evs = (lastRender.byDay[dayKey(day)] || []).filter(ev => {
+      const t = `${ev.summary || ''}`.toLowerCase();
+      return !/\b(meeting|standup|stand-up|dentist|doctor|appt|appointment|deadline|due|pay|bill)\b/.test(t);
+    });
+    // Resolve coords for the day's events (cap the work), then keep nearby ones.
+    await Promise.all(evs.filter(e => e._coords === undefined).slice(0, 40).map(ensureEventCoords));
+    return evs.map(ev => {
+      const c = eventCoords(ev);
+      if (!c) return null;
+      const d = haversineMiles(park.lat, park.lon, c.lat, c.lon);
+      return d <= 0.85 ? { ev, d } : null;
+    }).filter(Boolean).sort((a, b) => a.d - b.d).slice(0, 5);
+  }
+
+  function openPicnicPlanner(parkName) {
+    const overlay = document.getElementById('picnicOverlay');
+    if (!overlay) return;
+    PICNIC.seed = parkName ? PICNIC_PARKS.findIndex(p => p.name === parkName) : null;
+    if (PICNIC.seed === -1) PICNIC.seed = null;
+    PICNIC.step = 'when';
+    PICNIC.dayIdx = (lastRender && lastRender.activeIdx) || 0;
+    PICNIC.hour = 12;
+    picnicBuildOrder();
+    overlay.removeAttribute('hidden');
+    picnicRender();
+  }
+
+  function picnicRender() {
+    const body = document.getElementById('picnicBody');
+    const hl   = document.getElementById('picnicHeadline');
+    if (!body || !hl) return;
+    if (PICNIC.step === 'when') {
+      hl.textContent = 'When’s the picnic?';
+      picnicRenderWhen(body);
+    } else {
+      hl.textContent = 'Your picnic';
+      picnicRenderResult(body);
+    }
+  }
+
+  function picnicRenderWhen(body) {
+    const days = picnicDays();
+    const seedNote = PICNIC.seed != null
+      ? `<div class="picnic-seed-note">📍 Planning around <strong>${escapeHtml(PICNIC_PARKS[PICNIC.seed].name)}</strong></div>` : '';
+    const timeRow = PL_TIME_OPTS.filter(o => o.hr >= 9 && o.hr <= 20).map(o =>
+      `<button class="pl-time-chip${o.hr === PICNIC.hour ? ' active' : ''}" data-picnic-hr="${o.hr}" type="button">${o.label}</button>`).join('');
+    body.innerHTML = `
+      ${seedNote}
+      <div class="pl-q">Which day?</div>
+      <div class="dn-days">
+        ${days.map((d, i) => {
+          const lbl = i === 0 ? 'Today' : DAYS_SHORT[d.getDay()];
+          return `<button class="dn-day-chip${i === PICNIC.dayIdx ? ' active' : ''}" data-picnic-day="${i}" type="button">
+            <div>${lbl}</div><div class="dn-day-num">${d.getDate()}</div>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="pl-q" style="margin-top:1.1rem;">Roughly what time?</div>
+      <div class="pl-time-grid">${timeRow}</div>
+      <button class="pl-next" id="picnicFindBtn" type="button">🧺 Find my picnic →</button>`;
+    body.querySelectorAll('[data-picnic-day]').forEach(c => c.addEventListener('click', () => {
+      PICNIC.dayIdx = +c.dataset.picnicDay;
+      body.querySelectorAll('[data-picnic-day]').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    body.querySelectorAll('[data-picnic-hr]').forEach(c => c.addEventListener('click', () => {
+      PICNIC.hour = +c.dataset.picnicHr;
+      body.querySelectorAll('[data-picnic-hr]').forEach(x => x.classList.toggle('active', x === c));
+    }));
+    document.getElementById('picnicFindBtn').addEventListener('click', () => {
+      if (PICNIC.seed == null) picnicBuildOrder();
+      PICNIC.step = 'result';
+      picnicRender();
+    });
+  }
+
+  async function picnicRenderResult(body) {
+    const park = picnicCurrentPark();
+    const cands = picnicFoodCandidates(park);
+    const food = cands.length ? cands[PICNIC.foodIdx % cands.length] : null;
+    body.innerHTML = `<div class="dn-loading">🧺 Packing your picnic…</div>`;
+
+    const fc = picnicGeo(food);
+    const dist = fc ? haversineMiles(park.lat, park.lon, fc.lat, fc.lon) : null;
+    const walkMin = dist != null ? Math.max(1, Math.round(dist * 20)) : null;
+    const [weather, events] = await Promise.all([
+      picnicWeatherAt(park.lat, park.lon, PICNIC.dayIdx, PICNIC.hour),
+      picnicEventsNearPark(park, PICNIC.dayIdx),
+    ]);
+
+    const parkMap = mapUrl(`${park.name}, ${park.location || 'Philadelphia'}`);
+    const foodMap = food ? mapUrl(`${food.name}, ${food.location || 'Philadelphia'}`) : '#';
+    const dayLabel = (() => {
+      const d = picnicDays()[PICNIC.dayIdx];
+      return PICNIC.dayIdx === 0 ? 'today' : (d ? DAYS_LONG[d.getDay()] : 'your day');
+    })();
+
+    const why = food
+      ? `${park.name} gives you ${park.desc.replace(/\.$/, '').replace(/^[A-Z]/, m => m.toLowerCase())}. ${food.name} sits just ${fmtMiles(dist)} away${walkMin ? ` (~${walkMin} min walk)` : ''}, so you can grab ${escapeHtml((food.cuisine || 'takeout').toLowerCase())} and be on the blanket in minutes.`
+      : `${park.name} is a top spot to spread out. Pack your favorite takeout and head over.`;
+
+    const foodCard = food ? `
+      <div class="picnic-card">
+        <div class="picnic-card-title">🥖 The food — ${escapeHtml(food.name)}</div>
+        <div class="picnic-card-meta">${food.cuisine ? `🍴 ${escapeHtml(food.cuisine)}` : ''}${food.price ? ` · ${escapeHtml(food.price)}` : ''}${dist != null ? ` · 🚶 ${fmtMiles(dist)}${walkMin ? ` · ~${walkMin} min` : ''}` : ''}</div>
+        <div class="picnic-card-meta">📍 ${escapeHtml(food.location || '')}</div>
+        <div class="picnic-card-desc">${escapeHtml(food.desc || '')}</div>
+        <div class="picnic-card-actions">
+          ${food.website ? `<a class="resto-action" href="${escapeAttr(food.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+          <a class="resto-action" href="${escapeAttr(foodMap)}" target="_blank" rel="noopener">🗺️ Map</a>
+          <a class="resto-action" href="${escapeAttr(picnicDirUrl(park, food))}" target="_blank" rel="noopener">🧭 Walk to the park</a>
+        </div>
+      </div>` : `
+      <div class="picnic-card"><div class="picnic-card-desc">No picnic-takeout spot matched here — bring your own basket!</div></div>`;
+
+    const eventsCard = events.length ? `
+      <div class="picnic-card">
+        <div class="picnic-card-title">📅 Happening near the park ${escapeHtml(dayLabel)}</div>
+        ${events.map(({ ev, d }) => {
+          const allDay = !ev.start.dateTime;
+          const time = allDay ? 'All day' : fmtTime(ev.start.dateTime);
+          const locStr = eventLocationStr(ev);
+          return `<div class="picnic-event">
+            <span class="picnic-event-time">${escapeHtml(time)}</span>
+            <span class="picnic-event-name">${escapeHtml(ev.summary || 'Event')}</span>
+            <span class="picnic-event-dist">${fmtMiles(d)} away</span>
+            ${locStr ? `<a class="picnic-event-map" href="${escapeAttr(mapUrl(locStr))}" target="_blank" rel="noopener">🗺️</a>` : ''}
+          </div>`;
+        }).join('')}
+        <div class="picnic-event-note">Heads up — these may bring crowds or noise nearby.</div>
+      </div>` : `
+      <div class="picnic-card picnic-card--quiet">
+        <div class="picnic-card-title">📅 Nearby events</div>
+        <div class="picnic-card-desc">Nothing major on the calendar right around the park ${escapeHtml(dayLabel)} — should be a calm one. 🌿</div>
+      </div>`;
+
+    body.innerHTML = `
+      <div class="picnic-result">
+        <div class="picnic-pair-head">
+          <span class="picnic-pair-chip">🌳 ${escapeHtml(park.name)}</span>
+          <span class="picnic-pair-plus">＋</span>
+          <span class="picnic-pair-chip">${food ? '🥖 ' + escapeHtml(food.name) : '🥖 your basket'}</span>
+        </div>
+        <img class="picnic-map" src="${escapeAttr(picnicMapUrl(park, food))}" alt="Map of ${escapeAttr(park.name)} and ${escapeAttr(food ? food.name : 'your route')}" loading="lazy"
+             onerror="this.style.display='none'">
+        ${picnicWeatherChipHTML(weather)}
+        <div class="picnic-card">
+          <div class="picnic-card-title">🌳 The spot — ${escapeHtml(park.name)}</div>
+          <div class="picnic-card-meta">📍 ${escapeHtml(park.location || park.neighborhood || '')}</div>
+          <div class="picnic-card-desc">${escapeHtml(park.desc)}</div>
+          ${park.bring ? `<div class="picnic-bring"><strong>🎒 Bring:</strong> ${escapeHtml(park.bring)}</div>` : ''}
+          <div class="picnic-card-actions">
+            ${park.website ? `<a class="resto-action" href="${escapeAttr(park.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+            <a class="resto-action" href="${escapeAttr(parkMap)}" target="_blank" rel="noopener">🗺️ Map</a>
+          </div>
+        </div>
+        ${foodCard}
+        <div class="picnic-card picnic-why">
+          <div class="picnic-card-title">💡 Why this pairing</div>
+          <div class="picnic-card-desc">${why}</div>
+        </div>
+        ${eventsCard}
+        <div class="picnic-shuffle-row">
+          ${cands.length > 1 ? `<button class="picnic-shuffle-btn" data-picnic-shuffle="food" type="button">🔀 Different food</button>` : ''}
+          <button class="picnic-shuffle-btn" data-picnic-shuffle="park" type="button">🔀 Different spot</button>
+        </div>
+        <button class="picnic-restart-btn" data-picnic-restart type="button">📅 Change day or time</button>
+      </div>`;
+
+    const sf = body.querySelector('[data-picnic-shuffle="food"]');
+    if (sf) sf.addEventListener('click', () => { PICNIC.foodIdx++; picnicRender(); });
+    const sp = body.querySelector('[data-picnic-shuffle="park"]');
+    if (sp) sp.addEventListener('click', () => { PICNIC.parkIdx++; PICNIC.foodIdx = 0; picnicRender(); });
+    body.querySelector('[data-picnic-restart]').addEventListener('click', () => { PICNIC.step = 'when'; picnicRender(); });
+  }
+
+  function setupPicnicPlanner() {
+    const overlay = document.getElementById('picnicOverlay');
+    const back    = document.getElementById('picnicBack');
+    if (!overlay || !back || back.dataset.wired) return;
+    back.dataset.wired = '1';
+    back.addEventListener('click', () => {
+      if (PICNIC.step === 'result') { PICNIC.step = 'when'; picnicRender(); return; }
+      overlay.setAttribute('hidden', '');
+    });
   }
 
   function setupOutingBuilder() {
