@@ -2025,6 +2025,27 @@
   </div>
 </div>
 
+<div class="container view" id="view-picnic">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Picnic</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow">Picnic</div>
+        <div class="day-title">Pack a basket</div>
+        <div class="day-subtitle">Takeout for your basket, scenic spots &amp; a planner that pairs them</div>
+      </div>
+    </div>
+    <div id="picnicList"></div>
+  </div>
+</div>
+
 <button class="to-top-btn" id="toTopBtn" type="button" aria-label="Back to top">
   <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M12 19V5"/>
@@ -4116,15 +4137,14 @@
     { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', tag: 'dessert' },
     { id: 'bakeries', emoji: '🥐', label: 'Bakeries', subtitle: "Philly's best neighborhood bakeries", sections: BAKERY_SECTIONS },
     { id: 'outdoor-dining', emoji: '🌿', label: 'Outdoor Dining', subtitle: 'Rooftops, gardens, waterfronts &amp; patios', sections: OUTDOOR_DINING_SECTIONS },
-    { id: 'picnic', emoji: '🧺', label: 'Picnic', subtitle: 'Takeout for your basket &amp; scenic spots to spread out', picnic: true },
     { id: 'unique', emoji: '✨', label: 'Unique', subtitle: 'Only-in-Philly experiences', tag: 'unique' },
     { id: 'cheap-eats', emoji: '💵', label: 'Cheap Eats', subtitle: 'Big flavor, small tab', tag: 'cheap-eats' },
     { id: 'all', emoji: '🍽️', label: 'All Restaurants', subtitle: 'Everything in one place — filter to taste', all: true },
   ];
 
   const PLACES_TO_EAT = EAT_TABS.map(t => ({
-    id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle, picnic: !!t.picnic,
-    sections: t.sections || (t.all ? sectionsForAll() : sectionsForTag(t.picnic ? 'picnic' : t.tag)),
+    id: t.id, emoji: t.emoji, label: t.label, subtitle: t.subtitle,
+    sections: t.sections || (t.all ? sectionsForAll() : sectionsForTag(t.tag)),
   }));
 
   // EAT-PLACES-END
@@ -4503,6 +4523,7 @@
   const CATEGORIES = [
     { view: 'home',            emoji: '📅', label: 'Goings On' },
     { view: 'places-to-eat',   emoji: '🍽️', label: 'Places to Eat' },
+    { view: 'picnic',          emoji: '🧺', label: 'Picnic' },
     { view: 'bookstores',      emoji: '📚', label: 'Bookstores' },
     { view: 'farmers-markets', emoji: '🌽', label: 'Farmers Markets' },
   ];
@@ -5059,9 +5080,11 @@
       </div>`;
   }
 
-  // The Picnic tab: a planner launcher + a Takeout / Picnic-spots sub-tab toggle.
-  function renderPicnicTab(cat) {
-    const list = document.getElementById('eatList');
+  // The Picnic view (top-level, in the hamburger menu): a planner launcher + a
+  // Takeout / Picnic-spots sub-tab toggle. Renders into its own #picnicList.
+  function renderPicnicView() {
+    const list = document.getElementById('picnicList');
+    if (!list) return;
     const sub = picnicSub;
     list.innerHTML = `
       <div class="eat-content">
@@ -5083,7 +5106,7 @@
       // a Places photo and coordinates from its data-query (cached after first).
       loadRestoImages(list);
     } else {
-      const groups = cat.sections
+      const groups = sectionsForTag('picnic')
         .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
         .filter(s => s.places.length);
       body.innerHTML = groups.length
@@ -5095,9 +5118,18 @@
     }
     document.getElementById('picnicTabPlannerBtn').addEventListener('click', () => openPicnicPlanner());
     list.querySelectorAll('[data-picnic-sub]').forEach(b =>
-      b.addEventListener('click', () => { picnicSub = b.dataset.picnicSub; renderPicnicTab(cat); }));
+      b.addEventListener('click', () => { picnicSub = b.dataset.picnicSub; renderPicnicView(); }));
     list.querySelectorAll('[data-plan-park]').forEach(b =>
       b.addEventListener('click', e => { e.stopPropagation(); openPicnicPlanner(b.dataset.planPark); }));
+  }
+
+  // Render the Picnic view once at startup; the tile click-to-expand uses the
+  // same delegated handler pattern as the other lists.
+  function setupPicnicView() {
+    const list = document.getElementById('picnicList');
+    if (!list) return;
+    list.addEventListener('click', onRestoMainClick);
+    renderPicnicView();
   }
 
   async function renderEatCategory(catId) {
@@ -5109,8 +5141,6 @@
     document.getElementById('eatEyebrow').textContent = 'Places to Eat';
     document.getElementById('eatTitle').textContent = cat.label;
     document.getElementById('eatSubtitle').innerHTML = cat.subtitle || '';
-
-    if (cat.picnic) { renderPicnicTab(cat); return; }
 
     const list = document.getElementById('eatList');
     const allPlaces = cat.sections.flatMap(s => s.places);
@@ -6681,6 +6711,7 @@ Valid types: "meal", "activity", "dessert"`;
     setupEatTabs();
     setupBookTabs();
     setupFmTabs();
+    setupPicnicView();
   }
 
   // Translate vertical mouse-wheel into horizontal scroll over tab rows
@@ -6766,13 +6797,16 @@ Valid types: "meal", "activity", "dessert"`;
 
   // Proximity cutoff: straight-line, so deliberately conservative vs. actual travel time.
   // Streets add 20-30% to straight-line distance, and Philly neighborhoods are large.
-  function obRadiusMiles() {
-    return OB.transitMode === 'bike' ? 1.5     // ~10 min bike
-      : OB.transitMode === 'transit' ? 1.8     // ~nearby transit stop
-      : OB.transitMode === 'mix' ? 1.2         // ~20 min walk or one SEPTA hop
-      : OB.transitMode === 'drive' ? 2.5       // ~8 min drive
-      : 0.5;                                   // ~10 min walk
+  // Shared straight-line radius per transit mode, used by the Outing Builder and
+  // the Picnic Planner so "nearby" means the same thing across Discover tools.
+  function transitRadiusMiles(mode) {
+    return mode === 'bike' ? 1.5        // ~10 min bike
+      : mode === 'transit' ? 1.8        // ~nearby transit stop
+      : mode === 'mix' ? 1.2            // ~20 min walk or one SEPTA hop
+      : mode === 'drive' ? 2.5          // ~8 min drive
+      : 0.5;                            // ~10 min walk
   }
+  function obRadiusMiles() { return transitRadiusMiles(OB.transitMode); }
 
   function obActiveDayIdx() { return OB.dayIdx; }
   function obActiveDay()    { return lastRender ? lastRender.days[OB.dayIdx] : null; }
@@ -7750,7 +7784,22 @@ Return ONLY valid JSON (no markdown fences):
   // ── Picnic Planner ──────────────────────────────────────────────
   // Pairs a scenic park with a nearby picnic-takeout spot, with weather for the
   // chosen time, a map of the two, what to bring, and any events near the park.
-  const PICNIC = { step: 'when', dayIdx: 0, hour: 12, parkIdx: 0, foodIdx: 0, order: [], seed: null };
+  const PICNIC = { step: 'when', dayIdx: 0, hour: 12, transit: 'walk', parkIdx: 0, foodIdx: 0, order: [], seed: null };
+
+  // Travel radius + leg labels reuse the same model as the Outing Builder so the
+  // Picnic Planner never pairs a spot that's unreasonably far for the chosen mode.
+  function picnicTransitEmoji() {
+    return PICNIC.transit === 'bike' ? '🚲' : PICNIC.transit === 'drive' ? '🚗'
+      : (PICNIC.transit === 'transit' || PICNIC.transit === 'mix') ? '🚇' : '🚶';
+  }
+  function picnicLegLabel(mi) {
+    const walk = plWalkMins(mi), m = PICNIC.transit;
+    const walkLbl = walk <= 1 ? '< 1 min walk' : `~${walk} min walk`;
+    if (m === 'bike') { const b = plBikeMins(mi); return walk <= b + 2 ? walkLbl : `~${b} min bike`; }
+    if (m === 'drive') { return `~${Math.max(1, Math.round(mi / 22 * 60))} min drive`; }
+    if (m === 'transit' || m === 'mix') { const t = Math.round(10 + mi * 5); return walk <= t ? walkLbl : `~${t} min transit`; }
+    return walkLbl;
+  }
 
   function picnicDays() {
     const d = obDays();
@@ -7782,15 +7831,17 @@ Return ONLY valid JSON (no markdown fences):
     return PICNIC_PARKS[PICNIC.order[PICNIC.parkIdx % PICNIC.order.length]];
   }
 
-  // Picnic-takeout spots, nearest to the park first (geo-located ones rank).
+  // Picnic-takeout spots within reach of the park for the chosen transit mode,
+  // nearest first. Capped by the same radius the Outing Builder uses, so a spot
+  // is only paired when it's genuinely close enough to carry food to the blanket.
   function picnicFoodCandidates(park) {
-    const tagged = RESTAURANTS.filter(r => (r.tags || []).includes('picnic'));
-    const withGeo = tagged.filter(r => picnicGeo(r)).map(r => ({
-      r, d: haversineMiles(park.lat, park.lon, r.geo.lat, r.geo.lon),
-    })).sort((a, b) => a.d - b.d);
-    const withoutGeo = tagged.filter(r => !picnicGeo(r)).map(r => ({ r, d: Infinity }));
-    // Pair from the 6 nearest so shuffling stays sensible (close to the blanket).
-    return [...withGeo, ...withoutGeo].slice(0, Math.max(6, withGeo.length ? 6 : tagged.length)).map(x => x.r);
+    const radius = transitRadiusMiles(PICNIC.transit);
+    return RESTAURANTS
+      .filter(r => (r.tags || []).includes('picnic') && picnicGeo(r))
+      .map(r => ({ r, d: haversineMiles(park.lat, park.lon, r.geo.lat, r.geo.lon) }))
+      .filter(o => o.d <= radius)
+      .sort((a, b) => a.d - b.d)
+      .map(o => o.r);
   }
 
   async function picnicWeatherAt(lat, lon, dayIdx, hour) {
@@ -7831,9 +7882,12 @@ Return ONLY valid JSON (no markdown fences):
 
   function picnicDirUrl(park, food) {
     const fc = picnicGeo(food);
+    const mode = PICNIC.transit === 'drive' ? 'driving'
+      : PICNIC.transit === 'bike' ? 'bicycling'
+      : (PICNIC.transit === 'transit' || PICNIC.transit === 'mix') ? 'transit' : 'walking';
     const origin = `${park.lat},${park.lon}`;
     const dest = fc ? `${fc.lat},${fc.lon}` : encodeURIComponent(`${food.name}, ${food.location || 'Philadelphia'}`);
-    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking`;
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
   }
 
   async function picnicEventsNearPark(park, dayIdx) {
@@ -7862,6 +7916,7 @@ Return ONLY valid JSON (no markdown fences):
     PICNIC.step = 'when';
     PICNIC.dayIdx = (lastRender && lastRender.activeIdx) || 0;
     PICNIC.hour = 12;
+    PICNIC.transit = 'walk';
     picnicBuildOrder();
     overlay.removeAttribute('hidden');
     picnicRender();
@@ -7899,6 +7954,10 @@ Return ONLY valid JSON (no markdown fences):
       </div>
       <div class="pl-q" style="margin-top:1.1rem;">Roughly what time?</div>
       <div class="pl-time-grid">${timeRow}</div>
+      <div class="pl-q" style="margin-top:1.1rem;">How are you getting there?</div>
+      <div class="pl-chip-grid">
+        ${PL_TRANSIT_MODES.map(m => `<button class="pl-chip${PICNIC.transit === m.id ? ' active' : ''}" data-picnic-transit="${escapeAttr(m.id)}" type="button"><span class="pl-chip-emoji">${m.emoji}</span>${escapeHtml(m.label)}</button>`).join('')}
+      </div>
       <button class="pl-next" id="picnicFindBtn" type="button">🧺 Find my picnic →</button>`;
     body.querySelectorAll('[data-picnic-day]').forEach(c => c.addEventListener('click', () => {
       PICNIC.dayIdx = +c.dataset.picnicDay;
@@ -7908,6 +7967,10 @@ Return ONLY valid JSON (no markdown fences):
       PICNIC.hour = +c.dataset.picnicHr;
       body.querySelectorAll('[data-picnic-hr]').forEach(x => x.classList.toggle('active', x === c));
     }));
+    body.querySelectorAll('[data-picnic-transit]').forEach(c => c.addEventListener('click', () => {
+      PICNIC.transit = c.dataset.picnicTransit;
+      body.querySelectorAll('[data-picnic-transit]').forEach(x => x.classList.toggle('active', x === c));
+    }));
     document.getElementById('picnicFindBtn').addEventListener('click', () => {
       if (PICNIC.seed == null) picnicBuildOrder();
       PICNIC.step = 'result';
@@ -7916,14 +7979,26 @@ Return ONLY valid JSON (no markdown fences):
   }
 
   async function picnicRenderResult(body) {
-    const park = picnicCurrentPark();
-    const cands = picnicFoodCandidates(park);
-    const food = cands.length ? cands[PICNIC.foodIdx % cands.length] : null;
     body.innerHTML = `<div class="dn-loading">🧺 Packing your picnic…</div>`;
+    let park = picnicCurrentPark();
+    let cands = picnicFoodCandidates(park);
+    // If this isn't a park the user pinned and nothing is in range for the chosen
+    // mode, hop to the next shuffled park that does have a spot within reach — so
+    // pairings stay close instead of suggesting a multi-mile trek.
+    if (!cands.length && PICNIC.seed == null) {
+      for (let i = 1; i < PICNIC.order.length; i++) {
+        const ni = (PICNIC.parkIdx + i) % PICNIC.order.length;
+        const c = picnicFoodCandidates(PICNIC_PARKS[PICNIC.order[ni]]);
+        if (c.length) { PICNIC.parkIdx = ni; park = PICNIC_PARKS[PICNIC.order[ni]]; cands = c; break; }
+      }
+    }
+    const food = cands.length ? cands[PICNIC.foodIdx % cands.length] : null;
 
     const fc = picnicGeo(food);
     const dist = fc ? haversineMiles(park.lat, park.lon, fc.lat, fc.lon) : null;
-    const walkMin = dist != null ? Math.max(1, Math.round(dist * 20)) : null;
+    const legLabel = dist != null ? picnicLegLabel(dist) : null;
+    const tEmoji = picnicTransitEmoji();
+    const rangeWord = PICNIC.transit === 'walk' ? 'walking distance' : 'range';
     const [weather, events] = await Promise.all([
       picnicWeatherAt(park.lat, park.lon, PICNIC.dayIdx, PICNIC.hour),
       picnicEventsNearPark(park, PICNIC.dayIdx),
@@ -7937,22 +8012,22 @@ Return ONLY valid JSON (no markdown fences):
     })();
 
     const why = food
-      ? `${park.name} gives you ${park.desc.replace(/\.$/, '').replace(/^[A-Z]/, m => m.toLowerCase())}. ${food.name} sits just ${fmtMiles(dist)} away${walkMin ? ` (~${walkMin} min walk)` : ''}, so you can grab ${escapeHtml((food.cuisine || 'takeout').toLowerCase())} and be on the blanket in minutes.`
-      : `${park.name} is a top spot to spread out. Pack your favorite takeout and head over.`;
+      ? `${park.name} gives you ${park.desc.replace(/\.$/, '').replace(/^[A-Z]/, m => m.toLowerCase())}. ${food.name} sits just ${fmtMiles(dist)} away (${legLabel}), so you can grab ${escapeHtml((food.cuisine || 'takeout').toLowerCase())} and be on the blanket in minutes.`
+      : `${park.name} is a top spot to spread out — but there’s no picnic takeout within ${rangeWord} of it. Pack your own basket, or try a different way to get there for more options.`;
 
     const foodCard = food ? `
       <div class="picnic-card">
         <div class="picnic-card-title">🥖 The food — ${escapeHtml(food.name)}</div>
-        <div class="picnic-card-meta">${food.cuisine ? `🍴 ${escapeHtml(food.cuisine)}` : ''}${food.price ? ` · ${escapeHtml(food.price)}` : ''}${dist != null ? ` · 🚶 ${fmtMiles(dist)}${walkMin ? ` · ~${walkMin} min` : ''}` : ''}</div>
+        <div class="picnic-card-meta">${food.cuisine ? `🍴 ${escapeHtml(food.cuisine)}` : ''}${food.price ? ` · ${escapeHtml(food.price)}` : ''}${dist != null ? ` · ${tEmoji} ${fmtMiles(dist)} · ${legLabel}` : ''}</div>
         <div class="picnic-card-meta">📍 ${escapeHtml(food.location || '')}</div>
         <div class="picnic-card-desc">${escapeHtml(food.desc || '')}</div>
         <div class="picnic-card-actions">
           ${food.website ? `<a class="resto-action" href="${escapeAttr(food.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
           <a class="resto-action" href="${escapeAttr(foodMap)}" target="_blank" rel="noopener">🗺️ Map</a>
-          <a class="resto-action" href="${escapeAttr(picnicDirUrl(park, food))}" target="_blank" rel="noopener">🧭 Walk to the park</a>
+          <a class="resto-action" href="${escapeAttr(picnicDirUrl(park, food))}" target="_blank" rel="noopener">🧭 Directions to the park</a>
         </div>
       </div>` : `
-      <div class="picnic-card"><div class="picnic-card-desc">No picnic-takeout spot matched here — bring your own basket!</div></div>`;
+      <div class="picnic-card"><div class="picnic-card-desc">No picnic-takeout spot within ${rangeWord} of ${escapeHtml(park.name)} — bring your own basket, or switch your transport mode for more options.</div></div>`;
 
     const eventsCard = events.length ? `
       <div class="picnic-card">
@@ -8011,7 +8086,7 @@ Return ONLY valid JSON (no markdown fences):
     const sf = body.querySelector('[data-picnic-shuffle="food"]');
     if (sf) sf.addEventListener('click', () => { PICNIC.foodIdx++; picnicRender(); });
     const sp = body.querySelector('[data-picnic-shuffle="park"]');
-    if (sp) sp.addEventListener('click', () => { PICNIC.parkIdx++; PICNIC.foodIdx = 0; picnicRender(); });
+    if (sp) sp.addEventListener('click', () => { PICNIC.seed = null; PICNIC.parkIdx++; PICNIC.foodIdx = 0; picnicRender(); });
     body.querySelector('[data-picnic-restart]').addEventListener('click', () => { PICNIC.step = 'when'; picnicRender(); });
   }
 
