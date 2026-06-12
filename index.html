@@ -3953,28 +3953,6 @@
     { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', desc: 'The Lebanese market and all-day cafe packs a picnic crying out to happen — fluffy pita, pomegranate-laced baba ganoush, creamy hummus, and even creamier labneh from the market counter.', tags: ['picnic', 'lunch', 'dinner', 'date-night'], geo: { lat: 39.973713, lon: -75.133928 } },
   ];
 
-  // ── Picnic spots — scenic parks to spread a blanket (Philly Mag) ──
-  // lat/lon power the Picnic Planner's pairings, map, weather, and nearby-events.
-  const PICNIC_PARKS = [
-    { name: 'Azalea Garden', neighborhood: 'Fairmount', location: 'Behind the Art Museum, Fairmount', lat: 39.9676, lon: -75.1810, website: '', desc: 'A lovely four-acre garden behind the Art Museum filled with over 150 species of azaleas and rhododendrons — a flower-lover’s lunchtime escape.', bring: 'A light blanket, a baguette and cheese, and your camera for the blooms. Limited shade, so add a hat on sunny days.' },
-    { name: "Bartram's Garden", neighborhood: 'Southwest Philly', location: '5400 Lindbergh Blvd, Southwest Philly', lat: 39.9320, lon: -75.2120, website: 'https://www.bartramsgarden.org', desc: 'America’s oldest living botanical garden — 45 riverfront acres on the Schuylkill with Center City views and three designated picnic areas with tables.', bring: 'A blanket or claim a picnic table by the river. Pack a full spread; you’ll want to linger. Sunscreen for the open meadow.' },
-    { name: 'Belmont Plateau', neighborhood: 'West Philly', location: 'Belmont Mansion Dr, West Fairmount Park', lat: 39.9905, lon: -75.2090, website: '', desc: 'Wide-open space with one of the best skyline views in the city. Grills and tables sit down the hill if you want to cook your spread.', bring: 'A blanket, frisbee or kite for the open field, and charcoal if you’re grilling down the hill. Golden-hour timing for the skyline.' },
-    { name: 'Clark Park', neighborhood: 'West Philly', location: '4300 Baltimore Ave, West Philly', lat: 39.9490, lon: -75.2100, website: '', desc: 'A big, green West Philly park with giant shade trees — and a year-round Saturday farmers’ market right there, so you can grab farm-fresh picnic fare feet from your blanket.', bring: 'A blanket and a tote for market finds. Saturdays are best — shop the market, then post up under the trees.' },
-    { name: 'FDR Park', neighborhood: 'South Philly', location: '1500 Pattison Ave, South Philly', lat: 39.8990, lon: -75.1850, website: 'https://fdrparkphilly.org', desc: 'A lake-filled South Philly gem with 21 reservable picnic sites and the weekend Southeast Asian Market (Sat–Sun, 10–6) full of Lao, Khmer, Thai, Vietnamese, and Indonesian vendors.', bring: 'A blanket, or reserve a picnic site ($35/day, BYO grill). Cash for the Southeast Asian Market and an appetite.' },
-    { name: 'Glen Foerd', neighborhood: 'Northeast Philly', location: '5001 Grant Ave, Northeast Philly', lat: 40.0760, lon: -75.0140, website: 'https://glenfoerd.org', desc: 'A grand riverfront estate with 18 acres of trees, Delaware River views, a rose garden, and an old tennis lawn down the hill. Dog-friendly grounds; free self-guided mansion tours Fri–Sun.', bring: 'A blanket for the tennis lawn, water for the pup, and a book — this one’s for slow afternoons by the river.' },
-    { name: 'Kelly Drive', neighborhood: 'Fairmount Park', location: 'Kelly Dr along the Schuylkill, Fairmount Park', lat: 39.9760, lon: -75.1880, website: '', desc: 'Stellar spots all along the river — we’re partial to the Ellen Phillips Samuel Memorial sculpture garden just south of the Girard Avenue Bridge for its artwork and prime Schuylkill view.', bring: 'A compact blanket, snacks to share, and comfortable shoes if you’re strolling the sculpture garden first.' },
-    { name: 'Navy Yard', neighborhood: 'South Philly', location: 'Central Green, S Broad St, Navy Yard', lat: 39.8910, lon: -75.1690, website: 'https://navyyard.org', desc: 'Giant boats and ascending planes to gawk at, plus Central Green with a hammock grove and bocce courts. Food trucks roll in Tue–Thu on the Marine Parade Grounds.', bring: 'A blanket or claim a hammock, a bocce set if you have one, and check the food-truck lineup on their Instagram.' },
-    { name: 'Pastorius Park', neighborhood: 'Chestnut Hill', location: 'Abington Ave & Roanoke St, Chestnut Hill', lat: 40.0760, lon: -75.2090, website: '', desc: 'A peaceful 16-acre Chestnut Hill park with a turtle pond and free summertime concerts — a quiet, reflective respite a world apart from the city.', bring: 'A blanket and takeout from nearby Germantown Avenue. Time it to a Wednesday-evening summer concert if you can.' },
-    { name: 'Penn Treaty Park', neighborhood: 'Fishtown', location: '1301 N Beach St, Fishtown', lat: 39.9665, lon: -75.1290, website: '', desc: 'Right on the Delaware, so you get river views plus a breeze and plenty of open grass — and hammock-friendly trees. The Delaware River Trail makes it easy to bike or walk in.', bring: 'A blanket or a hammock for the trees, a windbreaker for the river breeze, and something cold to sip.' },
-    { name: 'Pennypack on the Delaware', neighborhood: 'Northeast Philly', location: 'State Rd & Rhawn St, Northeast Philly', lat: 40.0360, lon: -75.0090, website: '', desc: '1,300 acres of trails, wetlands, and meadows. Snag a designated picnic area (some with grills) or plop onto the wide grassy pier that extends out over the water.', bring: 'A blanket for the pier, bug spray for the wetlands, and a grill kit if you’re claiming a fire site.' },
-    { name: 'Race Street Pier', neighborhood: 'Old City', location: 'N Christopher Columbus Blvd & Race St, Old City', lat: 39.9540, lon: -75.1390, website: '', desc: 'Grass, concrete, or wooden benches on a Delaware River pier under the Ben Franklin Bridge — great river views, and Cherry Street Pier next door for art-viewing.', bring: 'A blanket or grab a bench, layers for the open-water breeze, and grab-and-go bites from Old City nearby.' },
-    { name: 'Rittenhouse Square', neighborhood: 'Rittenhouse', location: '18th & Walnut St, Rittenhouse', lat: 39.9495, lon: -75.1715, website: '', desc: 'The classic Philly picnic: prime people- and dog-watching, street performers, and countless restaurants ringing the square. No planning needed — pick up lunch on arrival, or hit the Sat/Tue farmers’ market.', bring: 'A small blanket (grass goes fast), and barely anything else — Parc’s bread window and the surrounding spots have you covered.' },
-    { name: 'Schuylkill Banks', neighborhood: 'Fitler Square', location: 'Schuylkill River Trail, Fitler Square', lat: 39.9510, lon: -75.1810, website: 'https://www.schuylkillbanks.org', desc: 'Grassy stretches along the river with a never-ending stream of runners and cyclists for fitness motivation — or turn toward the Schuylkill for a calmer view.', bring: 'A blanket, plenty of water, and a hat — the riverside stretches are sunny and exposed.' },
-    { name: 'Washington Square', neighborhood: 'Washington Square West', location: '210 W Washington Square, Washington Square West', lat: 39.9470, lon: -75.1520, website: '', desc: 'The quieter Rittenhouse — same city-park vibe minus the noise and the competition for grass. Talula’s Daily is right there for bread and fancy cheese.', bring: 'A blanket, a cheese board from Talula’s Daily, and a book for the calm.' },
-    { name: 'Wissahickon Valley Park', neighborhood: 'Northwest Philly', location: 'Forbidden Dr, Northwest Philly', lat: 40.0510, lon: -75.2120, website: 'https://fow.org', desc: '1,800 glorious acres of hiking, biking, and nature, with designated picnic areas, grills, and benches. (Grilling is only allowed at those sites.)', bring: 'Sturdy shoes, a daypack with your spread, water, and bug spray. Pick a designated picnic area if you want a grill.' },
-    { name: 'The Woodlands', neighborhood: 'West Philly', location: '4000 Woodland Ave, West Philly', lat: 39.9485, lon: -75.2010, website: 'https://www.woodlandsphila.org', desc: 'A serene 19th-century cemetery and arboretum — for those with a penchant for the macabre, groups under 10 can pick a plot and take in a quiet found only at a final resting place. (Don’t sit on the gravestones.)', bring: 'A blanket, a quiet mindset, and respect for the grounds. Lovely light through the old trees at dusk.' },
-  ];
-
   // Cuisine buckets used to auto-group a tab's restaurants (checked in order).
   const CUISINE_GROUPS = [
     { label: '🍣 Japanese & Sushi',           test: /japanese|sushi|izakaya|omakase/i },
@@ -4151,6 +4129,28 @@
 
   // EAT-PLACES-END
 
+  // ── Picnic spots — scenic parks to spread a blanket (Philly Mag) ──
+  // lat/lon power the Picnic Planner's pairings, map, weather, and nearby-events.
+  const PICNIC_PARKS = [
+    { name: 'Azalea Garden', neighborhood: 'Fairmount', location: 'Behind the Art Museum, Fairmount', lat: 39.9676, lon: -75.1810, website: '', desc: 'A lovely four-acre garden behind the Art Museum filled with over 150 species of azaleas and rhododendrons — a flower-lover’s lunchtime escape.', bring: 'A light blanket, a baguette and cheese, and your camera for the blooms. Limited shade, so add a hat on sunny days.' },
+    { name: "Bartram's Garden", neighborhood: 'Southwest Philly', location: '5400 Lindbergh Blvd, Southwest Philly', lat: 39.9320, lon: -75.2120, website: 'https://www.bartramsgarden.org', desc: 'America’s oldest living botanical garden — 45 riverfront acres on the Schuylkill with Center City views and three designated picnic areas with tables.', bring: 'A blanket or claim a picnic table by the river. Pack a full spread; you’ll want to linger. Sunscreen for the open meadow.' },
+    { name: 'Belmont Plateau', neighborhood: 'West Philly', location: 'Belmont Mansion Dr, West Fairmount Park', lat: 39.9905, lon: -75.2090, website: '', desc: 'Wide-open space with one of the best skyline views in the city. Grills and tables sit down the hill if you want to cook your spread.', bring: 'A blanket, frisbee or kite for the open field, and charcoal if you’re grilling down the hill. Golden-hour timing for the skyline.' },
+    { name: 'Clark Park', neighborhood: 'West Philly', location: '4300 Baltimore Ave, West Philly', lat: 39.9490, lon: -75.2100, website: '', desc: 'A big, green West Philly park with giant shade trees — and a year-round Saturday farmers’ market right there, so you can grab farm-fresh picnic fare feet from your blanket.', bring: 'A blanket and a tote for market finds. Saturdays are best — shop the market, then post up under the trees.' },
+    { name: 'FDR Park', neighborhood: 'South Philly', location: '1500 Pattison Ave, South Philly', lat: 39.8990, lon: -75.1850, website: 'https://fdrparkphilly.org', desc: 'A lake-filled South Philly gem with 21 reservable picnic sites and the weekend Southeast Asian Market (Sat–Sun, 10–6) full of Lao, Khmer, Thai, Vietnamese, and Indonesian vendors.', bring: 'A blanket, or reserve a picnic site ($35/day, BYO grill). Cash for the Southeast Asian Market and an appetite.' },
+    { name: 'Glen Foerd', neighborhood: 'Northeast Philly', location: '5001 Grant Ave, Northeast Philly', lat: 40.0760, lon: -75.0140, website: 'https://glenfoerd.org', desc: 'A grand riverfront estate with 18 acres of trees, Delaware River views, a rose garden, and an old tennis lawn down the hill. Dog-friendly grounds; free self-guided mansion tours Fri–Sun.', bring: 'A blanket for the tennis lawn, water for the pup, and a book — this one’s for slow afternoons by the river.' },
+    { name: 'Kelly Drive', neighborhood: 'Fairmount Park', location: 'Kelly Dr along the Schuylkill, Fairmount Park', lat: 39.9760, lon: -75.1880, website: '', desc: 'Stellar spots all along the river — we’re partial to the Ellen Phillips Samuel Memorial sculpture garden just south of the Girard Avenue Bridge for its artwork and prime Schuylkill view.', bring: 'A compact blanket, snacks to share, and comfortable shoes if you’re strolling the sculpture garden first.' },
+    { name: 'Navy Yard', neighborhood: 'South Philly', location: 'Central Green, S Broad St, Navy Yard', lat: 39.8910, lon: -75.1690, website: 'https://navyyard.org', desc: 'Giant boats and ascending planes to gawk at, plus Central Green with a hammock grove and bocce courts. Food trucks roll in Tue–Thu on the Marine Parade Grounds.', bring: 'A blanket or claim a hammock, a bocce set if you have one, and check the food-truck lineup on their Instagram.' },
+    { name: 'Pastorius Park', neighborhood: 'Chestnut Hill', location: 'Abington Ave & Roanoke St, Chestnut Hill', lat: 40.0760, lon: -75.2090, website: '', desc: 'A peaceful 16-acre Chestnut Hill park with a turtle pond and free summertime concerts — a quiet, reflective respite a world apart from the city.', bring: 'A blanket and takeout from nearby Germantown Avenue. Time it to a Wednesday-evening summer concert if you can.' },
+    { name: 'Penn Treaty Park', neighborhood: 'Fishtown', location: '1301 N Beach St, Fishtown', lat: 39.9665, lon: -75.1290, website: '', desc: 'Right on the Delaware, so you get river views plus a breeze and plenty of open grass — and hammock-friendly trees. The Delaware River Trail makes it easy to bike or walk in.', bring: 'A blanket or a hammock for the trees, a windbreaker for the river breeze, and something cold to sip.' },
+    { name: 'Pennypack on the Delaware', neighborhood: 'Northeast Philly', location: 'State Rd & Rhawn St, Northeast Philly', lat: 40.0360, lon: -75.0090, website: '', desc: '1,300 acres of trails, wetlands, and meadows. Snag a designated picnic area (some with grills) or plop onto the wide grassy pier that extends out over the water.', bring: 'A blanket for the pier, bug spray for the wetlands, and a grill kit if you’re claiming a fire site.' },
+    { name: 'Race Street Pier', neighborhood: 'Old City', location: 'N Christopher Columbus Blvd & Race St, Old City', lat: 39.9540, lon: -75.1390, website: '', desc: 'Grass, concrete, or wooden benches on a Delaware River pier under the Ben Franklin Bridge — great river views, and Cherry Street Pier next door for art-viewing.', bring: 'A blanket or grab a bench, layers for the open-water breeze, and grab-and-go bites from Old City nearby.' },
+    { name: 'Rittenhouse Square', neighborhood: 'Rittenhouse', location: '18th & Walnut St, Rittenhouse', lat: 39.9495, lon: -75.1715, website: '', desc: 'The classic Philly picnic: prime people- and dog-watching, street performers, and countless restaurants ringing the square. No planning needed — pick up lunch on arrival, or hit the Sat/Tue farmers’ market.', bring: 'A small blanket (grass goes fast), and barely anything else — Parc’s bread window and the surrounding spots have you covered.' },
+    { name: 'Schuylkill Banks', neighborhood: 'Fitler Square', location: 'Schuylkill River Trail, Fitler Square', lat: 39.9510, lon: -75.1810, website: 'https://www.schuylkillbanks.org', desc: 'Grassy stretches along the river with a never-ending stream of runners and cyclists for fitness motivation — or turn toward the Schuylkill for a calmer view.', bring: 'A blanket, plenty of water, and a hat — the riverside stretches are sunny and exposed.' },
+    { name: 'Washington Square', neighborhood: 'Washington Square West', location: '210 W Washington Square, Washington Square West', lat: 39.9470, lon: -75.1520, website: '', desc: 'The quieter Rittenhouse — same city-park vibe minus the noise and the competition for grass. Talula’s Daily is right there for bread and fancy cheese.', bring: 'A blanket, a cheese board from Talula’s Daily, and a book for the calm.' },
+    { name: 'Wissahickon Valley Park', neighborhood: 'Northwest Philly', location: 'Forbidden Dr, Northwest Philly', lat: 40.0510, lon: -75.2120, website: 'https://fow.org', desc: '1,800 glorious acres of hiking, biking, and nature, with designated picnic areas, grills, and benches. (Grilling is only allowed at those sites.)', bring: 'Sturdy shoes, a daypack with your spread, water, and bug spray. Pick a designated picnic area if you want a grill.' },
+    { name: 'The Woodlands', neighborhood: 'West Philly', location: '4000 Woodland Ave, West Philly', lat: 39.9485, lon: -75.2010, website: 'https://www.woodlandsphila.org', desc: 'A serene 19th-century cemetery and arboretum — for those with a penchant for the macabre, groups under 10 can pick a plot and take in a quiet found only at a final resting place. (Don’t sit on the gravestones.)', bring: 'A blanket, a quiet mindset, and respect for the grounds. Lovely light through the old trees at dusk.' },
+  ];
+
   // ── Farmers Market data ─────────────────────────────────────────
   const FARMERS_MARKETS = [
     { name: '4th & Lehigh Farmers Market', location: '412 W. Huntingdon St., Philadelphia', neighborhood: 'North Philadelphia', desc: 'A block away from El Centro de Oro, this seasonal farm stand offers fresh fruit and vegetables from Hayday Farms in Bucks County, like plump peaches and crates of juicy strawberries.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/4th-lehigh-farmers-market/', days: ['Tuesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
@@ -4324,18 +4324,21 @@
     // Baked geo (offline-computed) wins — zero API cost for coords, and photos
     // load from the stored reference via the cheap Photo SKU (no Text Search).
     const baked = bakedGeoIndex()[query];
-    if (baked) {
-      const info = {
-        photoUrl: baked.ph ? photoUrlFromName(baked.ph) : null,
-        lat: baked.lat ?? null, lon: baked.lon ?? null, address: null,
-      };
+    // Fully baked (coords + photo) → zero API cost, done.
+    if (baked && baked.ph) {
+      const info = { photoUrl: photoUrlFromName(baked.ph), lat: baked.lat ?? null, lon: baked.lon ?? null, address: null };
       placeInfoCache[query] = info;
       return info;
     }
+    // Baked coords but no photo yet (a freshly-added place the nightly bake-geo
+    // run hasn't photo-baked). Keep the curated coords (free), but still resolve a
+    // photo from cache/live so the tile isn't stuck on the emoji placeholder.
+    const bakedCoords = baked ? { lat: baked.lat ?? null, lon: baked.lon ?? null } : null;
     // Persistent cache: rebuild the photo URL from the stored reference name.
     const stored = lsPlaceInfoGet(query);
     if (stored !== undefined) {
-      const info = stored && { photoUrl: photoUrlFromName(stored.photoName), lat: stored.lat, lon: stored.lon, address: stored.address };
+      let info = stored && { photoUrl: photoUrlFromName(stored.photoName), lat: stored.lat, lon: stored.lon, address: stored.address };
+      if (bakedCoords) info = { ...(info || { photoUrl: null, address: null }), lat: bakedCoords.lat, lon: bakedCoords.lon };
       placeInfoCache[query] = info || null;
       return placeInfoCache[query];
     }
@@ -4349,21 +4352,26 @@
         },
         body: JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' }),
       });
-      if (!res.ok) { placeInfoCache[query] = null; return null; }
+      if (!res.ok) { placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null; return placeInfoCache[query]; }
       const data = await res.json();
       const place = data.places?.[0];
-      if (!place) { placeInfoCache[query] = null; lsPlaceInfoSet(query, null); return null; }
+      if (!place) {
+        lsPlaceInfoSet(query, null);
+        placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null;
+        return placeInfoCache[query];
+      }
       const photoName = place.photos?.[0]?.name || null;
       const lat = place.location?.latitude ?? null;
       const lon = place.location?.longitude ?? null;
       const address = place.formattedAddress || null;
       lsPlaceInfoSet(query, { photoName, lat, lon, address });
-      const info = { photoUrl: photoUrlFromName(photoName), lat, lon, address };
+      // Curated baked coords win over the live geocode when we have them.
+      const info = { photoUrl: photoUrlFromName(photoName), lat: bakedCoords?.lat ?? lat, lon: bakedCoords?.lon ?? lon, address };
       placeInfoCache[query] = info;
       return info;
     } catch {
-      placeInfoCache[query] = null;
-      return null;
+      placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null;
+      return placeInfoCache[query];
     }
   }
 
@@ -5071,6 +5079,9 @@
     const body = document.getElementById('picnicSubBody');
     if (sub === 'spots') {
       body.innerHTML = `<div class="eat-section-header">🌳 Scenic spots to spread a blanket</div>${PICNIC_PARKS.map(parkTileHTML).join('')}`;
+      // Same lazy photo + distance treatment as restaurants: each tile resolves
+      // a Places photo and coordinates from its data-query (cached after first).
+      loadRestoImages(list);
     } else {
       const groups = cat.sections
         .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
