@@ -39,7 +39,8 @@ spot. Use as many as apply:
 | `neighborhood` | Neighborhood Spots tab |
 | `unique` | Unique tab |
 | `cheap-eats` | Cheap Eats tab |
-| `picnic` | **Picnic** tab + Picnic Planner pairings |
+| `picnic` | force-include in the **Picnic** tab + Picnic Planner (usually unneeded — see below) |
+| `no-picnic` | force-EXCLUDE from the Picnic tab (escape hatch for a takeout-looking cuisine that's really sit-down) |
 | `date-night` | favored by date-night planning |
 | `byob`, `outdoor` | surfaced where those vibes are requested |
 
@@ -48,9 +49,25 @@ Notes:
   cuisine, and is eligible for Discover’s Spin / Indecision / “Not in the mood”.
 - **Drinks & Dessert** in the Outing Builder are detected from the `cuisine`/name
   (e.g. a `cuisine: 'Cocktail Bar'` shows up under Drinks) — no special tag needed,
-  though adding `dessert`/`picnic` helps.
+  though adding `dessert` helps.
 - **Trending** is driven separately by the Eater scraper (`update-trendy.js`), not
   by a tag.
+
+### Picnic is auto-filtered by cuisine — usually no tag needed
+
+The **Picnic** tab and Picnic Planner pull in any spot whose `cuisine` is
+takeout-friendly automatically (bakery, deli, sandwich/hoagie, café, coffee,
+pizza, salad/bowl, vegan/fast-casual, ice cream/dessert, cheese & specialty,
+prepared foods, falafel/hummus/Mediterranean, taqueria/taco, banh mi, BBQ,
+fried chicken, bagel, donut, pretzel, juice/smoothie, poke, empanada, arepa,
+dumpling — see `PICNIC_CUISINE_RE` in `index.html`). So a new bakery or hoagie
+shop shows up in Picnic with **no tag at all**.
+
+- Add the **`picnic`** tag only to force-include a spot whose cuisine *doesn't*
+  match the list (e.g. an Ethiopian fried-chicken spot labeled just "Ethiopian").
+- Add the **`no-picnic`** tag to force-exclude a spot whose cuisine matches but
+  isn't really grab-and-go (e.g. a Korean BBQ cook-at-your-table place, or an
+  upscale wood-fired-pizza sit-down restaurant).
 
 ## 4. What you get automatically, per spot
 
