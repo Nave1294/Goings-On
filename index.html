@@ -8151,13 +8151,28 @@ Return ONLY valid JSON (no markdown fences):
     return PICNIC_PARKS[PICNIC.order[PICNIC.parkIdx % PICNIC.order.length]];
   }
 
+  // Meals a takeout spot would plausibly still be serving at the picnic hour.
+  // Used to drop clear mismatches — a dinner-only spot for a morning picnic, or
+  // a breakfast-only spot for an evening one. Deliberately generous; spots with
+  // no meal tag (cafés, bakeries, ice cream, delis) always pass the check below.
+  function picnicMealsAtHour(hr) {
+    const meals = new Set();
+    if (hr <= 15) meals.add('breakfast'); // breakfast/brunch spots run into the afternoon
+    if (hr >= 11) meals.add('lunch');     // late morning onward
+    if (hr >= 16) meals.add('dinner');    // late afternoon & evening
+    return meals;
+  }
+
   // Picnic-takeout spots within reach of the park for the chosen transit mode,
   // nearest first. Capped by the same radius the Outing Builder uses, so a spot
-  // is only paired when it's genuinely close enough to carry food to the blanket.
+  // is only paired when it's genuinely close enough to carry food to the blanket,
+  // and filtered to spots open for the chosen picnic time (same meal-window logic
+  // the Outing Builder uses) so we never suggest a place that's closed then.
   function picnicFoodCandidates(park) {
     const radius = transitRadiusMiles(PICNIC.transit);
+    const meals = picnicMealsAtHour(PICNIC.hour);
     return RESTAURANTS
-      .filter(r => isPicnicFriendly(r) && picnicGeo(r))
+      .filter(r => isPicnicFriendly(r) && picnicGeo(r) && obRestaurantFitsTime(r, meals))
       .map(r => ({ r, d: haversineMiles(park.lat, park.lon, r.geo.lat, r.geo.lon) }))
       .filter(o => o.d <= radius)
       .sort((a, b) => a.d - b.d)
@@ -8331,9 +8346,10 @@ Return ONLY valid JSON (no markdown fences):
       return PICNIC.dayIdx === 0 ? 'today' : (d ? DAYS_LONG[d.getDay()] : 'your day');
     })();
 
+    const timeLabel = plHourLabel(PICNIC.hour);
     const why = food
-      ? `${park.name} gives you ${park.desc.replace(/\.$/, '').replace(/^[A-Z]/, m => m.toLowerCase())}. ${food.name} sits just ${fmtMiles(dist)} away (${legLabel}), so you can grab ${escapeHtml((food.cuisine || 'takeout').toLowerCase())} and be on the blanket in minutes.`
-      : `${park.name} is a top spot to spread out — but there’s no picnic takeout within ${rangeWord} of it. Pack your own basket, or try a different way to get there for more options.`;
+      ? `${park.name} gives you ${park.desc.replace(/\.$/, '').replace(/^[A-Z]/, m => m.toLowerCase())}. ${food.name} sits just ${fmtMiles(dist)} away (${legLabel}) and is open around ${timeLabel}, so you can grab ${escapeHtml((food.cuisine || 'takeout').toLowerCase())} and be on the blanket in minutes.`
+      : `${park.name} is a top spot to spread out — but nothing picnic-friendly looks open around ${timeLabel} within ${rangeWord} of it. Pack your own basket, try a different time, or switch how you’re getting there for more options.`;
 
     const foodCard = food ? `
       <div class="picnic-card">
@@ -8347,7 +8363,7 @@ Return ONLY valid JSON (no markdown fences):
           <a class="resto-action" href="${escapeAttr(picnicDirUrl(park, food))}" target="_blank" rel="noopener">🧭 Directions to the park</a>
         </div>
       </div>` : `
-      <div class="picnic-card"><div class="picnic-card-desc">No picnic-takeout spot within ${rangeWord} of ${escapeHtml(park.name)} — bring your own basket, or switch your transport mode for more options.</div></div>`;
+      <div class="picnic-card"><div class="picnic-card-desc">No picnic-takeout spot open around ${escapeHtml(timeLabel)} within ${rangeWord} of ${escapeHtml(park.name)} — bring your own basket, try a different time, or switch your transport mode for more options.</div></div>`;
 
     const eventsCard = events.length ? `
       <div class="picnic-card">
