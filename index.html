@@ -573,12 +573,18 @@
     }
     .pl-wx-strip-hours::-webkit-scrollbar { display: none; }
     .pl-wx-strip-na { font-size: 0.82rem; color: var(--text-secondary); }
-    .pl-wx-hr--sel .hour-time, .pl-wx-hr--sel .hour-temp { color: #4a8c3f; }
-    .pl-wx-hr--sel { position: relative; }
-    .pl-wx-hr--sel::after {
-      content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-      width: 5px; height: 5px; border-radius: 50%; background: #79b84a;
+    .pl-wx-strip-hours { align-items: stretch; padding-top: 2px; }
+    .pl-wx-hr--sel {
+      background: #79b84a;
+      border-radius: 12px;
+      padding: 6px 6px 7px;
+      box-shadow: 0 3px 10px rgba(74,140,63,0.45);
+      transform: scale(1.08);
+      transition: transform 0.15s ease;
     }
+    .pl-wx-hr--sel .hour-time { color: #fff; }
+    .pl-wx-hr--sel .hour-temp { color: #fff; font-size: 0.95rem; }
+    .pl-wx-hr--sel .hour-icon { font-size: 1.2rem; }
 
     .event-meta {
       font-size: 0.82rem;
@@ -2471,6 +2477,21 @@
     }).filter(Boolean);
   }
 
+  // The strip only shows every other hour, so a chosen time often lands between
+  // two cells. Snap each selected hour to the *later* of the two it falls between
+  // (and clamp to the last cell if it's past the end) so the highlight lands on a
+  // real cell.
+  function snapToStripHours(selHours, availHours) {
+    const sorted = [...availHours].sort((a, b) => a - b);
+    const out = new Set();
+    for (const sh of (selHours || [])) {
+      if (sh == null) continue;
+      const pick = sorted.find(h => h >= sh);
+      out.add(pick != null ? pick : sorted[sorted.length - 1]);
+    }
+    return out;
+  }
+
   function dayWeatherStripInnerHTML(wx, date, selHours) {
     const dayLbl = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const hours = wx ? planDayHourly(wx, date) : [];
@@ -2487,9 +2508,10 @@
     }
     const hi = Math.round(Math.max(...hours.map(h => h.temp)));
     const lo = Math.round(Math.min(...hours.map(h => h.temp)));
+    const sel = snapToStripHours(selHours, hours.map(h => h.hour));
     return `<div class="pl-wx-strip-head"><span>${escapeHtml(dayLbl)}</span><span class="pl-wx-strip-hilo">${hi}°/${lo}°</span></div>
       <div class="pl-wx-strip-hours">
-        ${hours.map(h => `<div class="hour-cell${(selHours || []).includes(h.hour) ? ' pl-wx-hr--sel' : ''}">
+        ${hours.map(h => `<div class="hour-cell${sel.has(h.hour) ? ' pl-wx-hr--sel' : ''}">
           <div class="hour-time">${fmtHourLabel(new Date(date.getFullYear(), date.getMonth(), date.getDate(), h.hour))}</div>
           <div class="hour-icon">${WEATHER_ICONS[h.code] || ''}</div>
           <div class="hour-temp">${h.temp}°</div>
