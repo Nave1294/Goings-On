@@ -570,6 +570,7 @@
     .pl-wx-strip-hilo { font-weight: 800; }
     .pl-wx-strip-hours {
       display: flex; gap: 0.85rem; overflow-x: auto; scrollbar-width: none;
+      position: relative; scroll-behavior: smooth;
     }
     .pl-wx-strip-hours::-webkit-scrollbar { display: none; }
     .pl-wx-strip-na { font-size: 0.82rem; color: var(--text-secondary); }
@@ -2519,6 +2520,21 @@
       </div>`;
   }
 
+  // Scroll the ribbon so the highlighted hour(s) sit centered in view — when a
+  // range is selected, centers their midpoint so both stay visible.
+  function centerStripSelection(row) {
+    const sels = row.querySelectorAll('.pl-wx-hr--sel');
+    if (!sels.length) return;
+    let min = Infinity, max = -Infinity;
+    sels.forEach(s => {
+      const left = s.offsetLeft;
+      min = Math.min(min, left);
+      max = Math.max(max, left + s.offsetWidth);
+    });
+    const target = (min + max) / 2 - row.clientWidth / 2;
+    row.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }
+
   async function mountDayWeatherStrip(targetId, date, selHours) {
     const el = document.getElementById(targetId);
     if (!el || !date) return;
@@ -2527,6 +2543,8 @@
     const el2 = document.getElementById(targetId);
     if (!el2) return;
     el2.innerHTML = dayWeatherStripInnerHTML(wx, date, selHours);
+    const row = el2.querySelector('.pl-wx-strip-hours');
+    if (row) centerStripSelection(row);
   }
 
   const QUOTES = [
