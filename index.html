@@ -2520,8 +2520,9 @@
       </div>`;
   }
 
-  // Scroll the ribbon so the highlighted hour(s) sit centered in view — when a
-  // range is selected, centers their midpoint so both stay visible.
+  // Nudge the ribbon's scroll only if the highlighted hour(s) would otherwise be
+  // off-screen — keeps the selection visible without yanking the scroll position
+  // around on every render.
   function centerStripSelection(row) {
     const sels = row.querySelectorAll('.pl-wx-hr--sel');
     if (!sels.length) return;
@@ -2531,8 +2532,10 @@
       min = Math.min(min, left);
       max = Math.max(max, left + s.offsetWidth);
     });
-    const target = (min + max) / 2 - row.clientWidth / 2;
-    row.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    const viewLeft = row.scrollLeft;
+    const viewRight = viewLeft + row.clientWidth;
+    if (min < viewLeft) row.scrollTo({ left: min, behavior: 'smooth' });
+    else if (max > viewRight) row.scrollTo({ left: max - row.clientWidth, behavior: 'smooth' });
   }
 
   async function mountDayWeatherStrip(targetId, date, selHours) {
