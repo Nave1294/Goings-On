@@ -555,6 +555,31 @@
       letter-spacing: -0.01em;
     }
 
+    /* Day-weather strip — shown atop planner day/time pickers */
+    .pl-wx-strip {
+      background: var(--accent-soft);
+      border-radius: 14px;
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .pl-wx-strip-head {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.85rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.55rem;
+    }
+    .pl-wx-strip-hilo { font-weight: 800; }
+    .pl-wx-strip-hours {
+      display: flex; gap: 0.85rem; overflow-x: auto; scrollbar-width: none;
+    }
+    .pl-wx-strip-hours::-webkit-scrollbar { display: none; }
+    .pl-wx-strip-na { font-size: 0.82rem; color: var(--text-secondary); }
+    .pl-wx-hr--sel .hour-time, .pl-wx-hr--sel .hour-temp { color: #4a8c3f; }
+    .pl-wx-hr--sel { position: relative; }
+    .pl-wx-hr--sel::after {
+      content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+      width: 5px; height: 5px; border-radius: 50%; background: #79b84a;
+    }
+
     .event-meta {
       font-size: 0.82rem;
       color: var(--text-secondary);
@@ -2430,6 +2455,56 @@
         </div>
       `).join('')}
     </div>`;
+  }
+
+  // ── Day-weather strip — shared across the Outing Builder, AI Planner, and
+  // Picnic Planner's day/time pickers, so conditions throughout the day are
+  // visible right where a day or time gets chosen.
+  const PL_WX_STRIP_HOURS = [7, 9, 11, 13, 15, 17, 19, 21];
+
+  function planDayHourly(wx, date) {
+    return PL_WX_STRIP_HOURS.map(h => {
+      const cursor = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h);
+      const idx = wx.hourly?.time?.indexOf(nyHourKey(cursor));
+      if (idx == null || idx < 0) return null;
+      return { hour: h, temp: Math.round(wx.hourly.temperature_2m[idx]), code: wx.hourly.weather_code[idx] };
+    }).filter(Boolean);
+  }
+
+  function dayWeatherStripInnerHTML(wx, date, selHours) {
+    const dayLbl = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const hours = wx ? planDayHourly(wx, date) : [];
+    if (!hours.length) {
+      const di = wx?.daily?.time?.indexOf(ymd(date));
+      if (wx && di != null && di >= 0) {
+        const icon = WEATHER_ICONS[wx.daily.weather_code[di]] || '⛅';
+        const hi = Math.round(wx.daily.temperature_2m_max[di]);
+        const lo = Math.round(wx.daily.temperature_2m_min[di]);
+        return `<div class="pl-wx-strip-head"><span>${escapeHtml(dayLbl)}</span><span class="pl-wx-strip-hilo">${icon} ${hi}°/${lo}°</span></div>
+          <div class="pl-wx-strip-na">Hourly forecast not available this far out.</div>`;
+      }
+      return `<div class="pl-wx-strip-na">Forecast not available yet — try again in a moment.</div>`;
+    }
+    const hi = Math.round(Math.max(...hours.map(h => h.temp)));
+    const lo = Math.round(Math.min(...hours.map(h => h.temp)));
+    return `<div class="pl-wx-strip-head"><span>${escapeHtml(dayLbl)}</span><span class="pl-wx-strip-hilo">${hi}°/${lo}°</span></div>
+      <div class="pl-wx-strip-hours">
+        ${hours.map(h => `<div class="hour-cell${(selHours || []).includes(h.hour) ? ' pl-wx-hr--sel' : ''}">
+          <div class="hour-time">${fmtHourLabel(new Date(date.getFullYear(), date.getMonth(), date.getDate(), h.hour))}</div>
+          <div class="hour-icon">${WEATHER_ICONS[h.code] || ''}</div>
+          <div class="hour-temp">${h.temp}°</div>
+        </div>`).join('')}
+      </div>`;
+  }
+
+  async function mountDayWeatherStrip(targetId, date, selHours) {
+    const el = document.getElementById(targetId);
+    if (!el || !date) return;
+    el.innerHTML = `<div class="pl-wx-strip-na">Loading weather…</div>`;
+    const wx = await fetchWeatherForCoord(PHILLY_LAT, PHILLY_LON);
+    const el2 = document.getElementById(targetId);
+    if (!el2) return;
+    el2.innerHTML = dayWeatherStripInnerHTML(wx, date, selHours);
   }
 
   const QUOTES = [
@@ -6638,6 +6713,7 @@ Valid types: "meal", "activity", "dessert"`;
     document.getElementById('plHeadline').textContent = 'Which day?';
     const days = plDays();
     body.innerHTML = `
+      <div class="pl-wx-strip" id="plWxStrip"></div>
       <div class="pl-q">Pick a day in the week ahead.</div>
       <div class="dn-days">
         ${days.map((d, i) => {
@@ -6652,15 +6728,19 @@ Valid types: "meal", "activity", "dessert"`;
     body.querySelectorAll('.dn-day-chip').forEach(c => c.addEventListener('click', () => {
       PL.dayIdx = +c.dataset.idx;
       body.querySelectorAll('.dn-day-chip').forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('plWxStrip', days[PL.dayIdx], []);
     }));
     document.getElementById('plNext').addEventListener('click', plAdvance);
+    mountDayWeatherStrip('plWxStrip', days[PL.dayIdx], []);
   }
 
   function plStepTime(body) {
     document.getElementById('plHeadline').textContent = 'Start & end time';
+    const day = plDays()[PL.dayIdx];
     const row = (sel, val) => PL_TIME_OPTS.map(o =>
       `<button class="pl-time-chip${o.hr === val ? ' active' : ''}" data-sel="${sel}" data-hr="${o.hr}" type="button">${o.label}</button>`).join('');
     body.innerHTML = `
+      <div class="pl-wx-strip" id="plWxStrip"></div>
       <div class="pl-q">When does it start?</div>
       <div class="pl-time-grid">${row('start', PL.startHour)}</div>
       <div class="pl-q" style="margin-top:1.1rem;">And roughly when should it wrap up?</div>
@@ -6671,11 +6751,13 @@ Valid types: "meal", "activity", "dessert"`;
       const sel = c.dataset.sel, hr = +c.dataset.hr;
       if (sel === 'start') PL.startHour = hr; else PL.endHour = hr;
       body.querySelectorAll(`.pl-time-chip[data-sel="${sel}"]`).forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('plWxStrip', day, [PL.startHour, PL.endHour]);
     }));
     document.getElementById('plNext').addEventListener('click', () => {
       if (PL.endHour <= PL.startHour) { document.getElementById('plTimeWarn').hidden = false; return; }
       plAdvance();
     });
+    mountDayWeatherStrip('plWxStrip', day, [PL.startHour, PL.endHour]);
   }
 
   function plStepCompose(body) {
@@ -7510,6 +7592,7 @@ Valid types: "meal", "activity", "dessert"`;
       return;
     }
     body.innerHTML = `
+      <div class="pl-wx-strip" id="obWxStrip"></div>
       <div class="pl-q">Pick a day in the week ahead.</div>
       <div class="dn-days">
         ${days.map((d, i) => {
@@ -7524,8 +7607,10 @@ Valid types: "meal", "activity", "dessert"`;
     body.querySelectorAll('[data-ob-day]').forEach(c => c.addEventListener('click', () => {
       OB.dayIdx = +c.dataset.obDay;
       body.querySelectorAll('[data-ob-day]').forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('obWxStrip', days[OB.dayIdx], []);
     }));
     document.getElementById('obDateNext').addEventListener('click', () => { OB.step = 'transit'; obRender(); });
+    mountDayWeatherStrip('obWxStrip', days[OB.dayIdx], []);
   }
 
   function obRenderTransit(body) {
@@ -7580,9 +7665,11 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   function obRenderTime(body) {
+    const day = obDays()[OB.dayIdx];
     const row = (sel, val) => PL_TIME_OPTS.map(o =>
       `<button class="pl-time-chip${o.hr === val ? ' active' : ''}" data-ob-sel="${sel}" data-hr="${o.hr}" type="button">${o.label}</button>`).join('');
     body.innerHTML = `
+      <div class="pl-wx-strip" id="obWxStrip"></div>
       <div class="pl-q">What time are you starting?</div>
       <div class="pl-time-grid">${row('start', OB.startHour)}</div>
       <div class="pl-q" style="margin-top:1.1rem;">And roughly when should it wrap up?</div>
@@ -7593,12 +7680,14 @@ Valid types: "meal", "activity", "dessert"`;
       const sel = c.dataset.obSel, hr = +c.dataset.hr;
       if (sel === 'start') OB.startHour = hr; else OB.endHour = hr;
       body.querySelectorAll(`.pl-time-chip[data-ob-sel="${sel}"]`).forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('obWxStrip', day, [OB.startHour, OB.endHour]);
     }));
     document.getElementById('obTimeNext').addEventListener('click', () => {
       if (OB.endHour <= OB.startHour) { document.getElementById('obTimeWarn').hidden = false; return; }
       OB.step = OB.stops.length > 0 ? 'equation' : 'first-category';
       obRender();
     });
+    mountDayWeatherStrip('obWxStrip', day, [OB.startHour, OB.endHour]);
   }
 
   function obRenderCategory(body, isFirst) {
@@ -8278,6 +8367,7 @@ Return ONLY valid JSON (no markdown fences):
       `<button class="pl-time-chip${o.hr === PICNIC.hour ? ' active' : ''}" data-picnic-hr="${o.hr}" type="button">${o.label}</button>`).join('');
     body.innerHTML = `
       ${seedNote}
+      <div class="pl-wx-strip" id="picnicWxStrip"></div>
       <div class="pl-q">Which day?</div>
       <div class="dn-days">
         ${days.map((d, i) => {
@@ -8297,10 +8387,12 @@ Return ONLY valid JSON (no markdown fences):
     body.querySelectorAll('[data-picnic-day]').forEach(c => c.addEventListener('click', () => {
       PICNIC.dayIdx = +c.dataset.picnicDay;
       body.querySelectorAll('[data-picnic-day]').forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('picnicWxStrip', days[PICNIC.dayIdx], [PICNIC.hour]);
     }));
     body.querySelectorAll('[data-picnic-hr]').forEach(c => c.addEventListener('click', () => {
       PICNIC.hour = +c.dataset.picnicHr;
       body.querySelectorAll('[data-picnic-hr]').forEach(x => x.classList.toggle('active', x === c));
+      mountDayWeatherStrip('picnicWxStrip', days[PICNIC.dayIdx], [PICNIC.hour]);
     }));
     body.querySelectorAll('[data-picnic-transit]').forEach(c => c.addEventListener('click', () => {
       PICNIC.transit = c.dataset.picnicTransit;
@@ -8311,6 +8403,7 @@ Return ONLY valid JSON (no markdown fences):
       PICNIC.step = 'result';
       picnicRender();
     });
+    mountDayWeatherStrip('picnicWxStrip', days[PICNIC.dayIdx], [PICNIC.hour]);
   }
 
   async function picnicRenderResult(body) {
