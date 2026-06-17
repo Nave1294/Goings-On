@@ -8193,7 +8193,30 @@ Return ONLY valid JSON (no markdown fences):
   // ── Picnic Planner ──────────────────────────────────────────────
   // Pairs a scenic park with a nearby picnic-takeout spot, with weather for the
   // chosen time, a map of the two, what to bring, and any events near the park.
-  const PICNIC = { step: 'when', dayIdx: 0, hour: 12, transit: 'walk', parkIdx: 0, foodIdx: 0, order: [], seed: null };
+  const PICNIC = { step: 'when', dayIdx: 0, hour: 12, transit: 'walk', area: null, parkIdx: 0, foodIdx: 0, order: [], seed: null };
+
+  // Broad city areas for the picnic-area picker. Parks live in ~22 granular
+  // neighborhoods, so we group them into the same handful of regions a Philadelphian
+  // thinks in — mirroring the neighborhood step in the other planners.
+  const PICNIC_AREAS = [
+    { id: null,         emoji: '🌆', label: 'Anywhere' },
+    { id: 'center',     emoji: '🏙️', label: 'Center City', hoods: ['Rittenhouse', 'Fitler Square', 'Washington Square West', 'Logan Square', 'Graduate Hospital', 'Callowhill', 'Old City', "Penn's Landing"] },
+    { id: 'fairmount',  emoji: '🎨', label: 'Fairmount & Parkway', hoods: ['Fairmount', 'Fairmount Park'] },
+    { id: 'west',       emoji: '🌳', label: 'West Philly', hoods: ['West Philly', 'West Fairmount Park', 'University City', 'East Falls', 'Southwest Philly'] },
+    { id: 'south',      emoji: '🍕', label: 'South Philly', hoods: ['South Philly', 'Navy Yard'] },
+    { id: 'river',      emoji: '🐟', label: 'River Wards', hoods: ['Fishtown', 'Port Richmond'] },
+    { id: 'north',      emoji: '🌲', label: 'NE & NW', hoods: ['Northeast Philly', 'Chestnut Hill', 'Northwest Philly'] },
+  ];
+
+  const picnicNormHood = h => (h || '').replace(/[’']/g, "'").trim();
+
+  function picnicAreaMatches(park, areaId) {
+    if (!areaId) return true;
+    const area = PICNIC_AREAS.find(a => a.id === areaId);
+    if (!area || !area.hoods) return true;
+    const norm = picnicNormHood(park.neighborhood);
+    return area.hoods.some(x => picnicNormHood(x) === norm);
+  }
 
   // Travel radius + leg labels reuse the same model as the Outing Builder so the
   // Picnic Planner never pairs a spot that's unreasonably far for the chosen mode.
@@ -8223,8 +8246,14 @@ Return ONLY valid JSON (no markdown fences):
   }
 
   // Build a shuffled park order; if seeded from a specific park, pin it first.
+  // When an area is chosen (and we're not seeded to a single park), keep only
+  // parks in that area, falling back to all parks if the area somehow has none.
   function picnicBuildOrder() {
-    const idx = PICNIC_PARKS.map((_, i) => i);
+    let idx = PICNIC_PARKS.map((_, i) => i);
+    if (PICNIC.seed == null && PICNIC.area) {
+      const filtered = idx.filter(i => picnicAreaMatches(PICNIC_PARKS[i], PICNIC.area));
+      if (filtered.length) idx = filtered;
+    }
     for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
     if (PICNIC.seed != null) {
       const pos = idx.indexOf(PICNIC.seed);
@@ -8341,6 +8370,7 @@ Return ONLY valid JSON (no markdown fences):
     PICNIC.dayIdx = (lastRender && lastRender.activeIdx) || 0;
     PICNIC.hour = 12;
     PICNIC.transit = 'walk';
+    PICNIC.area = null;
     picnicBuildOrder();
     overlay.removeAttribute('hidden');
     picnicRender();
@@ -8365,6 +8395,13 @@ Return ONLY valid JSON (no markdown fences):
       ? `<div class="picnic-seed-note">📍 Planning around <strong>${escapeHtml(PICNIC_PARKS[PICNIC.seed].name)}</strong></div>` : '';
     const timeRow = PL_TIME_OPTS.filter(o => o.hr >= 9 && o.hr <= 20).map(o =>
       `<button class="pl-time-chip${o.hr === PICNIC.hour ? ' active' : ''}" data-picnic-hr="${o.hr}" type="button">${o.label}</button>`).join('');
+    // Area chooser only makes sense when we're free to roam — if we're seeded to a
+    // specific park, that park already fixes the location.
+    const areaBlock = PICNIC.seed != null ? '' : `
+      <div class="pl-q" style="margin-top:1.1rem;">Which part of the city?</div>
+      <div class="pl-chip-grid">
+        ${PICNIC_AREAS.map(a => `<button class="pl-chip${PICNIC.area === a.id ? ' active' : ''}" data-picnic-area="${a.id === null ? '' : escapeAttr(a.id)}" type="button"><span class="pl-chip-emoji">${a.emoji}</span>${escapeHtml(a.label)}</button>`).join('')}
+      </div>`;
     body.innerHTML = `
       ${seedNote}
       <div class="pl-wx-strip" id="picnicWxStrip"></div>
@@ -8379,11 +8416,16 @@ Return ONLY valid JSON (no markdown fences):
       </div>
       <div class="pl-q" style="margin-top:1.1rem;">Roughly what time?</div>
       <div class="pl-time-grid">${timeRow}</div>
+      ${areaBlock}
       <div class="pl-q" style="margin-top:1.1rem;">How are you getting there?</div>
       <div class="pl-chip-grid">
         ${PL_TRANSIT_MODES.map(m => `<button class="pl-chip${PICNIC.transit === m.id ? ' active' : ''}" data-picnic-transit="${escapeAttr(m.id)}" type="button"><span class="pl-chip-emoji">${m.emoji}</span>${escapeHtml(m.label)}</button>`).join('')}
       </div>
       <button class="pl-next" id="picnicFindBtn" type="button">🧺 Find my picnic →</button>`;
+    body.querySelectorAll('[data-picnic-area]').forEach(c => c.addEventListener('click', () => {
+      PICNIC.area = c.dataset.picnicArea || null;
+      body.querySelectorAll('[data-picnic-area]').forEach(x => x.classList.toggle('active', x === c));
+    }));
     body.querySelectorAll('[data-picnic-day]').forEach(c => c.addEventListener('click', () => {
       PICNIC.dayIdx = +c.dataset.picnicDay;
       body.querySelectorAll('[data-picnic-day]').forEach(x => x.classList.toggle('active', x === c));
