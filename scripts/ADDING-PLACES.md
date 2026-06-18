@@ -42,11 +42,18 @@ spot. Use as many as apply:
 | `picnic` | force-include in the **Picnic** tab + Picnic Planner (usually unneeded — see below) |
 | `no-picnic` | force-EXCLUDE from the Picnic tab (escape hatch for a takeout-looking cuisine that's really sit-down) |
 | `date-night` | favored by date-night planning |
-| `byob`, `outdoor` | surfaced where those vibes are requested |
+| `outdoor` | adds it to the **Outdoor Dining** tab automatically (and outdoor-vibe planner picks) — no second entry needed |
+| `byob` | surfaced where that vibe is requested |
 
 Notes:
 - **Every** spot also appears automatically in **All Restaurants**, grouped by
   cuisine, and is eligible for Discover’s Spin / Indecision / “Not in the mood”.
+- **One entry, everywhere.** Add the spot once to `RESTAURANTS` (inside the
+  EAT-PLACES markers) and the right tabs fill from its `tags`/`cuisine`. You never
+  re-enter a place in a second list, and `bake-geo` looks it up exactly once.
+  `OUTDOOR_DINING_SECTIONS` is reserved for the curated *non-restaurant* venues
+  (rooftop bars, beer gardens, waterfront spots) that don't belong in the master
+  list — a normal restaurant with a patio just gets the `outdoor` tag.
 - **Drinks & Dessert** in the Outing Builder are detected from the `cuisine`/name
   (e.g. a `cuisine: 'Cocktail Bar'` shows up under Drinks) — no special tag needed,
   though adding `dessert` helps.
