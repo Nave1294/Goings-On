@@ -95,7 +95,29 @@ markers (so the business-oriented audit never tries to “close” a pier or gar
 Each park needs `name`, `neighborhood`, `location`, `lat`, `lon`, `desc`, and a
 `bring` tip. Photos/distance for parks load live and cache per visitor.
 
-## 6. Events
+## 6. Performing-arts discount venues
+
+The **Performing Arts** page is a static guide to each venue's discount / rush /
+pay-what-you-wish program — not a place list and not scraped per-show (the venue
+sites block bots). To add or fix a venue, edit the `PA_VENUES` array between the
+`// PA-START` and `// PA-END` markers in `index.html`. Keep it **valid JSON** (the
+quarterly Action re-reads it): double-quoted keys, no trailing commas. Each venue:
+
+```json
+{ "id": "slug", "group": "stages|theater|classical|free", "name": "Venue",
+  "kind": "short descriptor", "location": "address, neighborhood", "website": "https://…",
+  "deals": [ { "name": "Program", "price": "$10", "who": "who qualifies", "how": "how to get it", "url": "https://…" } ],
+  "note": "optional caveat" }
+```
+
+`group` picks the sub-tab (defined in `PA_GROUPS`, just above the markers). The
+**`update-arts-discounts.js`** Action runs quarterly: it uses Claude's web-search
+tool (which gets past the venue sites' bot-blocking, since the search runs on
+Anthropic's side, not the runner) to re-verify each venue's rules and rewrite the
+block — keeping the existing value whenever it can't confirm a change. Run it by
+hand from the Actions tab anytime.
+
+## 7. Events
 
 Events are **not** in this file — the app reads them from the linked Google
 Calendar (`CALENDAR_ID` in `index.html`). To add an event, add it to that

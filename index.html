@@ -1034,6 +1034,88 @@
       width: fit-content;
     }
 
+    /* ── Performing-arts discount cards ── */
+    .pa-card {
+      background: var(--card, #fff);
+      border: 1px solid var(--border, rgba(0,0,0,0.08));
+      border-radius: 16px;
+      padding: 1rem 1.05rem 1.1rem;
+      margin-bottom: 0.85rem;
+    }
+    .pa-card-name {
+      font-size: 1.02rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .pa-card-kind {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+    .pa-card-loc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+    .pa-deal {
+      border-top: 1px solid var(--border, rgba(0,0,0,0.07));
+      padding-top: 0.7rem;
+      margin-top: 0.7rem;
+    }
+    .pa-deal-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .pa-deal-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+    .pa-deal-price {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #2f7d32;
+      background: rgba(74, 140, 63, 0.14);
+      border-radius: 999px;
+      padding: 2px 9px;
+      white-space: nowrap;
+    }
+    .pa-deal-who {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #8a5a13;
+      margin-top: 4px;
+    }
+    .pa-deal-how {
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: var(--text);
+      margin-top: 4px;
+    }
+    .pa-deal-link {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 5px;
+      text-decoration: none;
+    }
+    .pa-deal-link:hover { text-decoration: underline; }
+    .pa-card-note {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--text-secondary);
+      margin-top: 0.7rem;
+      font-style: italic;
+    }
+    .pa-updated {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin: 0.2rem 0 0.9rem;
+    }
+
     /* ── Distance bubble ── */
     .distance-bubble {
       display: inline-flex;
@@ -2075,6 +2157,28 @@
       </div>
     </div>
     <div id="picnicList"></div>
+  </div>
+</div>
+
+<div class="container view" id="view-performing-arts">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Performing Arts</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="sub-tabs" id="paSubTabs"></div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow" id="paEyebrow">Performing Arts</div>
+        <div class="day-title" id="paTitle">Discount Tickets</div>
+        <div class="day-subtitle" id="paSubtitle">Rush, student &amp; pay-what-you-wish deals across Philly stages</div>
+      </div>
+    </div>
+    <div id="paList"></div>
   </div>
 </div>
 
@@ -4236,6 +4340,262 @@
   ];
   // TRENDY-END
 
+  // Performing Arts: sub-tabs that group the venues below. (Static — the
+  // discount RULES inside PA_VENUES are what the quarterly Action re-verifies.)
+  const PA_GROUPS = [
+    { id: 'stages',    emoji: '🏛️', label: 'Major Stages',        subtitle: 'The big presenting houses &amp; amphitheaters' },
+    { id: 'theater',   emoji: '🎭', label: 'Theater Companies',     subtitle: 'Producing theaters with their own rush &amp; PWYW deals' },
+    { id: 'classical', emoji: '🎻', label: 'Orchestra · Opera · Dance', subtitle: 'Resident companies &amp; classical presenters' },
+    { id: 'free',      emoji: '💸', label: 'Booths & Free',         subtitle: 'The TKTS booth and reliably free performances' },
+  ];
+
+  // PA-START — discount-ticket rules; re-verified quarterly by GitHub Action, safe to hand-edit
+  const PA_UPDATED = '2026-06-18';
+  const PA_VENUES = [
+    {
+        "id": "ensemble-arts",
+        "group": "stages",
+        "name": "Ensemble Arts Philly / Kimmel Cultural Campus",
+        "kind": "Broadway · Orchestra · Recitals",
+        "location": "300 S Broad St, Avenue of the Arts",
+        "website": "https://www.ensembleartsphilly.org",
+        "deals": [
+            { "name": "Community Rush", "price": "$35 or less", "who": "Open to anyone — no ID", "how": "Each Monday the week's eligible shows post online; or buy in person at the Kimmel box office day-of (5:30pm evenings / 11:30am matinees). Philadelphia Orchestra rush is ~$29; children under 14 with an adult are $29.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" },
+            { "name": "SEPTA Perks", "price": "Up to 40% off", "who": "SEPTA Key cardholders", "how": "Discount on select performances for SEPTA Key holders.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" }
+        ],
+        "note": "Covers the Academy of Music, Kimmel Center (Marian Anderson Hall, ex-Verizon Hall) and Miller Theater (ex-Merriam)."
+    },
+    {
+        "id": "mann",
+        "group": "stages",
+        "name": "Highmark Mann Center",
+        "kind": "Outdoor amphitheater — Fairmount Park",
+        "location": "5201 Parkside Ave, Fairmount Park",
+        "website": "https://manncenter.org",
+        "deals": [
+            { "name": "Access the Arts (free Orchestra lawn)", "price": "Free", "who": "Via 350+ partner nonprofits", "how": "~5,000 free Philadelphia Orchestra lawn tickets a year are distributed through community partner organizations — not at the box office.", "url": "https://manncenter.org/ticketing" },
+            { "name": "Children under 2", "price": "Free", "who": "Lawn, Orchestra concerts", "how": "Redeem at the Ticket Office the evening of the show, with a guardian.", "url": "https://manncenter.org/ticketing" }
+        ],
+        "note": "No general student/youth walk-up discount, and day-of tickets cost $5 more than face value."
+    },
+    {
+        "id": "penn-live-arts",
+        "group": "stages",
+        "name": "Penn Live Arts (Annenberg Center)",
+        "kind": "University presenter — dance, music & theater",
+        "location": "3680 Walnut St, University City",
+        "website": "https://pennlivearts.org",
+        "deals": [
+            { "name": "College Student Rush", "price": "$10", "who": "Any college student w/ valid ID", "how": "At the box office 2 hours before the show; limit 2.", "url": "https://pennlivearts.org/events/college-students.php" },
+            { "name": "Penn Students", "price": "$10", "who": "Penn students", "how": "Code PENNSTUDENT anytime online or at the box office; Penn email to buy, Penn ID at pickup; limit 2.", "url": "https://pennlivearts.org/events/college-students.php" },
+            { "name": "20% off for anyone", "price": "20% off", "who": "Anyone", "how": "Use code PENN online; students use STUDENT20 for 20% off anytime.", "url": "https://pennlivearts.org/events/college-students.php" }
+        ]
+    },
+    {
+        "id": "walnut",
+        "group": "theater",
+        "name": "Walnut Street Theatre",
+        "kind": "Historic producing theater — Broadway-style",
+        "location": "825 Walnut St, Washington Square West",
+        "website": "https://www.walnutstreettheatre.org",
+        "deals": [
+            { "name": "\"Under 40\"", "price": "$35", "who": "Anyone 40 or younger", "how": "Free to join online; you get promo codes and can buy a pair (your guest can be any age). Pick up day-of, noon to showtime.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" },
+            { "name": "Youth / Military / Industry Rush", "price": "$25", "who": "24-and-under, active military, or industry", "how": "Day-of with ID showing date of birth; one per ID.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" },
+            { "name": "Day-of Standby", "price": "~$50", "who": "Anyone", "how": "Released at noon day-of by phone or box office (not online); a limited $25 mezzanine is also offered.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" }
+        ],
+        "note": "Ticket prices add a $2.50 preservation fee."
+    },
+    {
+        "id": "arden",
+        "group": "theater",
+        "name": "Arden Theatre Company",
+        "kind": "Regional theater — Old City",
+        "location": "40 N 2nd St, Old City",
+        "website": "https://ardentheatre.org",
+        "deals": [
+            { "name": "Student Rush", "price": "$15", "who": "Students w/ ID", "how": "In person up to 1 hour before curtain; limit 2. ($5-off student advance tickets are also available online/phone with ID at will-call.)", "url": "https://ardentheatre.org/tickets/discounts/" },
+            { "name": "SEPTA Key", "price": "$10 off", "who": "Anyone w/ SEPTA Key", "how": "Discount applied at purchase; Industry Rush $20 and Educator $5-off are also offered.", "url": "https://ardentheatre.org/tickets/discounts/" }
+        ]
+    },
+    {
+        "id": "wilma",
+        "group": "theater",
+        "name": "Wilma Theater",
+        "kind": "Contemporary regional theater",
+        "location": "265 S Broad St, Avenue of the Arts",
+        "website": "https://wilmatheater.org",
+        "deals": [
+            { "name": "Rush", "price": "$20", "who": "Anyone", "how": "In person 1 hour before curtain, subject to availability.", "url": "https://wilmatheater.org/visit/box-office/" },
+            { "name": "Student / Industry", "price": "$20", "who": "Students or industry", "how": "Request via the online discount form; show ID/proof at pickup; limit 1.", "url": "https://wilmatheater.org/visit/box-office/" }
+        ]
+    },
+    {
+        "id": "ptc",
+        "group": "theater",
+        "name": "Philadelphia Theatre Company",
+        "kind": "Regional theater — Suzanne Roberts Theatre",
+        "location": "480 S Broad St, Avenue of the Arts",
+        "website": "https://philadelphiatheatrecompany.org",
+        "deals": [
+            { "name": "Student Rush", "price": "~$15", "who": "Students w/ ID", "how": "Day-of with valid student ID; ACCESS Card holders $2–$5. Call 215-985-0420 to confirm — PTC's slate has been in flux.", "url": "https://philadelphiatheatrecompany.org/tickets/" }
+        ]
+    },
+    {
+        "id": "1812",
+        "group": "theater",
+        "name": "1812 Productions",
+        "kind": "Philadelphia's comedy theater company",
+        "location": "Plays & Players, 1714 Delancey St, Rittenhouse",
+        "website": "https://1812productions.org",
+        "deals": [
+            { "name": "Student & preview discounts", "price": "~$15–$20", "who": "Students w/ ID", "how": "Reduced student and preview-performance pricing; group and ACCESS rates too. Call 215-592-9560 to confirm current figures.", "url": "https://1812productions.org/tickets/" }
+        ]
+    },
+    {
+        "id": "interact",
+        "group": "theater",
+        "name": "InterAct Theatre Company",
+        "kind": "Issue-driven contemporary theater",
+        "location": "The Drake, 302 S Hicks St, Center City",
+        "website": "https://www.interacttheatre.org",
+        "deals": [
+            { "name": "Pay-What-You-Can dress rehearsal", "price": "Pay what you can", "who": "Anyone", "how": "The Thursday before a show's first ticketed performance; in person.", "url": "https://www.interacttheatre.org/box-office" },
+            { "name": "ACCESS Philly", "price": "$2", "who": "ACCESS (SNAP/EBT) cardholders", "how": "In person; groups get up to 20% off too.", "url": "https://www.interacttheatre.org/box-office" }
+        ]
+    },
+    {
+        "id": "quintessence",
+        "group": "theater",
+        "name": "Quintessence Theatre Group",
+        "kind": "Classic-repertory theater — Mt. Airy",
+        "location": "7137 Germantown Ave, Mt. Airy",
+        "website": "https://www.quintessencetheatre.org",
+        "deals": [
+            { "name": "Rush", "price": "$10", "who": "Anyone", "how": "In person only, on sale 1 hour before curtain, first-come (call 215-987-4450). One of the best walk-up deals in the city.", "url": "https://www.quintessencetheatre.org/ticket-prices" },
+            { "name": "Student", "price": "$15", "who": "Students", "how": "Online or by phone, no code needed.", "url": "https://www.quintessencetheatre.org/ticket-prices" }
+        ]
+    },
+    {
+        "id": "peoples-light",
+        "group": "theater",
+        "name": "People's Light",
+        "kind": "Regional theater — Chester County",
+        "location": "39 Conestoga Rd, Malvern",
+        "website": "https://www.peopleslight.org",
+        "deals": [
+            { "name": "Preview & Access Dates", "price": "$30–$35", "who": "Anyone", "how": "Applied automatically on preview and designated Access dates — no code.", "url": "https://www.peopleslight.org/visit/ticket-discounts/" },
+            { "name": "Student / Youth", "price": "$15", "who": "Students (ID); youth 17 & under", "how": "Students use code STUDENT26 with ID; anyone 17-and-under gets $5 off. Industry $15 with proof.", "url": "https://www.peopleslight.org/visit/ticket-discounts/" }
+        ]
+    },
+    {
+        "id": "fringearts",
+        "group": "theater",
+        "name": "FringeArts",
+        "kind": "Contemporary performance — Sept Fringe Festival",
+        "location": "140 N Columbus Blvd, Penn's Landing",
+        "website": "https://fringearts.com",
+        "deals": [
+            { "name": "Students & 25-and-under", "price": "Flat $15", "who": "Students or anyone 25 & under", "how": "Flat $15 on most shows (or $5 off shows over $20); show student/age ID at pickup. Pay-What-You-Can on select shows.", "url": "https://fringearts.com/box-office/" },
+            { "name": "FringeACCESS", "price": "$2", "who": "ACCESS (SNAP/EBT) cardholders", "how": "Up to 4 tickets at $2 each, fees waived.", "url": "https://fringearts.com/box-office/" }
+        ]
+    },
+    {
+        "id": "philadelphia-orchestra",
+        "group": "classical",
+        "name": "The Philadelphia Orchestra",
+        "kind": "Symphony orchestra — Marian Anderson Hall",
+        "location": "300 S Broad St, Avenue of the Arts",
+        "website": "https://www.ensembleartsphilly.org",
+        "deals": [
+            { "name": "Student Circle", "price": "$8 tickets", "who": "Enrolled students 14+", "how": "~$30 season membership, then $8 (often Tuesday) concerts via code STUDENTS with student ID. Registration reopens summer 2026 for the 2026–27 season.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/student-circle" },
+            { "name": "Community Rush", "price": "~$29", "who": "Anyone", "how": "Day-of/week-of Orchestra rush through the Ensemble Arts Community Rush program (see Major Stages).", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" }
+        ],
+        "note": "The old eZseatU $25-unlimited pass and the free neighborhood-concert series are discontinued/suspended."
+    },
+    {
+        "id": "opera-philadelphia",
+        "group": "classical",
+        "name": "Opera Philadelphia",
+        "kind": "Opera company — Academy of Music",
+        "location": "240 S Broad St, Avenue of the Arts",
+        "website": "https://www.operaphila.org",
+        "deals": [
+            { "name": "Pick Your Price", "price": "From $11", "who": "Anyone — no ID", "how": "Any available seat starts at $11; pay what you choose above that. Buy online, by phone (215.732.8400), or in person.", "url": "https://www.operaphila.org/your-visit/tickets-packages/pick-your-price/" }
+        ],
+        "note": "The flagship $11 program, confirmed for the 2025–26 season."
+    },
+    {
+        "id": "philadelphia-ballet",
+        "group": "classical",
+        "name": "Philadelphia Ballet",
+        "kind": "Professional ballet — Academy of Music",
+        "location": "240 S Broad St, Avenue of the Arts",
+        "website": "https://philadelphiaballet.org",
+        "deals": [
+            { "name": "Student tickets", "price": "$10", "who": "Students w/ ID", "how": "Online starting 72 hours before a performance, or at the box office ($29 for The Nutcracker).", "url": "https://philadelphiaballet.org/student-tickets/" },
+            { "name": "Student Rush", "price": "$10", "who": "Students w/ ID", "how": "At the Academy of Music box office 1 hour before curtain, in person, with valid student ID.", "url": "https://philadelphiaballet.org/rush-tickets/" }
+        ]
+    },
+    {
+        "id": "balletx",
+        "group": "classical",
+        "name": "BalletX",
+        "kind": "Contemporary ballet",
+        "location": "Suzanne Roberts Theatre, 480 S Broad St",
+        "website": "https://www.balletx.org",
+        "deals": [
+            { "name": "Student & partner discounts", "price": "Call for pricing", "who": "Students & partner groups", "how": "No standing online student rush; call the box office at 215-225-5389 x250 for student pricing and any per-run college codes.", "url": "https://www.balletx.org/season-and-tickets/" }
+        ]
+    },
+    {
+        "id": "pcms",
+        "group": "classical",
+        "name": "Philadelphia Chamber Music Society",
+        "kind": "Chamber-music presenter — ~50 concerts/yr",
+        "location": "Kimmel, Curtis & other halls, Center City",
+        "website": "https://www.pcmsconcerts.org",
+        "deals": [
+            { "name": "Unlimited Student Pass", "price": "$40 / season", "who": "Full-time students 35 & under", "how": "One-time $40 covers every season concert; reserve online + will-call. Single student tickets are $10.", "url": "https://www.pcmsconcerts.org/community/students-young-friends/" },
+            { "name": "Young Friends Pass", "price": "$80 / season", "who": "Anyone 40 & younger", "how": "One-time $80 for unlimited concerts; email-list members also get occasional comp tickets and a $10 Day sale.", "url": "https://www.pcmsconcerts.org/community/students-young-friends/" }
+        ]
+    },
+    {
+        "id": "tkts",
+        "group": "free",
+        "name": "TKTS Philly",
+        "kind": "Day-of discount booth — TDF & Visit Philadelphia",
+        "location": "Independence Visitor Center, 599 Market St",
+        "website": "https://www.phlvisitorcenter.com/tkts",
+        "deals": [
+            { "name": "Walk-up discount", "price": "30–50% off", "who": "Anyone — no ID", "how": "Tickets to shows within 72 hours across ~20–40 Greater Philadelphia venues. In person only, daily ~10am–6pm (call 267-514-4758 to confirm). No online sales.", "url": "https://www.phlvisitorcenter.com/tkts" }
+        ]
+    },
+    {
+        "id": "curtis",
+        "group": "free",
+        "name": "Curtis Institute of Music",
+        "kind": "Conservatory — student recitals & orchestra",
+        "location": "1726 Locust St, Rittenhouse",
+        "website": "https://www.curtis.edu",
+        "deals": [
+            { "name": "Student recitals", "price": "Free", "who": "Anyone", "how": "100+ free student recitals during the school year (often Mon/Wed/Fri 7:30pm); free but advance registration required. Friday/graduation recitals are also livestreamed.", "url": "https://www.curtis.edu/curtis-performances/curtis-recital-series/" },
+            { "name": "Curtis Symphony student tickets", "price": "$9", "who": "K-12 & university students w/ ID", "how": "For ticketed Curtis Symphony Orchestra concerts at Marian Anderson Hall, via the Ensemble Arts Box Office.", "url": "https://www.curtis.edu/curtis-performances/curtis-subscriptions-and-discounts/discounts-and-community-partners/" }
+        ]
+    },
+    {
+        "id": "world-cafe-live",
+        "group": "free",
+        "name": "World Cafe Live",
+        "kind": "Independent music venue — with WXPN",
+        "location": "3025 Walnut St, University City",
+        "website": "https://worldcafelive.org",
+        "deals": [
+            { "name": "WXPN Free at Noon", "price": "Free", "who": "Anyone", "how": "A free concert every Friday at noon; reserve free tickets online (max 2 per email). Also streamed.", "url": "https://xpn.org/free-at-noon/" }
+        ]
+    }
+  ];
+  // PA-END
+
   // Sub-categories shown as tabs inside the Places to Eat window.
   // Add restaurants to `sections` (each section = { label, places: [...] }).
   // Ordered most general → most filtered.
@@ -4961,6 +5321,71 @@
       </div>`;
   }
 
+  // ── Performing Arts: one card per venue, listing its discount programs ──
+  function paTileHTML(v) {
+    const mapHref = mapUrl(v.name + ' ' + (v.location || ''));
+    const deals = (v.deals || []).map(d => `
+      <div class="pa-deal">
+        <div class="pa-deal-head">
+          <span class="pa-deal-name">${escapeHtml(d.name)}</span>
+          ${d.price ? `<span class="pa-deal-price">${escapeHtml(d.price)}</span>` : ''}
+        </div>
+        ${d.who ? `<div class="pa-deal-who">${escapeHtml(d.who)}</div>` : ''}
+        ${d.how ? `<div class="pa-deal-how">${escapeHtml(d.how)}</div>` : ''}
+        ${d.url ? `<a class="pa-deal-link" href="${escapeAttr(d.url)}" target="_blank" rel="noopener">Details →</a>` : ''}
+      </div>`).join('');
+    const links = [
+      `<a class="pa-deal-link" style="margin:0" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">map</a>`,
+      v.website ? `<a class="pa-deal-link" style="margin:0" href="${escapeAttr(v.website)}" target="_blank" rel="noopener">website</a>` : '',
+    ].filter(Boolean).join(' · ');
+    return `
+      <div class="pa-card">
+        <div class="pa-card-name">${escapeHtml(v.name)}</div>
+        ${v.kind ? `<div class="pa-card-kind">${escapeHtml(v.kind)}</div>` : ''}
+        ${v.location ? `<div class="pa-card-loc">📍 ${escapeHtml(v.location)} · ${links}</div>` : ''}
+        ${deals}
+        ${v.note ? `<div class="pa-card-note">${escapeHtml(v.note)}</div>` : ''}
+      </div>`;
+  }
+
+  let currentPACat = null;
+  function renderPACategory(catId) {
+    const cat = PA_GROUPS.find(c => c.id === catId) || PA_GROUPS[0];
+    currentPACat = cat.id;
+    document.querySelectorAll('#paSubTabs .sub-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.cat === cat.id));
+    document.getElementById('paEyebrow').textContent = 'Discount Tickets';
+    document.getElementById('paTitle').textContent = cat.label;
+    document.getElementById('paSubtitle').innerHTML = cat.subtitle || '';
+
+    const list = document.getElementById('paList');
+    const venues = PA_VENUES.filter(v => v.group === cat.id);
+    const stamp = PA_UPDATED
+      ? `<div class="pa-updated">Rules re-verified ${escapeHtml(PA_UPDATED)} — always confirm at the box office before you go.</div>`
+      : `<div class="pa-updated">Programs change — always confirm at the box office before you go.</div>`;
+    if (!venues.length) {
+      list.innerHTML = stamp + `<div class="eat-content eat-empty">
+        <div class="eat-empty-icon">${cat.emoji}</div>
+        <div class="eat-empty-text">Nothing listed here yet.</div>
+      </div>`;
+      return;
+    }
+    list.innerHTML = stamp + `<div class="eat-content">${venues.map(paTileHTML).join('')}</div>`;
+  }
+
+  function setupPATabs() {
+    const tabsEl = document.getElementById('paSubTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = PA_GROUPS.map(c =>
+      `<button class="sub-tab" data-cat="${c.id}" type="button">
+         <span class="sub-tab-emoji">${c.emoji}</span>${escapeHtml(c.label)}
+       </button>`).join('');
+    tabsEl.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => renderPACategory(tab.dataset.cat));
+    });
+    renderPACategory(PA_GROUPS[0].id);
+  }
+
   function updateTileDistance(tile) {
     const slot = tile.querySelector('.resto-dist');
     if (!slot) return;
@@ -4984,6 +5409,7 @@
     { view: 'picnic',          emoji: '🧺', label: 'Picnic' },
     { view: 'bookstores',      emoji: '📚', label: 'Bookstores' },
     { view: 'farmers-markets', emoji: '🌽', label: 'Farmers Markets' },
+    { view: 'performing-arts', emoji: '🎭', label: 'Performing Arts' },
   ];
 
   function showView(viewId) {
@@ -7177,6 +7603,7 @@ Valid types: "meal", "activity", "dessert"`;
     setupBookTabs();
     setupFmTabs();
     setupPicnicView();
+    setupPATabs();
   }
 
   // Translate vertical mouse-wheel into horizontal scroll over tab rows
