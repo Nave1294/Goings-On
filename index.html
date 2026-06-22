@@ -1131,6 +1131,22 @@
     }
     .event-distance { margin-top: 0.35rem; }
     .resto-dist:not(:empty) { margin-top: 0.4rem; }
+    .event-auto-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      flex: none;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 1px 7px;
+      margin-left: 6px;
+      white-space: nowrap;
+      cursor: default;
+    }
 
     /* ── Proximity toggle ── */
     .proximity-bar {
@@ -2998,6 +3014,28 @@
     return `<div class="event-distance"><span class="distance-bubble">📍 ${fmtMiles(mi)} away</span></div>`;
   }
 
+  // Events written by scripts/scrape-events.js carry a marker so the app can flag
+  // them as machine-added. Primary signal is a token in the description (always
+  // returned to public API-key reads); extendedProperties is a belt-and-suspenders
+  // fallback. Keep these source ids in sync with SOURCES in scrape-events.js.
+  const AUTO_SOURCE_LABELS = { visitphilly: 'Visit Philly', hiddencity: 'Hidden City' };
+
+  function autoEventSource(ev) {
+    const fromProp = ev.extendedProperties?.private?.goingsOnSource;
+    if (fromProp) return fromProp;
+    const m = (ev.description || '').match(/\[goings-on:auto:([a-z0-9-]+)\]/i);
+    return m ? m[1].toLowerCase() : null;
+  }
+
+  // Strip the auto-added marker (and its "Auto-added from …" line) before display.
+  function cleanEventDescription(desc) {
+    return (desc || '')
+      .replace(/\[goings-on:auto:[a-z0-9-]+\]/ig, '')
+      .replace(/^[ \t]*Auto-added from .+$/img, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   function eventHTML(ev, idx, contextDay) {
     const allDay = !ev.start.dateTime;
     const timeLabel = allDay ? 'All day' : fmtTime(ev.start.dateTime);
@@ -3006,7 +3044,12 @@
     const loc = ev.location
       ? `<div class="event-meta">${escapeHtml(ev.location)}</div>`
       : (ev._foundLocation ? `<div class="event-meta">🔎 ${escapeHtml(ev._foundLocation)} <span class="loc-guess">(found online)</span></div>` : '');
-    const desc = ev.description ? `<div class="event-meta">${escapeHtml(stripTags(ev.description)).slice(0, 140)}</div>` : '';
+    const cleanDesc = cleanEventDescription(ev.description);
+    const desc = cleanDesc ? `<div class="event-meta">${escapeHtml(stripTags(cleanDesc)).slice(0, 140)}</div>` : '';
+    const autoSrc = autoEventSource(ev);
+    const autoBadge = autoSrc
+      ? `<span class="event-auto-badge" title="Automatically added from ${escapeAttr(AUTO_SOURCE_LABELS[autoSrc] || autoSrc)}">🤖 ${escapeHtml(AUTO_SOURCE_LABELS[autoSrc] || 'Auto')}</span>`
+      : '';
     const mapBtn = locStr ? `
       <a class="event-map" href="${escapeAttr(mapUrl(locStr))}" target="_blank" rel="noopener">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3024,7 +3067,7 @@
         </div>
         <div class="event-body">
           <div class="event-header">
-            <div class="event-title">${escapeHtml(ev.summary || '(No title)')}</div>
+            <div class="event-title">${escapeHtml(ev.summary || '(No title)')}${autoBadge}</div>
             ${weatherChipHTML(ev, idx, contextDay)}
           </div>
           ${loc}${eventDistanceHTML(ev)}${desc}${mapBtn}

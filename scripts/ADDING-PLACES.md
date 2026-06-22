@@ -123,3 +123,37 @@ Events are **not** in this file — the app reads them from the linked Google
 Calendar (`CALENDAR_ID` in `index.html`). To add an event, add it to that
 calendar; it shows up on the next load, with weather and (for the Picnic Planner)
 nearby-park awareness handled automatically.
+
+### Auto-scraped events (Visit Philly + Hidden City)
+
+`scripts/scrape-events.js` (workflow `.github/workflows/scrape-events.yml`, runs
+**Mondays and Thursdays**) finds upcoming events from Visit Philly and Hidden City
+and **writes them into the Google Calendar**, so they flow into the app like any
+other event. Those sites block direct scraping (HTTP 403 to datacenter IPs), so —
+exactly like the discount-rules job — it uses Claude's server-side `web_search`
+tool to read them. The run is idempotent: each event is stamped with a
+`goingsOnSig` signature and re-runs skip anything already on the calendar. It only
+ever **inserts** events it marks itself; your hand-added events are never touched.
+
+Each auto-added event carries a marker the app detects — a `[goings-on:auto:<source>]`
+token in the description **and** `extendedProperties.private.goingsOnSource` — so the
+event card shows a small **🤖 auto-added** badge (the token is stripped from the
+displayed text). Source ids live in `SOURCES` (script) and `AUTO_SOURCE_LABELS`
+(`index.html`); keep them in sync.
+
+**One-time setup (required before the job can write):** the script needs a Google
+service account that the calendar trusts. No domain-wide delegation is needed —
+you just share the calendar with the service account.
+
+1. In Google Cloud, create a project, **enable the Google Calendar API**, create a
+   **service account**, and download its **JSON key**.
+2. Open the Goings-On calendar's settings → **Share with specific people** → add
+   the service account's email (`…@…iam.gserviceaccount.com`) with permission
+   **"Make changes to events."**
+3. In the GitHub repo: **Settings → Secrets and variables → Actions** → add a
+   secret named **`GCAL_SERVICE_ACCOUNT`** whose value is the full contents of the
+   downloaded JSON key. (`ANTHROPIC_API_KEY` is already configured.)
+
+Then run it by hand from the **Actions** tab ("Scrape Events into Calendar" →
+*Run workflow*) to verify, or wait for the next Monday/Thursday run. Until the
+secret is set the job exits cleanly with a reminder and changes nothing.

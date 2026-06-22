@@ -4,9 +4,11 @@
   "description": "GitHub Actions scripts for Goings On",
   "scripts": {
     "update-trendy": "node scripts/update-trendy.js",
-    "audit-places": "node scripts/audit-places.js"
+    "audit-places": "node scripts/audit-places.js",
+    "scrape-events": "node scripts/scrape-events.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0"
+    "@anthropic-ai/sdk": "^0.52.0",
+    "googleapis": "^144.0.0"
   }
 }

@@ -25,6 +25,11 @@ explicitly asks to hold that specific change for review.
 - **audit-places.yml** — daily; checks address/website/business status, fills
   missing addresses, removes permanently-closed spots.
 - **update-trendy.yml** — scrapes Eater Philly into the Trending tab.
+- **scrape-events.yml** — Mondays & Thursdays; uses Claude web-search to pull
+  upcoming Visit Philly / Hidden City events and writes them to the Google
+  Calendar (not this repo). Each gets a `[goings-on:auto:*]` marker so the app
+  shows a 🤖 auto-added badge. Needs the `GCAL_SERVICE_ACCOUNT` secret — see
+  `scripts/ADDING-PLACES.md` §7.
 - **GitHub Pages** — auto-deploys `main` (plain branch deploy; `.nojekyll` is
   required at the repo root — do not delete it).
 

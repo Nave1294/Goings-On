@@ -1,0 +1,34 @@
+name: Scrape Events into Calendar
+
+on:
+  schedule:
+    # Twice a week: 14:00 UTC (~9-10am ET) every Monday and Thursday
+    - cron: '0 14 * * 1,4'
+  workflow_dispatch:
+    # Allow manual runs from the Actions tab
+
+# This job writes to the Google Calendar, not to index.html, so it does NOT need
+# the edit-index-html concurrency group the other workflows share.
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scrape events and add to calendar
+        run: node scripts/scrape-events.js
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GCAL_SERVICE_ACCOUNT: ${{ secrets.GCAL_SERVICE_ACCOUNT }}
