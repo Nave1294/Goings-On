@@ -175,7 +175,12 @@ async function findEvents(client, source) {
 
   const msg = await client.messages.create({
     model: MODEL,
-    max_tokens: 4096,
+    // Generous budget: with web_search, every search round-trip (queries +
+    // result summaries) is counted against this same output-token cap before
+    // the final JSON is written, so a tight limit can truncate the answer
+    // right when there are many events to list (max_uses=8 search calls plus
+    // a 10+ event source can easily run past 4096).
+    max_tokens: 8192,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
     messages: [{
       role: 'user',
@@ -205,6 +210,10 @@ For each event return an object:
 Return ONLY a valid JSON array (no markdown, no commentary). Return [] if you find nothing you are confident about.`,
     }],
   });
+
+  if (msg.stop_reason === 'max_tokens') {
+    console.warn(`  ${source.label}: response hit max_tokens — output may be truncated, raise max_tokens if this recurs`);
+  }
 
   const text  = msg.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
   const match = text.match(/\[[\s\S]*\]/);
