@@ -6647,9 +6647,19 @@
     stops: [],
     summary: '',    // AI's short rationale for the picks
     shareText: '',
-    anchor: null,   // optional fixed stop the user already has: { name, location, startHour, endHour }
+    anchor: null,   // optional fixed stop the user already has: { name, location, startHour, endHour, kind }
     _anchorDraft: null,
   };
+
+  // What kind of stop the user's own fixed plan is, so the planner can count it
+  // toward the composition (e.g. a locked-in dinner fills one of the meal slots)
+  // instead of planning a second one on top of it. Ids match PL.comp keys.
+  const PL_ANCHOR_KINDS = [
+    { id: 'meal',     emoji: '🍽️', label: 'Food / meal' },
+    { id: 'dessert',  emoji: '🍦', label: 'Dessert / drinks' },
+    { id: 'activity', emoji: '🎭', label: 'Activity / show' },
+  ];
+  const PL_ANCHOR_KIND_PHRASE = { meal: 'a meal / food stop', dessert: 'a dessert or drinks stop', activity: 'an activity' };
 
   const PL_OCCASIONS = [
     { id: 'date',        emoji: '💕', label: 'Date night' },
@@ -6821,8 +6831,8 @@
   // ── itinerary assembly ──
   // Order the slots. Lead with food only if the start time is a meal time;
   // otherwise lead with an activity. Dessert/drinks always lands last.
-  function plSlotOrder() {
-    let m = PL.comp.meal, a = PL.comp.activity, d = PL.comp.dessert;
+  function plSlotOrder(comp = PL.comp) {
+    let m = comp.meal, a = comp.activity, d = comp.dessert;
     const order = [];
     const leadMeal = !!plMealTypeAt(PL.startHour) && m > 0;
     let next = leadMeal ? 'meal' : (a > 0 ? 'activity' : 'meal');
@@ -6984,8 +6994,47 @@
     throw new Error('No parseable JSON from AI');
   }
 
+  // Build the itinerary stop for the user's own fixed plan, styled by its kind
+  // (meal / dessert / activity) so it reads as that kind of stop while staying
+  // clearly marked as the user's own pick.
+  function plAnchorStop() {
+    const a = PL.anchor;
+    const kind = a.kind || 'activity';
+    const aGeo = obItemGeo({ name: a.name, location: a.location });
+    const mt = kind === 'meal' ? plMealTypeAt(a.startHour) : null;
+    const eyebrow = kind === 'meal' ? `Your ${mt || 'meal'}`
+      : kind === 'dessert' ? 'Your dessert / drinks'
+      : 'Your plan';
+    return {
+      kind, hour: a.startHour,
+      duration: Math.max(30, (a.endHour - a.startHour) * 60) || 90,
+      emoji: '📌', eyebrow,
+      title: a.name,
+      meta: [`🕒 ${plHourLabel(a.startHour)}–${plHourLabel(a.endHour)}`, a.location && ('📍 ' + a.location.split(',')[0])].filter(Boolean),
+      desc: '',
+      actions: [a.location && { label: '🗺️ Map', href: mapUrl(a.location) }].filter(Boolean),
+      coords: aGeo.coords || null,
+    };
+  }
+
   async function plBuildItineraryAI() {
-    const order = plSlotOrder();
+    // The user's own fixed stop (anchor) fills one composition slot of its kind,
+    // so the AI only plans the REMAINING stops — never a duplicate of the anchor.
+    const anchorKind = PL.anchor ? (PL.anchor.kind || 'activity') : null;
+    const effComp = { ...PL.comp };
+    const anchorFillsSlot = anchorKind && effComp[anchorKind] > 0;
+    if (anchorFillsSlot) effComp[anchorKind]--;
+
+    const order = plSlotOrder(effComp);
+
+    // If the anchor consumed the only requested stop, there's nothing left for
+    // the AI to plan — the user's own stop IS the whole outing.
+    if (!order.length) {
+      if (!PL.anchor) throw new Error('No stops requested');
+      PL.summary = '';
+      return [plAnchorStop()];
+    }
+
     const times = plSlotTimes(order.length);
     const dayEvents = plRankedEventsForDay();
     const dayDate = plDays()[PL.dayIdx];
@@ -7020,6 +7069,7 @@
 
 FIXED STOP THE USER ALREADY HAS (this is already decided — build the rest of the outing AROUND it):
 - "${PL.anchor.name}"${PL.anchor.location ? ' at ' + PL.anchor.location : ''}, from ${plHourLabel(PL.anchor.startHour)} to ${plHourLabel(PL.anchor.endHour)}.
+- This is ${PL_ANCHOR_KIND_PHRASE[anchorKind] || 'an activity'} the user has locked in.${anchorFillsSlot ? ` It already counts as one of the ${anchorKind} stops, so it is NOT in the "Stops to plan" list below — plan only the other stops listed and do NOT add another ${anchorKind} stop to replace it.` : ' It is NOT in the "Stops to plan" list below — plan only the stops listed and do not duplicate this one.'}
 - Schedule the stops you plan into the time GAPS before and after this fixed stop — nothing may overlap ${plHourLabel(PL.anchor.startHour)}–${plHourLabel(PL.anchor.endHour)}.
 - Keep your stops close to the fixed stop's location${PL.anchor.location ? ' (' + PL.anchor.location + ')' : ''} so the legs stay within travel range.
 - Do NOT output this fixed stop in your "stops" array — only the NEW stops you add around it. It will be added automatically.` : '';
@@ -7184,20 +7234,7 @@ Valid types: "meal", "activity", "dessert"`;
 
     // Inject the user's fixed stop (if any) so it always appears exactly as entered,
     // pinned to its time — the AI was told to plan around it, not output it.
-    if (PL.anchor) {
-      const a = PL.anchor;
-      const aGeo = obItemGeo({ name: a.name, location: a.location });
-      stops.push({
-        kind: 'activity', hour: a.startHour,
-        duration: Math.max(30, (a.endHour - a.startHour) * 60) || 90,
-        emoji: '📌', eyebrow: 'Your plan',
-        title: a.name,
-        meta: [`🕒 ${plHourLabel(a.startHour)}–${plHourLabel(a.endHour)}`, a.location && ('📍 ' + a.location.split(',')[0])].filter(Boolean),
-        desc: '',
-        actions: [a.location && { label: '🗺️ Map', href: mapUrl(a.location) }].filter(Boolean),
-        coords: aGeo.coords || null,
-      });
-    }
+    if (PL.anchor) stops.push(plAnchorStop());
 
     if (!stops.length) throw new Error('No usable stops from AI');
 
@@ -7470,22 +7507,30 @@ Valid types: "meal", "activity", "dessert"`;
     document.getElementById('plHeadline').textContent = 'Already have something planned?';
     // Draft so edits don't commit until "Next". Seed from a saved anchor or defaults.
     const d = PL._anchorDraft = PL.anchor
-      ? { ...PL.anchor }
-      : { name: '', location: '', startHour: PL.startHour, endHour: Math.min(PL.endHour, PL.startHour + 2) };
+      ? { kind: 'activity', ...PL.anchor }
+      : { name: '', location: '', startHour: PL.startHour, endHour: Math.min(PL.endHour, PL.startHour + 2), kind: 'activity' };
     const inWindow = PL_TIME_OPTS.filter(o => o.hr >= PL.startHour && o.hr <= PL.endHour);
     const opts = inWindow.length >= 2 ? inWindow : PL_TIME_OPTS;
     const row = (sel, val) => opts.map(o =>
       `<button class="pl-time-chip${o.hr === val ? ' active' : ''}" data-anc="${sel}" data-hr="${o.hr}" type="button">${o.label}</button>`).join('');
+    const kindChips = PL_ANCHOR_KINDS.map(k =>
+      `<button class="pl-chip${k.id === d.kind ? ' active' : ''}" data-anc-kind="${k.id}" type="button"><span class="pl-chip-emoji">${k.emoji}</span>${escapeHtml(k.label)}</button>`).join('');
     body.innerHTML = `
       <div class="pl-q">Add a reservation, show, or stop you already have — we'll build the rest of the outing around it. <strong>Optional</strong> — leave the name blank to skip.</div>
       <input class="pl-input" id="plAncName" type="text" placeholder="What is it? (e.g. Hamilton at the Forrest, dinner reservation)" value="${escapeAttr(d.name)}" maxlength="80" autocomplete="off">
       <input class="pl-input" id="plAncLoc" type="text" placeholder="Where? (address or neighborhood — helps keep nearby)" value="${escapeAttr(d.location)}" maxlength="90" autocomplete="off" style="margin-top:0.6rem">
+      <div class="pl-q" style="margin-top:1.1rem;">What kind of stop is it? <span style="font-weight:500;color:var(--text-secondary)">(so it counts as one of your stops, not an extra)</span></div>
+      <div class="pl-chip-grid" id="plAncKind">${kindChips}</div>
       <div class="pl-q" id="plAncTimeQ" style="margin-top:1.1rem;">When are you there? From…</div>
       <div class="pl-time-grid" id="plAncStart">${row('start', d.startHour)}</div>
       <div class="pl-q">…until</div>
       <div class="pl-time-grid" id="plAncEnd">${row('end', d.endHour)}</div>
       <div class="pl-warn" id="plAncWarn" hidden>End time should be after the start.</div>
       <button class="pl-next" id="plNext" type="button">Next →</button>`;
+    body.querySelectorAll('[data-anc-kind]').forEach(c => c.addEventListener('click', () => {
+      d.kind = c.dataset.ancKind;
+      body.querySelectorAll('[data-anc-kind]').forEach(x => x.classList.toggle('active', x === c));
+    }));
     body.querySelectorAll('[data-anc]').forEach(c => c.addEventListener('click', () => {
       const sel = c.dataset.anc, hr = +c.dataset.hr;
       if (sel === 'start') d.startHour = hr; else d.endHour = hr;
@@ -7495,7 +7540,7 @@ Valid types: "meal", "activity", "dessert"`;
       const name = document.getElementById('plAncName').value.trim();
       if (!name) { PL.anchor = null; plAdvance(); return; }
       if (d.endHour <= d.startHour) { document.getElementById('plAncWarn').hidden = false; return; }
-      PL.anchor = { name, location: document.getElementById('plAncLoc').value.trim(), startHour: d.startHour, endHour: d.endHour };
+      PL.anchor = { name, location: document.getElementById('plAncLoc').value.trim(), startHour: d.startHour, endHour: d.endHour, kind: d.kind };
       plAdvance();
     });
   }
@@ -7512,8 +7557,13 @@ Valid types: "meal", "activity", "dessert"`;
           <button class="pl-step-btn" data-key="${key}" data-d="1" type="button">+</button>
         </div>
       </div>`;
+    const anchorNote = PL.anchor ? (() => {
+      const k = PL_ANCHOR_KINDS.find(x => x.id === (PL.anchor.kind || 'activity')) || {};
+      return `<div class="pl-q" style="color:var(--text-secondary);font-weight:500;margin-top:-0.2rem;">${k.emoji || '📌'} Your “${escapeHtml(PL.anchor.name)}” already counts as one ${escapeHtml((k.label || 'stop').toLowerCase())} — set how many <em>more</em> stops to add.</div>`;
+    })() : '';
     body.innerHTML = `
       <div class="pl-q">How many stops, and of what kind?</div>
+      ${anchorNote}
       ${stepper('meal', '🍽️', 'Meals')}
       ${stepper('activity', '🎭', 'Activities')}
       ${stepper('dessert', '🍦', 'Dessert / drinks')}
@@ -7525,7 +7575,8 @@ Valid types: "meal", "activity", "dessert"`;
       document.getElementById('plVal-' + k).textContent = PL.comp[k];
     }));
     document.getElementById('plNext').addEventListener('click', () => {
-      if (PL.comp.meal + PL.comp.activity + PL.comp.dessert === 0) { document.getElementById('plCompWarn').hidden = false; return; }
+      // An anchor is itself a stop, so zero *additional* stops is fine when one exists.
+      if (!PL.anchor && PL.comp.meal + PL.comp.activity + PL.comp.dessert === 0) { document.getElementById('plCompWarn').hidden = false; return; }
       plAdvance();
     });
   }
