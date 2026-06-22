@@ -76,8 +76,95 @@ const isISODate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 const isHM      = s => /^([01]\d|2[0-3]):[0-5]\d$/.test(s || '');
 
 function signature(sourceId, title, date) {
-  const norm = String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  return `${sourceId}|${norm}|${date}`;
+  return `${sourceId}|${normTitle(title)}|${date}`;
+}
+
+// ─── duplicate detection ──────────────────────────────────────────────────────
+// Two events are "the same" if they share a day and a near-identical title. We
+// normalize titles (drop punctuation, filler words, years, "Philadelphia") and
+// compare by exact match, substring, or token overlap so small wording
+// differences between sources still collapse to one event.
+
+const TITLE_STOPWORDS = new Set([
+  'the','a','an','of','at','in','on','to','for','and','or','with','presents',
+  'present','presented','by','featuring','feat','philly','philadelphia','phila',
+  '2024','2025','2026','2027',
+]);
+
+function normTitle(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !TITLE_STOPWORDS.has(w))
+    .join(' ')
+    .trim();
+}
+
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+
+// Every calendar day an event touches (capped so a year-long entry can't blow up).
+function expandDates(startISO, endISO) {
+  const out = [];
+  let d = startISO, guard = 0;
+  const last = (endISO && endISO >= startISO) ? endISO : startISO;
+  while (d <= last && guard++ < 120) { out.push(d); d = addDaysISO(d, 1); }
+  return out;
+}
+
+// Days covered by an existing Google event (all-day end date is exclusive).
+function eventDates(ev) {
+  const startISO = ev.start?.date || (ev.start?.dateTime || '').slice(0, 10);
+  if (!startISO) return [];
+  let endISO;
+  if (ev.end?.date)          endISO = addDaysISO(ev.end.date, -1);
+  else if (ev.end?.dateTime) endISO = ev.end.dateTime.slice(0, 10);
+  else                       endISO = startISO;
+  return expandDates(startISO, endISO);
+}
+
+// Days covered by one of our normalized candidate events.
+function candidateDates(e) {
+  return expandDates(e.date, e.endDate || e.date);
+}
+
+// Does candidate `e` match anything already indexed on a shared day?
+function isDuplicate(existing, source, e) {
+  // Fast path: we already created this exact event on a prior run.
+  if (existing.sigs.has(signature(source.id, e.title, e.date))) return true;
+
+  const norm = normTitle(e.title);
+  if (!norm) return false;
+  const tokens = new Set(norm.split(' ').filter(Boolean));
+
+  for (const day of candidateDates(e)) {
+    const list = existing.byDay.get(day);
+    if (!list) continue;
+    for (const x of list) {
+      if (x.norm === norm) return true;
+      if (norm.length >= 8 && (x.norm.includes(norm) || norm.includes(x.norm))) return true;
+      if (jaccard(tokens, x.tokens) >= 0.7) return true;
+    }
+  }
+  return false;
+}
+
+// Record an event (existing or just-inserted) in the day index so later
+// candidates in the same run dedup against it too.
+function indexEvent(existing, title, dates) {
+  const norm = normTitle(title);
+  if (!norm) return;
+  const tokens = new Set(norm.split(' ').filter(Boolean));
+  for (const day of dates) {
+    if (!existing.byDay.has(day)) existing.byDay.set(day, []);
+    existing.byDay.get(day).push({ norm, tokens });
+  }
 }
 
 // ─── Claude: discover events via server-side web search ───────────────────────
@@ -213,32 +300,32 @@ function getCalendar() {
   return google.calendar({ version: 'v3', auth });
 }
 
-// Signatures of auto-added events already on the calendar in our window.
-async function existingSignatures(cal, todayISO, untilISO) {
-  const sigs = new Set();
+// Load EVERY event already on the calendar in the window — manually-added,
+// previously auto-added, or from any other source — into a per-day title index
+// plus a set of our own signatures, so we never insert a duplicate of something
+// that's already there. We fetch a little past the horizon to catch long
+// festivals a candidate might overlap.
+async function loadExisting(cal, todayISO, untilISO) {
+  const existing = { byDay: new Map(), sigs: new Set() };
   let pageToken;
   do {
     const res = await cal.events.list({
       calendarId: CALENDAR_ID,
-      privateExtendedProperty: 'goingsOnAuto=true',
       timeMin: new Date(`${todayISO}T00:00:00Z`).toISOString(),
-      timeMax: new Date(`${addDaysISO(untilISO, 1)}T00:00:00Z`).toISOString(),
+      timeMax: new Date(`${addDaysISO(untilISO, 30)}T00:00:00Z`).toISOString(),
       singleEvents: true,
       maxResults: 2500,
       pageToken,
     });
     for (const ev of res.data.items || []) {
+      if (ev.status === 'cancelled' || !ev.summary) continue;
+      indexEvent(existing, ev.summary, eventDates(ev));
       const sig = ev.extendedProperties?.private?.goingsOnSig;
-      if (sig) sigs.add(sig);
-      else if (ev.summary) {
-        const src  = ev.extendedProperties?.private?.goingsOnSource || '';
-        const date = ev.start?.date || (ev.start?.dateTime || '').slice(0, 10);
-        if (date) sigs.add(signature(src, ev.summary, date));
-      }
+      if (sig) existing.sigs.add(sig);
     }
     pageToken = res.data.nextPageToken;
   } while (pageToken);
-  return sigs;
+  return existing;
 }
 
 // ─── main ──────────────────────────────────────────────────────────────────────
@@ -249,11 +336,10 @@ async function main() {
   const todayISO = toISODate(new Date());
   const untilISO = addDaysISO(todayISO, HORIZON_DAYS);
 
-  const known = await existingSignatures(cal, todayISO, untilISO);
-  console.log(`${known.size} auto-added event(s) already on the calendar in window`);
+  const existing = await loadExisting(cal, todayISO, untilISO);
+  console.log(`Indexed events already on the calendar across ${existing.byDay.size} day(s)`);
 
-  let added = 0, skipped = 0;
-  const seenThisRun = new Set();
+  let added = 0, skippedDup = 0, skippedBad = 0;
 
   for (const source of SOURCES) {
     console.log(`\nSearching: ${source.label}`);
@@ -268,15 +354,20 @@ async function main() {
 
     for (const r of raw) {
       const e = normalizeEvent(r, todayISO, untilISO);
-      if (!e) { skipped++; continue; }
-      const sig = signature(source.id, e.title, e.date);
-      if (known.has(sig) || seenThisRun.has(sig)) { skipped++; continue; }
-      seenThisRun.add(sig);
+      if (!e) { skippedBad++; continue; }
+      if (isDuplicate(existing, source, e)) {
+        console.log(`  = already on calendar, skipping: ${e.date}  ${e.title}`);
+        skippedDup++;
+        continue;
+      }
 
       try {
         await cal.events.insert({ calendarId: CALENDAR_ID, requestBody: toEventResource(e, source) });
         console.log(`  + ${e.date}  ${e.title}`);
         added++;
+        // Index it immediately so later candidates this run dedup against it.
+        existing.sigs.add(signature(source.id, e.title, e.date));
+        indexEvent(existing, e.title, candidateDates(e));
       } catch (err) {
         console.warn(`  ! failed to insert "${e.title}": ${err.message}`);
       }
@@ -284,7 +375,7 @@ async function main() {
     await new Promise(r => setTimeout(r, 400)); // be gentle on the API
   }
 
-  console.log(`\nDone — ${added} added, ${skipped} skipped (duplicate or invalid).`);
+  console.log(`\nDone — ${added} added, ${skippedDup} duplicate(s) skipped, ${skippedBad} invalid skipped.`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

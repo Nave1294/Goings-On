@@ -131,9 +131,12 @@ nearby-park awareness handled automatically.
 and **writes them into the Google Calendar**, so they flow into the app like any
 other event. Those sites block direct scraping (HTTP 403 to datacenter IPs), so —
 exactly like the discount-rules job — it uses Claude's server-side `web_search`
-tool to read them. The run is idempotent: each event is stamped with a
-`goingsOnSig` signature and re-runs skip anything already on the calendar. It only
-ever **inserts** events it marks itself; your hand-added events are never touched.
+tool to read them. The run is idempotent and won't create duplicates: before
+inserting, it indexes **every** event already on the calendar (hand-added,
+previously auto-added, or from any source) and skips any candidate that shares a
+day and a near-identical title (fuzzy match on a normalized title — punctuation,
+filler words, and reordering don't fool it). It only ever **inserts** events it
+marks itself; your hand-added events are never modified or removed.
 
 Each auto-added event carries a marker the app detects — a `[goings-on:auto:<source>]`
 token in the description **and** `extendedProperties.private.goingsOnSource` — so the
