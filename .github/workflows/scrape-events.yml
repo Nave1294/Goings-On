@@ -2,8 +2,8 @@ name: Scrape Events into Calendar
 
 on:
   schedule:
-    # Twice a week: 14:00 UTC (~9-10am ET) every Monday and Thursday
-    - cron: '0 14 * * 1,4'
+    # Weekly: 14:00 UTC (~9-10am ET) every Monday
+    - cron: '0 14 * * 1'
   workflow_dispatch:
     # Allow manual runs from the Actions tab
 

@@ -127,7 +127,7 @@ nearby-park awareness handled automatically.
 ### Auto-scraped events (Visit Philly + Hidden City)
 
 `scripts/scrape-events.js` (workflow `.github/workflows/scrape-events.yml`, runs
-**Mondays and Thursdays**) finds upcoming events from Visit Philly and Hidden City
+**Mondays**) finds upcoming events from Visit Philly and Hidden City
 and **writes them into the Google Calendar**, so they flow into the app like any
 other event. Those sites block direct scraping (HTTP 403 to datacenter IPs), so —
 exactly like the discount-rules job — it uses Claude's server-side `web_search`
@@ -158,5 +158,5 @@ you just share the calendar with the service account.
    downloaded JSON key. (`ANTHROPIC_API_KEY` is already configured.)
 
 Then run it by hand from the **Actions** tab ("Scrape Events into Calendar" →
-*Run workflow*) to verify, or wait for the next Monday/Thursday run. Until the
+*Run workflow*) to verify, or wait for the next Monday run. Until the
 secret is set the job exits cleanly with a reminder and changes nothing.
