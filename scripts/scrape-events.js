@@ -49,7 +49,7 @@ const SOURCES = [
   {
     id: 'hiddencity',
     label: 'Hidden City',
-    hint: 'Hidden City Philadelphia (hiddencityphila.org) — its tours, talks, and special events',
+    hint: 'Hidden City Philadelphia\'s ticketed walking tours and events. Its editorial blog at hiddencityphila.org rarely lists dated events — the actual schedule lives at hiddencityphila.org/tours/ and on its ticketing platforms, hiddencityphila.ticketleap.com and eventbrite.com/o/hidden-city-philadelphia-22593391359. Search those specifically for upcoming dated tours (e.g. Lost Jewish Quarter, Mount Moriah Cemetery, North Central Philly, Forgotten North Broad Street) and any special members-only site visits.',
   },
 ];
 
@@ -176,12 +176,12 @@ async function findEvents(client, source) {
   const msg = await client.messages.create({
     model: MODEL,
     max_tokens: 4096,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
     messages: [{
       role: 'user',
       content: `You curate a Philadelphia events calendar. Using web search, find specific, real, upcoming events from ${source.hint}.
 
-Today is ${todayISO}. Only include events whose date falls between ${todayISO} and ${untilISO} (inclusive). Search that source's current "this week / this weekend / upcoming events" coverage and follow through to the specific events it lists.
+Today is ${todayISO}. Only include events whose date falls between ${todayISO} and ${untilISO} (inclusive). Search whatever pages that source actually publishes its dated schedule on — that might be a "this week / this weekend" blog roundup, a dedicated tours/events page, or a third-party ticketing platform it sells through — and follow through to the specific events listed there, not just the homepage or editorial articles.
 
 INCLUDE only events you can tie to a CONCRETE calendar date (a festival, concert, tour, exhibit opening, market, talk, etc. happening on a known day). EXCLUDE:
 - Anything without a specific date, or only a vague month/"all summer".
