@@ -5742,12 +5742,12 @@
   // time the Map view opens, then just resized on later opens. Free tiles + free
   // geocoding only — no paid Google calls.
   const MAP_LAYERS = [
-    { id: 'events',  emoji: '📅', label: 'Goings On',       color: '#d1495b' },
-    { id: 'eat',     emoji: '🍽️', label: 'Places to Eat',   color: '#2d6a4f' },
-    { id: 'picnic',  emoji: '🧺', label: 'Picnic',          color: '#3a7d44' },
-    { id: 'books',   emoji: '📚', label: 'Bookstores',      color: '#b5651d' },
-    { id: 'markets', emoji: '🌽', label: 'Farmers Markets', color: '#c99a00' },
-    { id: 'arts',    emoji: '🎭', label: 'Performing Arts', color: '#6d4b8f' },
+    { id: 'events',  emoji: '📅', label: 'Goings On',       color: '#1976d2' }, // blue  — calendar/events
+    { id: 'eat',     emoji: '🍽️', label: 'Places to Eat',   color: '#e53935' }, // red   — restaurants
+    { id: 'picnic',  emoji: '🧺', label: 'Picnic',          color: '#43a047' }, // green — grass/nature
+    { id: 'books',   emoji: '📚', label: 'Bookstores',      color: '#795548' }, // brown — old books
+    { id: 'markets', emoji: '🌽', label: 'Farmers Markets', color: '#f57c00' }, // orange — harvest/produce
+    { id: 'arts',    emoji: '🎭', label: 'Performing Arts', color: '#8e24aa' }, // purple — theater curtains
   ];
   let _masterMap = null;
   const _mapLayerGroups = {};   // id -> L.layerGroup
@@ -5762,26 +5762,48 @@
     try { localStorage.setItem('goingsOn.mapLayers', JSON.stringify(_mapLayerOn)); } catch {}
   }
 
+  let _userLocMarker = null;
+
   function openMasterMap() {
-    const el = document.getElementById('masterMap');
+    const el = document.getElementById(‘masterMap’);
     if (!el) return;
-    if (typeof L === 'undefined') {   // Leaflet CDN blocked/failed
-      el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--text-secondary)">Map couldn’t load (offline?). Try refreshing.</div>';
+    if (typeof L === ‘undefined’) {
+      el.innerHTML = ‘<div style="padding:1.5rem;text-align:center;color:var(--text-secondary)">Map couldn\’t load (offline?). Try refreshing.</div>’;
       return;
     }
     if (!_masterMap) initMasterMap();
     // The container was display:none until this view became active, so Leaflet
-    // measured it as 0×0 — recompute now that it's visible (the classic fix).
+    // measured it as 0×0 — recompute now that it’s visible.
     setTimeout(() => { if (_masterMap) _masterMap.invalidateSize(); }, 60);
+    // Show user location only if already granted — never prompt on map open.
+    maybeShowUserOnMap();
+  }
+
+  async function maybeShowUserOnMap() {
+    if (!_masterMap) return;
+    try {
+      if (!userLoc) {
+        const perm = await navigator.permissions.query({ name: ‘geolocation’ });
+        if (perm.state !== ‘granted’) return;
+        await getUserLocation();
+      }
+      if (!userLoc) return;
+      if (_userLocMarker) _userLocMarker.remove();
+      _userLocMarker = L.circleMarker([userLoc.lat, userLoc.lon], {
+        radius: 9, color: ‘#1565c0’, weight: 3,
+        fillColor: ‘#42a5f5’, fillOpacity: 0.95,
+      }).bindTooltip(‘You are here’, { permanent: false, direction: ‘top’ })
+        .addTo(_masterMap);
+    } catch {}
   }
 
   function initMasterMap() {
     loadMapLayerPrefs();
-    _masterMap = L.map('masterMap', { zoomControl: true, scrollWheelZoom: true })
+    _masterMap = L.map(‘masterMap’, { zoomControl: true, scrollWheelZoom: true })
       .setView([39.9526, -75.1652], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-      subdomains: 'abcd', maxZoom: 19,
+    L.tileLayer(‘https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png’, {
+      attribution: ‘© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>’,
+      subdomains: ‘abcd’, maxZoom: 19,
     }).addTo(_masterMap);
     for (const l of MAP_LAYERS) {
       _mapLayerGroups[l.id] = L.layerGroup();
@@ -5829,6 +5851,7 @@
       ${info.meta ? `<div class="map-popup-meta">📍 ${escapeHtml(info.meta)}</div>` : ''}
       ${info.actions ? `<div class="map-popup-actions">${info.actions}</div>` : ''}`;
     L.circleMarker([lat, lon], { radius: 6, color, weight: 2, fillColor: color, fillOpacity: 0.7 })
+      .bindTooltip(info.name, { direction: 'top', offset: [0, -4] })
       .bindPopup(popup, { maxWidth: 230 })
       .addTo(grp);
   }
@@ -8240,7 +8263,7 @@ Valid types: "meal", "activity", "dessert"`;
   // Translate vertical mouse-wheel into horizontal scroll over tab rows
   function enableHorizontalWheelScroll() {
     document.addEventListener('wheel', e => {
-      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav');
+      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav, .map-layer-bar');
       if (!row || row.scrollWidth <= row.clientWidth) return;
       if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // already a horizontal gesture
       e.preventDefault();
@@ -8253,7 +8276,7 @@ Valid types: "meal", "activity", "dessert"`;
     let drag = null;
     document.addEventListener('pointerdown', e => {
       if (e.pointerType !== 'mouse' || e.button !== 0) return;
-      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav');
+      const row = e.target.closest('.tabs, .sub-tabs, .cat-nav, .map-layer-bar');
       if (!row || row.scrollWidth <= row.clientWidth) return;
       drag = { row, startX: e.clientX, startScroll: row.scrollLeft, moved: false };
     });
