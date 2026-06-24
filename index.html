@@ -5278,6 +5278,7 @@
   // ── Picnic spots — scenic parks to spread a blanket (Philly Mag) ──
   // lat/lon power the Picnic Planner's pairings, map, weather, and nearby-events.
   const PICNIC_PARKS = [
+    // PARK-PLACES-START — bake-geo.js bakes a precise `geo` here so the map pins them accurately. NOT audited as businesses (parks/piers/cemeteries never "close").
     { name: 'Azalea Garden', neighborhood: 'Fairmount', location: 'Behind the Art Museum, Fairmount', lat: 39.9676, lon: -75.1810, website: '', desc: 'A lovely four-acre garden behind the Art Museum filled with over 150 species of azaleas and rhododendrons — a flower-lover’s lunchtime escape.', bring: 'A light blanket, a baguette and cheese, and your camera for the blooms. Limited shade, so add a hat on sunny days.' },
     { name: "Bartram's Garden", neighborhood: 'Southwest Philly', location: '5400 Lindbergh Blvd, Southwest Philly', lat: 39.9320, lon: -75.2120, website: 'https://www.bartramsgarden.org', desc: 'America’s oldest living botanical garden — 45 riverfront acres on the Schuylkill with Center City views and three designated picnic areas with tables.', bring: 'A blanket or claim a picnic table by the river. Pack a full spread; you’ll want to linger. Sunscreen for the open meadow.' },
     { name: 'Belmont Plateau', neighborhood: 'West Philly', location: 'Belmont Mansion Dr, West Fairmount Park', lat: 39.9905, lon: -75.2090, website: '', desc: 'Wide-open space with one of the best skyline views in the city. Grills and tables sit down the hill if you want to cook your spread.', bring: 'A blanket, frisbee or kite for the open field, and charcoal if you’re grilling down the hill. Golden-hour timing for the skyline.' },
@@ -5320,7 +5321,15 @@
     { name: "Shofuso Japanese House", neighborhood: "West Fairmount Park", location: "Lansdowne Dr & Horticultural Dr, West Fairmount Park", lat: 39.9857, lon: -75.2143, website: "https://japanesehouse.org", desc: "A 16th-century-style Japanese house and garden with a koi pond and raked gravel garden in the middle of Fairmount Park. The surrounding lawns make for a uniquely serene picnic spot. Open Wed–Sun seasonally.", bring: "A quiet mindset and a light lunch. Check seasonal hours before heading out — it’s worth combining with the Horticultural Center nearby." },
     { name: "Smith Memorial Grounds", neighborhood: "West Fairmount Park", location: "Concourse Dr, West Fairmount Park", lat: 39.9855, lon: -75.2045, website: "", desc: "The open meadow and grand granite arch of the Smith Civil War Memorial, with wide lawns stretching in every direction and the full West Fairmount Park trail network branching out from here.", bring: "A blanket for the open meadow and sturdy shoes if you plan to explore the surrounding trails after lunch." },
     { name: "The Waterworks", neighborhood: "Fairmount", location: "640 Waterworks Dr, Fairmount", lat: 39.9657, lon: -75.1825, website: "https://fairmountwaterworks.org", desc: "The stunning 19th-century neoclassical Fairmount Water Works complex right on the Schuylkill bank — a museum, a riverside outdoor terrace, and one of the most scenic spots in the city, strangely often overlooked.", bring: "A blanket for the riverbank, and check whether the café is open. Perfect before or after heading up the hill to the Art Museum." },
+    // PARK-PLACES-END
   ];
+
+  // Prefer bake-geo's precise coordinates over the hand-entered fallback. The
+  // inline lat/lon stay as an instant fallback so parks never vanish before the
+  // first bake; once `geo` is filled, every park feature reads the exact spot.
+  for (const p of PICNIC_PARKS) {
+    if (p.geo && p.geo.lat != null) { p.lat = p.geo.lat; p.lon = p.geo.lon; }
+  }
 
   // ── Farmers Market data ─────────────────────────────────────────
   const FARMERS_MARKETS = [

@@ -180,6 +180,7 @@ async function main() {
     { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
     { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
     { start: 'FM-PLACES-START',   end: 'FM-PLACES-END',   label: 'Farmers Markets' },
+    { start: 'PARK-PLACES-START', end: 'PARK-PLACES-END', label: 'Picnic Parks' },
   ];
 
   // Gather every place across all marked sections in stable file order, so a
