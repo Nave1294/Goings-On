@@ -103,23 +103,30 @@
     .today-btn:hover { transform: translateY(-1px); }
     .today-btn:active { transform: scale(0.96); }
 
-    /* Persistent Map shortcut injected into every page's header (left column) */
-    .brand-map-btn {
-      grid-column: 1;
-      justify-self: end;
-      font: inherit;
-      font-size: 1rem;
-      line-height: 1;
+    /* Persistent Map FAB — fixed bottom-left, hidden on the map view itself */
+    #mapFab {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--surface);
       color: var(--accent);
-      background: var(--accent-soft);
-      border: none;
+      border: 1.5px solid var(--border);
       cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 999px;
-      transition: transform 0.15s ease;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      line-height: 1;
+      z-index: 50;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .brand-map-btn:hover { transform: translateY(-1px); }
-    .brand-map-btn:active { transform: scale(0.95); }
+    #mapFab:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.13); }
+    #mapFab:active { transform: scale(0.94); }
+    body[data-view="map"] #mapFab { display: none; }
 
     .to-top-btn {
       position: fixed;
@@ -2325,6 +2332,8 @@
     <path d="M5 12l7-7 7 7"/>
   </svg>
 </button>
+
+<button type="button" id="mapFab" aria-label="Open map">🗺️</button>
 
 <button type="button" class="add-btn" id="addBtn" aria-label="Suggest something to add">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8208,21 +8217,8 @@ Valid types: "meal", "activity", "dessert"`;
       h.addEventListener('click', toggleNav));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNav(); });
 
-    // Persistent 🗺️ Map shortcut in every page's header (except the Map page).
-    document.querySelectorAll('.view').forEach(view => {
-      if (view.id === 'view-map') return;
-      const row = view.querySelector('.brand-row');
-      const ham = row && row.querySelector('.hamburger-btn');
-      if (!row || !ham || row.querySelector('.brand-map-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'brand-map-btn';
-      btn.type = 'button';
-      btn.title = 'Open map';
-      btn.setAttribute('aria-label', 'Open map');
-      btn.textContent = '🗺️';
-      btn.addEventListener('click', () => showView('map'));
-      ham.insertAdjacentElement('afterend', btn);
-    });
+    // Persistent 🗺️ Map FAB — one button, always in view, hidden on map page via CSS
+    document.getElementById('mapFab').addEventListener('click', () => showView('map'));
 
     // Back buttons → return to a view
     document.querySelectorAll('.back-btn').forEach(btn => {
