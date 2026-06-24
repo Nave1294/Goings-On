@@ -5765,15 +5765,15 @@
   let _userLocMarker = null;
 
   function openMasterMap() {
-    const el = document.getElementById(‘masterMap’);
+    const el = document.getElementById('masterMap');
     if (!el) return;
-    if (typeof L === ‘undefined’) {
-      el.innerHTML = ‘<div style="padding:1.5rem;text-align:center;color:var(--text-secondary)">Map couldn\’t load (offline?). Try refreshing.</div>’;
+    if (typeof L === 'undefined') {
+      el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--text-secondary)">Map couldn\'t load (offline?). Try refreshing.</div>';
       return;
     }
     if (!_masterMap) initMasterMap();
     // The container was display:none until this view became active, so Leaflet
-    // measured it as 0×0 — recompute now that it’s visible.
+    // measured it as 0×0 — recompute now that it's visible.
     setTimeout(() => { if (_masterMap) _masterMap.invalidateSize(); }, 60);
     // Show user location only if already granted — never prompt on map open.
     maybeShowUserOnMap();
@@ -5783,27 +5783,27 @@
     if (!_masterMap) return;
     try {
       if (!userLoc) {
-        const perm = await navigator.permissions.query({ name: ‘geolocation’ });
-        if (perm.state !== ‘granted’) return;
+        const perm = await navigator.permissions.query({ name: 'geolocation' });
+        if (perm.state !== 'granted') return;
         await getUserLocation();
       }
       if (!userLoc) return;
       if (_userLocMarker) _userLocMarker.remove();
       _userLocMarker = L.circleMarker([userLoc.lat, userLoc.lon], {
-        radius: 9, color: ‘#1565c0’, weight: 3,
-        fillColor: ‘#42a5f5’, fillOpacity: 0.95,
-      }).bindTooltip(‘You are here’, { permanent: false, direction: ‘top’ })
+        radius: 9, color: '#1565c0', weight: 3,
+        fillColor: '#42a5f5', fillOpacity: 0.95,
+      }).bindTooltip('You are here', { permanent: false, direction: 'top' })
         .addTo(_masterMap);
     } catch {}
   }
 
   function initMasterMap() {
     loadMapLayerPrefs();
-    _masterMap = L.map(‘masterMap’, { zoomControl: true, scrollWheelZoom: true })
+    _masterMap = L.map('masterMap', { zoomControl: true, scrollWheelZoom: true })
       .setView([39.9526, -75.1652], 12);
-    L.tileLayer(‘https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png’, {
-      attribution: ‘© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>’,
-      subdomains: ‘abcd’, maxZoom: 19,
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 19,
     }).addTo(_masterMap);
     for (const l of MAP_LAYERS) {
       _mapLayerGroups[l.id] = L.layerGroup();
