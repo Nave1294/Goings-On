@@ -7,6 +7,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Goings On</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPeE=" crossorigin=""></script>
   <style>
     [hidden] { display: none !important; }
     :root {
@@ -1174,8 +1176,58 @@
     .near-btn:active { transform: scale(0.95); }
     .near-btn.active { color: var(--accent); background: var(--accent-soft); }
     .near-btn.loading { opacity: 0.5; pointer-events: none; }
-    /* Inline filter toolbar (neighborhood dropdown left, Near me right) */
-    .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; }
+    /* Inline filter toolbar: map toggle left, neighborhood dropdown middle, Near me right */
+    .proximity-bar.eat-toolbar { justify-content: space-between; align-items: center; gap: 0.4rem; }
+    .map-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .map-toggle-btn:hover { color: var(--accent); background: var(--accent-soft); }
+    .map-toggle-btn.active { color: var(--accent); background: var(--accent-soft); }
+    #eatMap {
+      border-radius: 12px;
+      overflow: hidden;
+      height: 60vh;
+      min-height: 320px;
+      margin-bottom: 1rem;
+    }
+    /* Leaflet popup matches app style */
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      font-family: inherit;
+      font-size: 0.82rem;
+      color: var(--text);
+      background: var(--surface);
+    }
+    .leaflet-popup-tip { background: var(--surface); }
+    .eat-map-popup-name { font-weight: 700; font-size: 0.88rem; margin-bottom: 2px; }
+    .eat-map-popup-meta { color: var(--text-secondary); font-size: 0.76rem; margin-bottom: 6px; }
+    .eat-map-popup-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .eat-map-popup-actions a {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .eat-map-popup-actions a:hover { opacity: 0.8; }
     .nbhd-select {
       font: inherit;
       font-size: 0.72rem;
@@ -2096,6 +2148,7 @@
   <div class="cat-nav"></div>
   <div class="sub-tabs" id="eatSubTabs"></div>
   <div class="proximity-bar eat-toolbar">
+    <button class="map-toggle-btn" id="eatMapToggle" type="button" title="Toggle map view">🗺️ Map</button>
     <select class="nbhd-select" id="eatNbhdFilter" aria-label="Filter by neighborhood">
       <option value="">📍 All neighborhoods</option>
     </select>
@@ -2110,6 +2163,7 @@
       </div>
     </div>
     <div id="eatList"></div>
+    <div id="eatMap" hidden></div>
   </div>
 </div>
 
@@ -6261,6 +6315,8 @@
     }
 
     loadRestoImages(list);
+    // Keep map pins in sync when the tab changes while map is open
+    renderEatMap(cat.id);
   }
 
   function setupEatTabs() {
@@ -6571,9 +6627,84 @@
     }
     // Click a tile to expand its description + map
     document.getElementById('eatList').addEventListener('click', onRestoMainClick);
+
+    // ── Map toggle ─────────────────────────────────────────────────────────
+    const mapToggleBtn = document.getElementById('eatMapToggle');
+    if (mapToggleBtn) mapToggleBtn.addEventListener('click', toggleEatMap);
+
     // Open on the first category that actually has spots
     const firstPopulated = PLACES_TO_EAT.find(c => c.sections.some(s => s.places.length)) || PLACES_TO_EAT[0];
     renderEatCategory(firstPopulated.id);
+  }
+
+  // ── Map view ────────────────────────────────────────────────────────────
+  let eatMapActive = false;
+  let _eatLeafletMap = null;   // created once, reused across toggles
+  let _eatMarkers  = null;     // LayerGroup holding current pins
+
+  function toggleEatMap() {
+    eatMapActive = !eatMapActive;
+    const btn     = document.getElementById('eatMapToggle');
+    const listEl  = document.getElementById('eatList');
+    const mapEl   = document.getElementById('eatMap');
+    if (!btn || !listEl || !mapEl) return;
+    btn.classList.toggle('active', eatMapActive);
+    listEl.hidden  = eatMapActive;
+    mapEl.hidden   = !eatMapActive;
+    if (eatMapActive) renderEatMap(currentEatCat);
+  }
+
+  function renderEatMap(catId) {
+    const mapEl = document.getElementById('eatMap');
+    if (!mapEl || !eatMapActive) return;
+
+    // Init Leaflet once
+    if (!_eatLeafletMap) {
+      _eatLeafletMap = L.map(mapEl, { zoomControl: true }).setView([39.9526, -75.1652], 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19,
+      }).addTo(_eatLeafletMap);
+      _eatMarkers = L.layerGroup().addTo(_eatLeafletMap);
+    } else {
+      // Force Leaflet to recalculate its size in case the container was hidden
+      _eatLeafletMap.invalidateSize();
+    }
+
+    // Clear previous pins
+    _eatMarkers.clearLayers();
+
+    const cat = PLACES_TO_EAT.find(c => c.id === catId) || PLACES_TO_EAT[0];
+    const places = cat.sections.flatMap(s => s.places)
+      .filter(r => r.geo && r.geo.lat != null && r.geo.lon != null);
+
+    const bounds = [];
+    for (const r of places) {
+      const { lat, lon } = r.geo;
+      const meta = [r.cuisine, r.price].filter(Boolean).join(' · ');
+      const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + (r.location ? ', ' + r.location : ', Philadelphia'))}`;
+      const actions = [
+        r.website      ? `<a href="${escapeAttr(r.website)}" target="_blank" rel="noopener">🌐 Website</a>` : '',
+        r.reservation  ? `<a href="${escapeAttr(r.reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : '',
+        `<a href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ Map</a>`,
+      ].filter(Boolean).join('');
+      const popup = `
+        <div class="eat-map-popup-name">${escapeHtml(r.name)}</div>
+        ${meta ? `<div class="eat-map-popup-meta">${escapeHtml(meta)}</div>` : ''}
+        ${r.location ? `<div class="eat-map-popup-meta">📍 ${escapeHtml(r.location.split(',')[0])}</div>` : ''}
+        <div class="eat-map-popup-actions">${actions}</div>`;
+      const marker = L.circleMarker([lat, lon], {
+        radius: 7, color: '#2d6a4f', weight: 2,
+        fillColor: '#2d6a4f', fillOpacity: 0.75,
+      }).bindPopup(popup, { maxWidth: 220 });
+      _eatMarkers.addLayer(marker);
+      bounds.push([lat, lon]);
+    }
+
+    if (bounds.length) {
+      _eatLeafletMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 });
+    }
   }
 
   // ── Planner: theme matching & idea fallbacks ────────────────────
