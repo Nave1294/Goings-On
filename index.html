@@ -103,6 +103,24 @@
     .today-btn:hover { transform: translateY(-1px); }
     .today-btn:active { transform: scale(0.96); }
 
+    /* Persistent Map shortcut injected into every page's header (left column) */
+    .brand-map-btn {
+      grid-column: 1;
+      justify-self: end;
+      font: inherit;
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 999px;
+      transition: transform 0.15s ease;
+    }
+    .brand-map-btn:hover { transform: translateY(-1px); }
+    .brand-map-btn:active { transform: scale(0.95); }
+
     .to-top-btn {
       position: fixed;
       bottom: 1.5rem;
@@ -5275,6 +5293,7 @@
 
   // ── Farmers Market data ─────────────────────────────────────────
   const FARMERS_MARKETS = [
+    // FM-PLACES-START — bake-geo.js bakes coords here so the map geocodes them for free. Not audited as businesses.
     { name: '4th & Lehigh Farmers Market', location: '412 W. Huntingdon St., Philadelphia', neighborhood: 'North Philadelphia', desc: 'A block away from El Centro de Oro, this seasonal farm stand offers fresh fruit and vegetables from Hayday Farms in Bucks County, like plump peaches and crates of juicy strawberries.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/4th-lehigh-farmers-market/', days: ['Tuesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
     { name: '52nd and Haverford Farmers Market', location: '5200 Haverford Ave., Philadelphia', neighborhood: 'West Philadelphia', desc: "The seasonal farm stand on 52nd and Haverford Streets is a favorite for longtime residents of Haddington. Bucks County's Hayday Farms bring fruits, veggies, and flowers.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/52nd-haverford/', days: ['Wednesday'], hours: '11 AM – 3 PM', seasonal: true, season: 'Opens July' },
     { name: 'Bryn Mawr Farmers Market', location: '7 N. Bryn Mawr Ave., Bryn Mawr', neighborhood: 'Montgomery County', desc: 'In Bryn Mawr, shoppers at this year-round Saturday market can buy gluten-free whoopie pies from Amaranth Bakery, buckwheat ales from Deer Creek Malthouse, and more. Located at Bryn Mawr Station.', website: 'https://www.lmfarmersmarkets.org/brynmawr', days: ['Saturday'], hours: 'Jan–Mar: 10 AM – 12 PM (1st, 3rd & 5th Sat); Apr–Dec: 9 AM – 1 PM', seasonal: false, season: 'Year-round' },
@@ -5300,6 +5319,7 @@
     { name: 'Pretzel Park Farmers Market', location: '4300 Silverwood St., Philadelphia', neighborhood: 'Roxborough/Manayunk', desc: 'Honey, handmade candy, pastas, coffee, and more in Manayunk. Many vendors offer preorder for quick pickups — check the full vendor list online.', website: 'https://www.facebook.com/pretzelparkfarmersmarket/', days: ['Saturday'], hours: '10 AM – 2 PM', seasonal: true, season: 'May – mid-December' },
     { name: 'Rittenhouse Farmers Market', location: '1800 Walnut St., Philadelphia', neighborhood: 'Rittenhouse', desc: 'Year-round in Rittenhouse Square Park with Sunny Acres, A-Frame Apiary, Rineer Family Farms, Lost Bread Co., and Second Daughter Baking Co.', website: 'https://www.farmtocitymarkets.com/markets2', days: ['Tuesday', 'Saturday'], hours: 'Tue 10 AM – 2 PM · Sat 9 AM – 2 PM', seasonal: false, season: 'Year-round' },
     { name: 'Swarthmore Farmers Market', location: '121 Park Ave., Swarthmore', neighborhood: 'Delaware County', desc: 'Ciders, baskets of strawberries, Milk Jawn ice cream, Kismet Bagels, Trotter Hill Alpacas, plus local musicians and art booths.', website: 'https://swarthmoretowncenter.com/swarthmore-farmers-market', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: true, season: 'May – November' },
+    // FM-PLACES-END
   ];
 
   // BOOK-PLACES-START — managed by audit-places.js, do not edit markers
@@ -5804,25 +5824,26 @@
       .addTo(grp);
   }
 
-  // Deterministic ±~300m offset so approximate (neighborhood-level) pins that
-  // share a centroid fan out instead of stacking into one invisible dot.
-  function jitterCoord(c, seed) {
-    let h = 0;
-    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) & 0xffff;
-    return { lat: c.lat + (((h >> 8 & 0xff) / 255 - 0.5) * 0.006), lon: c.lon + ((h & 0xff) / 255 - 0.5) * 0.006 };
+  // Precise coords via the cached Google Places lookup (the same source the rest
+  // of the app uses). Persistently cached, so each venue is only ever fetched
+  // once. Returns {lat,lon} ONLY for a confident near-Philly match — never an
+  // approximate neighborhood centroid.
+  async function mapPreciseGeocode(query) {
+    if (!query) return null;
+    const info = await fetchPlaceInfo(query);
+    return (info && info.lat != null && nearPhilly(info.lat, info.lon))
+      ? { lat: info.lat, lon: info.lon } : null;
   }
 
-  // Approximate coords from the FREE neighborhood geocoder (cached). Never the
-  // paid Places API. Returns {lat,lon} or null.
-  async function mapFreeGeocode(item) {
-    const q = item.neighborhood ? `${item.neighborhood}, Philadelphia`
-      : item.location ? `${item.location.split(',').slice(-1)[0].trim()}, Philadelphia` : null;
-    if (!q) return null;
-    const c = await geocode(q);
-    return (c && nearPhilly(c.lat, c.lon)) ? c : null;
+  // Resolve a few at a time so the first open isn't one long serial chain of
+  // network calls (already-cached venues resolve instantly).
+  async function mapBatch(items, handler, size = 6) {
+    for (let i = 0; i < items.length; i += size)
+      await Promise.all(items.slice(i, i + size).map(handler));
   }
 
   async function populateMasterMap() {
+    // ── Precise baked / inline coords (free, instant) ──
     // Places to Eat — baked geo
     for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
       if (!(r.geo && r.geo.lat != null)) continue;
@@ -5849,48 +5870,50 @@
         actions: mapActionLinks({ website: b.website, mapQuery: b.name + (b.location ? ', ' + b.location : ', Philadelphia') }),
       });
     }
-    // Events — precise coords where known, else approximate neighborhood geocode
+    updateMapCount();
+
+    // ── Precisely geocoded at runtime via cached Places lookup ──
+    // Events — dedupe, then resolve each to a precise venue location.
     if (lastRender && lastRender.byDay) {
-      const seen = new Set();
-      for (const arr of Object.values(lastRender.byDay)) {
+      const seen = new Set(), events = [];
+      for (const arr of Object.values(lastRender.byDay))
         for (const ev of arr) {
           const key = ev.id || ev.summary;
-          if (!key || seen.has(key)) continue;
-          seen.add(key);
-          let c = eventCoords(ev), jittered = false;
-          if (!c && ev.location) { c = await mapFreeGeocode({ location: ev.location }); jittered = true; }
-          if (!c) continue;
-          if (jittered) c = jitterCoord(c, ev.summary || ev.location);
-          addMapMarker('events', c.lat, c.lon, {
-            eyebrow: 'Event', name: ev.summary || 'Event',
-            meta: ev.location ? ev.location.split(',')[0] : '',
-            actions: mapActionLinks({ website: (typeof eventSiteUrl === 'function' ? eventSiteUrl(ev) : ''), mapQuery: ev.location || ev.summary }),
-          });
+          if (key && !seen.has(key)) { seen.add(key); events.push(ev); }
         }
-      }
+      await mapBatch(events, async ev => {
+        let c = (ev._coords && ev._coords.lat != null) ? ev._coords : null;
+        if (!c) c = await mapPreciseGeocode(ev.location || ev.summary);
+        if (!c) return;
+        addMapMarker('events', c.lat, c.lon, {
+          eyebrow: 'Event', name: ev.summary || 'Event',
+          meta: ev.location ? ev.location.split(',')[0] : '',
+          actions: mapActionLinks({ website: (typeof eventSiteUrl === 'function' ? eventSiteUrl(ev) : ''), mapQuery: ev.location || ev.summary }),
+        });
+      });
+      updateMapCount();
     }
-    // Farmers Markets — approximate neighborhood geocode
-    for (const m of FARMERS_MARKETS) {
-      const c = await mapFreeGeocode(m);
-      if (!c) continue;
-      const jc = jitterCoord(c, m.name);
-      addMapMarker('markets', jc.lat, jc.lon, {
+    // Farmers Markets — precise venue lookup
+    await mapBatch(FARMERS_MARKETS, async m => {
+      const c = await mapPreciseGeocode(m.name + (m.location ? ', ' + m.location : ''));
+      if (!c) return;
+      addMapMarker('markets', c.lat, c.lon, {
         eyebrow: 'Farmers market', name: m.name,
         meta: [m.neighborhood, Array.isArray(m.days) ? m.days.join('/') : ''].filter(Boolean).join(' · '),
         actions: mapActionLinks({ website: m.website, mapQuery: m.name + (m.location ? ', ' + m.location : ', Philadelphia') }),
       });
-    }
-    // Performing Arts — approximate neighborhood geocode
-    for (const v of PA_VENUES) {
-      const c = await mapFreeGeocode(v);
-      if (!c) continue;
-      const jc = jitterCoord(c, v.name);
-      addMapMarker('arts', jc.lat, jc.lon, {
+    });
+    updateMapCount();
+    // Performing Arts — precise venue lookup
+    await mapBatch(PA_VENUES, async v => {
+      const c = await mapPreciseGeocode(v.name + (v.location ? ', ' + v.location : ''));
+      if (!c) return;
+      addMapMarker('arts', c.lat, c.lon, {
         eyebrow: v.kind || 'Performing arts', name: v.name,
         meta: v.location ? v.location.split(',').slice(-1)[0].trim() : '',
         actions: mapActionLinks({ website: v.website, mapQuery: v.name + (v.location ? ', ' + v.location : ', Philadelphia') }),
       });
-    }
+    });
     updateMapCount();
   }
 
@@ -8184,6 +8207,22 @@ Valid types: "meal", "activity", "dessert"`;
     document.querySelectorAll('.hamburger-btn').forEach(h =>
       h.addEventListener('click', toggleNav));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNav(); });
+
+    // Persistent 🗺️ Map shortcut in every page's header (except the Map page).
+    document.querySelectorAll('.view').forEach(view => {
+      if (view.id === 'view-map') return;
+      const row = view.querySelector('.brand-row');
+      const ham = row && row.querySelector('.hamburger-btn');
+      if (!row || !ham || row.querySelector('.brand-map-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'brand-map-btn';
+      btn.type = 'button';
+      btn.title = 'Open map';
+      btn.setAttribute('aria-label', 'Open map');
+      btn.textContent = '🗺️';
+      btn.addEventListener('click', () => showView('map'));
+      ham.insertAdjacentElement('afterend', btn);
+    });
 
     // Back buttons → return to a view
     document.querySelectorAll('.back-btn').forEach(btn => {

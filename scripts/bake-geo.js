@@ -179,10 +179,11 @@ async function main() {
   const sections = [
     { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
     { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
+    { start: 'FM-PLACES-START',   end: 'FM-PLACES-END',   label: 'Farmers Markets' },
   ];
 
-  // Gather every place across both marked sections in stable file order, so a
-  // rolling validate slice can span restaurants and bookstores uniformly.
+  // Gather every place across all marked sections in stable file order, so a
+  // rolling validate slice can span restaurants, bookstores, and markets uniformly.
   const allPlaces = [];
   for (const section of sections) {
     for (const p of extractPlaceLines(html, section.start, section.end)) allPlaces.push(p);
