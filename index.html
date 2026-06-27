@@ -2975,6 +2975,11 @@
       }
     });
 
+    // Screen out near-duplicate calendar entries within each day (same event
+    // added by two sources, or a hand-added copy the scraper's fuzzy match
+    // missed) so it never shows twice. Keeps the richest copy of each.
+    Object.keys(byDay).forEach(k => { byDay[k] = dedupeDayEvents(byDay[k]); });
+
     // Sort within each day: all-day first, then by start time
     Object.values(byDay).forEach(arr => {
       arr.sort((a, b) => {
@@ -3178,6 +3183,64 @@
       .replace(/^[ \t]*Auto-added from .+$/img, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+  }
+
+  // ── Duplicate screening ──────────────────────────────────────────────────
+  // The calendar can hold near-duplicate events (the same thing added by two
+  // sources, or a hand-added copy the scraper's fuzzy match didn't catch). This
+  // mirrors scrape-events.js's matching so the DISPLAY collapses them too: same
+  // day + near-identical title (punctuation/filler/years/"Philadelphia" stripped,
+  // then exact / substring / token-overlap compare).
+  const EV_TITLE_STOPWORDS = new Set([
+    'the','a','an','of','at','in','on','to','for','and','or','with','presents',
+    'present','presented','by','featuring','feat','philly','philadelphia','phila',
+    '2024','2025','2026','2027','2028',
+  ]);
+  function evNormTitle(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w && !EV_TITLE_STOPWORDS.has(w))
+      .join(' ')
+      .trim();
+  }
+  function evJaccard(a, b) {
+    if (!a.size || !b.size) return 0;
+    let inter = 0;
+    for (const x of a) if (b.has(x)) inter++;
+    return inter / (a.size + b.size - inter);
+  }
+  function evTitlesMatch(an, at, bn, bt) {
+    if (!an || !bn) return false;
+    if (an === bn) return true;
+    if (an.length >= 8 && (an.includes(bn) || bn.includes(an))) return true;
+    return evJaccard(at, bt) >= 0.7;
+  }
+  // Higher score = the copy we keep when two collapse: a hand-added event beats
+  // an auto-scraped one, a located event beats an unlocated one, a timed event
+  // beats a vague all-day, and more description wins the final tiebreak.
+  function evRichness(ev) {
+    let s = 0;
+    if (!autoEventSource(ev)) s += 1000;
+    if (ev.location) s += 100;
+    if (ev.start && ev.start.dateTime) s += 10;
+    s += Math.min((cleanEventDescription(ev.description) || '').length, 600) / 10;
+    return s;
+  }
+  // Collapse near-identical events within one day, keeping the richest copy.
+  function dedupeDayEvents(arr) {
+    const kept = []; // { ev, n, t }
+    for (const ev of arr) {
+      const n = evNormTitle(ev.summary);
+      const t = new Set(n.split(' ').filter(Boolean));
+      if (!n) { kept.push({ ev, n, t }); continue; }
+      const hit = kept.find(k => evTitlesMatch(n, t, k.n, k.t));
+      if (!hit) { kept.push({ ev, n, t }); continue; }
+      if (evRichness(ev) > evRichness(hit.ev)) { hit.ev = ev; hit.n = n; hit.t = t; }
+    }
+    return kept.map(k => k.ev);
   }
 
   function eventHTML(ev, idx, contextDay) {
