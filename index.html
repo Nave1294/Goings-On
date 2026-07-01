@@ -3383,8 +3383,25 @@
   ];
 
   // TRENDY-START — auto-updated by GitHub Action every Monday, do not edit manually
-  const TRENDY_UPDATED  = '2026-06-22';
+  const TRENDY_UPDATED  = '2026-06-29';
   const TRENDY_SECTIONS = [
+      {
+          "label": "📰 Cozy Georgian Comfort Foods Take Center Stage in Fishtown · Jun 24",
+          "articleUrl": "https://philly.eater.com/dining-report/54595/kinto-review-philly-georgian-restaurant",
+          "date": "2026-06-24",
+          "v": 2,
+          "places": [
+              {
+                  "name": "Kinto",
+                  "location": "Fishtown, 1144 Frankford Avenue",
+                  "cuisine": "Georgian",
+                  "desc": "A newer Georgian restaurant featuring affordable and comforting cuisine with delightful dumplings, flatbreads, and herby turnovers. The article highlights its khinkali (soup dumplings), pkhali (vegetable and walnut spreads), chebureki (Georgian turnovers), and intimate, cozy atmosphere with a dreamy green-tiled bar.",
+                  "website": "",
+                  "articleUrl": "https://philly.eater.com/dining-report/54595/kinto-review-philly-georgian-restaurant",
+                  "season": "📰 Eater · Jun 24"
+              }
+          ]
+      },
       {
           "label": "📰 The Best Date-Night Restaurants in Philly · Jun 18",
           "articleUrl": "https://philly.eater.com/maps/date-night-romantic-restaurants-bars-philly",
@@ -4741,254 +4758,522 @@
   ];
 
   // PA-START — discount-ticket rules; re-verified quarterly by GitHub Action, safe to hand-edit
-  const PA_UPDATED = '2026-06-18';
+  const PA_UPDATED = '2026-07-01';
   const PA_VENUES = [
-    {
-        "id": "ensemble-arts",
-        "group": "stages",
-        "name": "Ensemble Arts Philly / Kimmel Cultural Campus",
-        "kind": "Broadway · Orchestra · Recitals",
-        "location": "300 S Broad St, Avenue of the Arts",
-        "website": "https://www.ensembleartsphilly.org",
-        "deals": [
-            { "name": "Community Rush", "price": "$35 or less", "who": "Open to anyone — no ID", "how": "Each Monday the week's eligible shows post online; or buy in person at the Kimmel box office day-of (5:30pm evenings / 11:30am matinees). Philadelphia Orchestra rush is ~$29; children under 14 with an adult are $29.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" },
-            { "name": "SEPTA Perks", "price": "Up to 40% off", "who": "SEPTA Key cardholders", "how": "Discount on select performances for SEPTA Key holders.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" }
-        ],
-        "note": "Covers the Academy of Music, Kimmel Center (Marian Anderson Hall, ex-Verizon Hall) and Miller Theater (ex-Merriam)."
-    },
-    {
-        "id": "mann",
-        "group": "stages",
-        "name": "Highmark Mann Center",
-        "kind": "Outdoor amphitheater — Fairmount Park",
-        "location": "5201 Parkside Ave, Fairmount Park",
-        "website": "https://manncenter.org",
-        "deals": [
-            { "name": "Access the Arts (free Orchestra lawn)", "price": "Free", "who": "Via 350+ partner nonprofits", "how": "~5,000 free Philadelphia Orchestra lawn tickets a year are distributed through community partner organizations — not at the box office.", "url": "https://manncenter.org/ticketing" }
-        ],
-        "note": "Young-child lawn policy varies by show — call the box office to confirm before assuming a free seat. No general student/youth walk-up discount, and day-of tickets cost $5 more than face value."
-    },
-    {
-        "id": "penn-live-arts",
-        "group": "stages",
-        "name": "Penn Live Arts (Annenberg Center)",
-        "kind": "University presenter — dance, music & theater",
-        "location": "3680 Walnut St, University City",
-        "website": "https://pennlivearts.org",
-        "deals": [
-            { "name": "College Student Rush", "price": "$10", "who": "Any college student w/ valid ID", "how": "At the box office 2 hours before the show; limit 2.", "url": "https://pennlivearts.org/events/college-students.php" },
-            { "name": "Penn Students", "price": "$10", "who": "Penn students", "how": "Code PENNSTUDENT anytime online or at the box office; Penn email to buy, Penn ID at pickup; limit 2.", "url": "https://pennlivearts.org/events/college-students.php" },
-            { "name": "STUDENT20", "price": "20% off", "who": "Any college student", "how": "Online discount code, anytime — student-only, not open to the general public.", "url": "https://pennlivearts.org/events/college-students.php" },
-            { "name": "West Philly Rush", "price": "50–80% off", "who": "West Philadelphia residents", "how": "Address-verified discount program for West Philly residents — check the Penn Connections page for current verification steps.", "url": "https://pennlivearts.org/events/penn-connections.php" },
-            { "name": "Penn staff/faculty & alumni", "price": "10% off", "who": "Current/retired Penn staff & faculty, or Penn alumni", "how": "Staff/faculty: 10% off up to 4 tickets. Alumni: 10% off up to 2 tickets. (A separate SEPTA Key discount also gives anyone 10% off up to 2 tickets.)", "url": "https://pennlivearts.org/visit/" }
-        ],
-        "note": "Corrected 2026-06-19: there is no general 20%-off-anyone code — STUDENT20 is student-only and the 10%-off \"PENN\" code is restricted to Penn staff/faculty."
-    },
-    {
-        "id": "walnut",
-        "group": "theater",
-        "name": "Walnut Street Theatre",
-        "kind": "Historic producing theater — Broadway-style",
-        "location": "825 Walnut St, Washington Square West",
-        "website": "https://www.walnutstreettheatre.org",
-        "deals": [
-            { "name": "\"Under 40\"", "price": "$35", "who": "Anyone 40 or younger", "how": "Free to join online; you get promo codes and can buy a pair (your guest can be any age). Pick up day-of, noon to showtime.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" },
-            { "name": "Youth / Military / Industry Rush", "price": "$25", "who": "24-and-under, active military, or industry", "how": "Day-of with ID showing date of birth; one per ID.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" },
-            { "name": "Day-of Standby", "price": "~$50", "who": "Anyone", "how": "Released at noon day-of by phone or box office (not online); a limited $25 mezzanine is also offered.", "url": "https://www.walnutstreettheatre.org/visit/discounts.php" }
-        ],
-        "note": "Ticket prices add a $2.50 preservation fee."
-    },
-    {
-        "id": "arden",
-        "group": "theater",
-        "name": "Arden Theatre Company",
-        "kind": "Regional theater — Old City",
-        "location": "40 N 2nd St, Old City",
-        "website": "https://ardentheatre.org",
-        "deals": [
-            { "name": "Student Rush", "price": "$15", "who": "Students w/ ID", "how": "In person up to 1 hour before curtain; limit 2. ($5-off student advance tickets are also available online/phone with ID at will-call.)", "url": "https://ardentheatre.org/tickets/discounts/" },
-            { "name": "SEPTA Key", "price": "$10 off", "who": "Anyone w/ SEPTA Key", "how": "Discount applied at purchase; Industry Rush $20 and Educator $5-off are also offered.", "url": "https://ardentheatre.org/tickets/discounts/" }
-        ]
-    },
-    {
-        "id": "wilma",
-        "group": "theater",
-        "name": "Wilma Theater",
-        "kind": "Contemporary regional theater",
-        "location": "265 S Broad St, Avenue of the Arts",
-        "website": "https://wilmatheater.org",
-        "deals": [
-            { "name": "Rush", "price": "$20", "who": "Anyone", "how": "In person 1 hour before curtain, subject to availability.", "url": "https://wilmatheater.org/visit/box-office/" },
-            { "name": "Student / Industry", "price": "$20", "who": "Students or industry", "how": "Request via the online discount form; show ID/proof at pickup; limit 1.", "url": "https://wilmatheater.org/visit/box-office/" }
-        ]
-    },
-    {
-        "id": "ptc",
-        "group": "theater",
-        "name": "Philadelphia Theatre Company",
-        "kind": "Regional theater — Suzanne Roberts Theatre",
-        "location": "480 S Broad St, Avenue of the Arts",
-        "website": "https://philadelphiatheatrecompany.org",
-        "deals": [
-            { "name": "Friday Student Rush", "price": "$10", "who": "Students w/ ID", "how": "Friday-night performances only, sold to move unsold seats; ACCESS Card holders separately get $2–$5 tickets. Call 215-985-0420 to confirm a given week.", "url": "https://philadelphiatheatrecompany.org/tickets/" }
-        ]
-    },
-    {
-        "id": "1812",
-        "group": "theater",
-        "name": "1812 Productions",
-        "kind": "Philadelphia's comedy theater company",
-        "location": "Plays & Players, 1714 Delancey St, Rittenhouse",
-        "website": "https://1812productions.org",
-        "deals": [
-            { "name": "Student Discount", "price": "20% off", "who": "Students w/ ID", "how": "Show student ID in person before checkout; max 2 tickets per production.", "url": "https://www.1812productions.org/tickets-for-students-educators" },
-            { "name": "Student Day Pass", "price": "$24", "who": "Students w/ current ID", "how": "Monday–Friday before 5pm only.", "url": "https://www.1812productions.org/tickets-for-students-educators" },
-            { "name": "ACCESS Philly", "price": "$2", "who": "ACCESS (SNAP/EBT) cardholders", "how": "Up to 4 tickets per production, by credit/debit card, no handling fees.", "url": "https://www.1812productions.org/access-philly-tickets" }
-        ]
-    },
-    {
-        "id": "interact",
-        "group": "theater",
-        "name": "InterAct Theatre Company",
-        "kind": "Issue-driven contemporary theater",
-        "location": "The Drake, 302 S Hicks St, Center City",
-        "website": "https://www.interacttheatre.org",
-        "deals": [
-            { "name": "Pay-What-You-Can dress rehearsal", "price": "Pay what you can", "who": "Anyone", "how": "The Thursday before a show's first ticketed performance; in person.", "url": "https://www.interacttheatre.org/box-office" },
-            { "name": "ACCESS Philly", "price": "$2", "who": "ACCESS (SNAP/EBT) cardholders", "how": "In person; groups get up to 20% off too.", "url": "https://www.interacttheatre.org/box-office" }
-        ]
-    },
-    {
-        "id": "quintessence",
-        "group": "theater",
-        "name": "Quintessence Theatre Group",
-        "kind": "Classic-repertory theater — Mt. Airy",
-        "location": "7137 Germantown Ave, Mt. Airy",
-        "website": "https://www.quintessencetheatre.org",
-        "deals": [
-            { "name": "Rush", "price": "$10", "who": "Anyone", "how": "In person only, on sale 1 hour before curtain, first-come (call 215-987-4450). One of the best walk-up deals in the city.", "url": "https://www.quintessencetheatre.org/ticket-prices" },
-            { "name": "Student", "price": "$15", "who": "Students", "how": "Online or by phone, no code needed.", "url": "https://www.quintessencetheatre.org/ticket-prices" }
-        ]
-    },
-    {
-        "id": "peoples-light",
-        "group": "theater",
-        "name": "People's Light",
-        "kind": "Regional theater — Chester County",
-        "location": "39 Conestoga Rd, Malvern",
-        "website": "https://www.peopleslight.org",
-        "deals": [
-            { "name": "Preview & Access Dates", "price": "$30–$35", "who": "Anyone", "how": "Applied automatically on preview and designated Access dates — no code.", "url": "https://www.peopleslight.org/visit/ticket-discounts/" },
-            { "name": "Student / Youth", "price": "$15", "who": "Students (ID); youth 17 & under", "how": "Students use code STUDENT26 with ID; anyone 17-and-under gets $5 off. Industry $15 with proof.", "url": "https://www.peopleslight.org/visit/ticket-discounts/" }
-        ]
-    },
-    {
-        "id": "fringearts",
-        "group": "theater",
-        "name": "FringeArts",
-        "kind": "Contemporary performance — Sept Fringe Festival",
-        "location": "140 N Columbus Blvd, Penn's Landing",
-        "website": "https://fringearts.com",
-        "deals": [
-            { "name": "Students & 25-and-under", "price": "Flat $15", "who": "Students or anyone 25 & under", "how": "Flat $15 on most shows (or $5 off shows over $20); show student/age ID at pickup. Pay-What-You-Can on select shows.", "url": "https://fringearts.com/box-office/" },
-            { "name": "FringeACCESS", "price": "$2", "who": "ACCESS (SNAP/EBT) cardholders", "how": "Up to 4 tickets at $2 each, fees waived.", "url": "https://fringearts.com/box-office/" }
-        ]
-    },
-    {
-        "id": "philadelphia-orchestra",
-        "group": "classical",
-        "name": "The Philadelphia Orchestra",
-        "kind": "Symphony orchestra — Marian Anderson Hall",
-        "location": "300 S Broad St, Avenue of the Arts",
-        "website": "https://www.ensembleartsphilly.org",
-        "deals": [
-            { "name": "Student Circle", "price": "$8 tickets", "who": "Enrolled students 14+", "how": "~$30 season membership, then $8 (often Tuesday) concerts via code STUDENTS with student ID. Registration reopens summer 2026 for the 2026–27 season.", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/student-circle" },
-            { "name": "Community Rush", "price": "~$29", "who": "Anyone", "how": "Day-of/week-of Orchestra rush through the Ensemble Arts Community Rush program (see Major Stages).", "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush" }
-        ],
-        "note": "The old eZseatU $25-unlimited pass and the free neighborhood-concert series are discontinued/suspended."
-    },
-    {
-        "id": "opera-philadelphia",
-        "group": "classical",
-        "name": "Opera Philadelphia",
-        "kind": "Opera company — Academy of Music",
-        "location": "240 S Broad St, Avenue of the Arts",
-        "website": "https://www.operaphila.org",
-        "deals": [
-            { "name": "Pick Your Price", "price": "From $11", "who": "Anyone — no ID", "how": "Any available seat starts at $11; pay what you choose above that. Buy online, by phone (215.732.8400), or in person.", "url": "https://www.operaphila.org/your-visit/tickets-packages/pick-your-price/" }
-        ],
-        "note": "The flagship $11 program, confirmed for the 2025–26 season."
-    },
-    {
-        "id": "philadelphia-ballet",
-        "group": "classical",
-        "name": "Philadelphia Ballet",
-        "kind": "Professional ballet — Academy of Music",
-        "location": "240 S Broad St, Avenue of the Arts",
-        "website": "https://philadelphiaballet.org",
-        "deals": [
-            { "name": "PBSTUDENT10", "price": "$10 ($29 for The Nutcracker)", "who": "Students w/ ID", "how": "Code PBSTUDENT10 online starting 72 hours before a performance, or at the box office; pick up with valid student ID.", "url": "https://philadelphiaballet.org/student-tickets/" },
-            { "name": "Student/Community Rush", "price": "Deeply discounted", "who": "Students & general public", "how": "Limited rush tickets at the box office 1 hour before curtain, when available.", "url": "https://philadelphiaballet.org/rush-tickets/" },
-            { "name": "Opening Night Student Tickets", "price": "Free", "who": "Students w/ ID", "how": "Box office only, starting 1 hour before curtain on opening night.", "url": "https://philadelphiaballet.org/rush-tickets/" }
-        ]
-    },
-    {
-        "id": "balletx",
-        "group": "classical",
-        "name": "BalletX",
-        "kind": "Contemporary ballet",
-        "location": "Suzanne Roberts Theatre, 480 S Broad St",
-        "website": "https://www.balletx.org",
-        "deals": [
-            { "name": "Student tickets", "price": "$25", "who": "Under 21, or any age w/ valid student ID", "how": "Contact the box office to book (215-225-5389 x250) — not always purchasable online.", "url": "https://www.balletx.org/about-us/faqs/" }
-        ]
-    },
-    {
-        "id": "pcms",
-        "group": "classical",
-        "name": "Philadelphia Chamber Music Society",
-        "kind": "Chamber-music presenter — ~50 concerts/yr",
-        "location": "Kimmel, Curtis & other halls, Center City",
-        "website": "https://www.pcmsconcerts.org",
-        "deals": [
-            { "name": "Unlimited Student Pass", "price": "$40 / season", "who": "Full-time students 35 & under", "how": "One-time $40 covers every season concert; reserve online + will-call. Single student tickets are $10.", "url": "https://www.pcmsconcerts.org/community/students-young-friends/" },
-            { "name": "Young Friends Pass", "price": "$80 / season", "who": "Anyone 40 & younger", "how": "One-time $80 for unlimited concerts; email-list members also get occasional comp tickets and a $10 Day sale.", "url": "https://www.pcmsconcerts.org/community/students-young-friends/" }
-        ]
-    },
-    {
-        "id": "tkts",
-        "group": "free",
-        "name": "TKTS Philly",
-        "kind": "Day-of discount booth — TDF & Visit Philadelphia",
-        "location": "Independence Visitor Center, 599 Market St",
-        "website": "https://www.phlvisitorcenter.com/tkts",
-        "deals": [
-            { "name": "Walk-up discount", "price": "30–50% off", "who": "Anyone — no ID", "how": "Tickets to shows within 72 hours across ~20–40 Greater Philadelphia venues. In person only, daily ~10am–6pm (call 267-514-4758 to confirm). No online sales.", "url": "https://www.phlvisitorcenter.com/tkts" }
-        ]
-    },
-    {
-        "id": "curtis",
-        "group": "free",
-        "name": "Curtis Institute of Music",
-        "kind": "Conservatory — student recitals & orchestra",
-        "location": "1726 Locust St, Rittenhouse",
-        "website": "https://www.curtis.edu",
-        "deals": [
-            { "name": "Student recitals", "price": "Free", "who": "Anyone", "how": "100+ free student recitals during the school year (often Mon/Wed/Fri 7:30pm); free but advance registration required. Friday/graduation recitals are also livestreamed.", "url": "https://www.curtis.edu/curtis-performances/curtis-recital-series/" },
-            { "name": "Curtis Symphony student tickets", "price": "$9", "who": "K-12 & university students w/ ID", "how": "For ticketed Curtis Symphony Orchestra concerts at Marian Anderson Hall, via the Ensemble Arts Box Office.", "url": "https://www.curtis.edu/curtis-performances/curtis-subscriptions-and-discounts/discounts-and-community-partners/" }
-        ]
-    },
-    {
-        "id": "world-cafe-live",
-        "group": "free",
-        "name": "World Cafe Live",
-        "kind": "Independent music venue — with WXPN",
-        "location": "3025 Walnut St, University City",
-        "website": "https://worldcafelive.org",
-        "deals": [
-            { "name": "WXPN Free at Noon", "price": "Free", "who": "Anyone", "how": "A free concert every Friday at noon; reserve free tickets online (max 2 per email). Also streamed.", "url": "https://xpn.org/free-at-noon/" }
-        ]
-    }
+      {
+          "id": "ensemble-arts",
+          "group": "stages",
+          "name": "Ensemble Arts Philly / Kimmel Cultural Campus",
+          "kind": "Broadway · Orchestra · Recitals",
+          "location": "300 S Broad St, Avenue of the Arts",
+          "website": "https://www.ensembleartsphilly.org",
+          "deals": [
+              {
+                  "name": "Community Rush",
+                  "price": "$29–$46",
+                  "who": "Open to anyone — no ID",
+                  "how": "Digital Community Rush begins online every Monday of each performance week; or buy in person at the box office two hours before curtain (or at Kimmel: 5:30pm evenings / 11:30am matinees). Philadelphia Orchestra rush is $29; Broadway Series rush averages $46; Ensemble Arts Philly Presents rush averages $44. Children under 14 with an adult are $29.",
+                  "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush"
+              },
+              {
+                  "name": "SEPTA Perks",
+                  "price": "Up to 40% off",
+                  "who": "SEPTA Key, TrailPass, TransPass, or One Day Independence Pass holders",
+                  "how": "Use promo code SEPTA when purchasing tickets online for select performances.",
+                  "url": "https://www.septa.org/destinations/ensemble-arts-philly/"
+              }
+          ],
+          "note": "Covers the Academy of Music, Kimmel Center (Marian Anderson Hall, ex-Verizon Hall) and Miller Theater (ex-Merriam)."
+      },
+      {
+          "id": "mann",
+          "group": "stages",
+          "name": "Highmark Mann Center",
+          "kind": "Outdoor amphitheater — Fairmount Park",
+          "location": "5201 Parkside Ave, Fairmount Park",
+          "website": "https://manncenter.org",
+          "deals": [
+              {
+                  "name": "Access the Arts (free Orchestra lawn)",
+                  "price": "Free",
+                  "who": "Via 350+ partner nonprofits",
+                  "how": "~5,000 free Philadelphia Orchestra lawn tickets a year are distributed through community partner organizations — not at the box office.",
+                  "url": "https://manncenter.org/ticketing"
+              }
+          ],
+          "note": "Young-child lawn policy varies by show — call the box office to confirm before assuming a free seat. No general student/youth walk-up discount, and day-of tickets cost $5 more than face value."
+      },
+      {
+          "id": "penn-live-arts",
+          "group": "stages",
+          "name": "Penn Live Arts (Annenberg Center)",
+          "kind": "University presenter — dance, music & theater",
+          "location": "3680 Walnut St, University City",
+          "website": "https://pennlivearts.org",
+          "deals": [
+              {
+                  "name": "College Student Rush",
+                  "price": "$10",
+                  "who": "Any college student w/ valid ID",
+                  "how": "At the box office 2 hours before the show; limit 2.",
+                  "url": "https://pennlivearts.org/events/college-students.php"
+              },
+              {
+                  "name": "Penn Students",
+                  "price": "$10",
+                  "who": "Penn students",
+                  "how": "Code PENNSTUDENT anytime online or at the box office; Penn email to buy, Penn ID at pickup; limit 2.",
+                  "url": "https://pennlivearts.org/events/college-students.php"
+              },
+              {
+                  "name": "STUDENT20",
+                  "price": "20% off",
+                  "who": "Any college student",
+                  "how": "Online discount code, anytime — student-only, not open to the general public.",
+                  "url": "https://pennlivearts.org/events/college-students.php"
+              },
+              {
+                  "name": "West Philly Welcome",
+                  "price": "$15–$25",
+                  "who": "West Philadelphia residents in specific zip codes (19104, 19131, 19139, 19142, 19143, 19145, 19151, 19153)",
+                  "how": "In-person, online, or by phone; available the week before most performances, up to 2 tickets per household. Mention zip code or use as promo code.",
+                  "url": "https://pennlivearts.org/events/westphillywelcome.php"
+              },
+              {
+                  "name": "Penn staff/faculty & alumni",
+                  "price": "10% off",
+                  "who": "Current/retired Penn staff & faculty, or Penn alumni",
+                  "how": "Staff/faculty: 10% off up to 4 tickets. Alumni: 10% off up to 2 tickets. (A separate SEPTA Key discount also gives anyone 10% off up to 2 tickets.)",
+                  "url": "https://pennlivearts.org/visit/"
+              }
+          ],
+          "note": "Corrected 2026-07-01: West Philly Rush renamed to West Philly Welcome with fixed price tier ($15–$25) instead of percentage discount; program now described as open the week before performances with zip code residency requirement explicitly stated."
+      },
+      {
+          "id": "walnut",
+          "group": "theater",
+          "name": "Walnut Street Theatre",
+          "kind": "Historic producing theater — Broadway-style",
+          "location": "825 Walnut St, Washington Square West",
+          "website": "https://www.walnutstreettheatre.org",
+          "deals": [
+              {
+                  "name": "\"$30 Under 40\"",
+                  "price": "$30",
+                  "who": "Anyone 40 or younger",
+                  "how": "Free to join online; you get promo codes and can buy a pair (your guest can be any age). Pick up day-of, noon to showtime.",
+                  "url": "https://www.walnutstreettheatre.org/visit/30under40.php"
+              },
+              {
+                  "name": "Youth / Military / Industry Rush",
+                  "price": "$25",
+                  "who": "24-and-under, active military, or industry",
+                  "how": "Day-of with ID showing date of birth; one per ID.",
+                  "url": "https://www.walnutstreettheatre.org/visit/discounts.php"
+              },
+              {
+                  "name": "Day-of Standby",
+                  "price": "~$50",
+                  "who": "Anyone",
+                  "how": "Released at noon day-of by phone or box office (not online); a limited $25 mezzanine is also offered.",
+                  "url": "https://www.walnutstreettheatre.org/visit/discounts.php"
+              }
+          ],
+          "note": "Ticket prices add a $2.50 preservation fee."
+      },
+      {
+          "id": "arden",
+          "group": "theater",
+          "name": "Arden Theatre Company",
+          "kind": "Regional theater — Old City",
+          "location": "40 N 2nd St, Old City",
+          "website": "https://ardentheatre.org",
+          "deals": [
+              {
+                  "name": "Student Rush",
+                  "price": "$15",
+                  "who": "Students w/ ID",
+                  "how": "In person up to 1 hour before curtain; limit 2. ($5-off student advance tickets are also available online/phone with ID at will-call.)",
+                  "url": "https://ardentheatre.org/tickets/discounts/"
+              },
+              {
+                  "name": "SEPTA Key",
+                  "price": "$10 off",
+                  "who": "Anyone w/ SEPTA Key",
+                  "how": "Discount applied at purchase; limit one order per card holder. By phone at 215.922.1122, at box office, or online (use code SEPTA).",
+                  "url": "https://ardentheatre.org/tickets/discounts/"
+              }
+          ]
+      },
+      {
+          "id": "wilma",
+          "group": "theater",
+          "name": "Wilma Theater",
+          "kind": "Contemporary regional theater",
+          "location": "265 S Broad St, Avenue of the Arts",
+          "website": "https://wilmatheater.org",
+          "deals": [
+              {
+                  "name": "Rush",
+                  "price": "$20",
+                  "who": "Anyone",
+                  "how": "In person at the box office 1 hour before the performance begins, subject to availability. Call ahead to confirm.",
+                  "url": "https://wilmatheater.org/visit/box-office/"
+              },
+              {
+                  "name": "Student / Industry",
+                  "price": "$20",
+                  "who": "Students or theater industry",
+                  "how": "Valid student ID or industry proof (name on theater website, program, paystub, contract, etc.) required at pickup. Limit 1 per ID, subject to availability.",
+                  "url": "https://wilmatheater.org/visit/box-office/"
+              },
+              {
+                  "name": "Military / Veterans",
+                  "price": "Free / $25",
+                  "who": "Active military with ID / veterans",
+                  "how": "Active military: one free ticket per valid military ID. Veterans without military ID: $25 (identify as Blue Star Theater participant when contacting box office).",
+                  "url": "https://wilmatheater.org/visit/box-office/"
+              }
+          ]
+      },
+      {
+          "id": "ptc",
+          "group": "theater",
+          "name": "Philadelphia Theatre Company",
+          "kind": "Regional theater — Suzanne Roberts Theatre",
+          "location": "480 S Broad St, Avenue of the Arts",
+          "website": "https://philadelphiatheatrecompany.org",
+          "deals": [
+              {
+                  "name": "Day-of Rush",
+                  "price": "$20",
+                  "who": "All audiences, subject to availability",
+                  "how": "Limited number of rush tickets available starting at 12pm the day of performance. Purchase online, over phone, or in-person. Limit 20 per performance. Regular fees apply.",
+                  "url": "https://philadelphiatheatrecompany.org/box-office-info-and-policy/"
+              }
+          ]
+      },
+      {
+          "id": "1812",
+          "group": "theater",
+          "name": "1812 Productions",
+          "kind": "Philadelphia's comedy theater company",
+          "location": "Plays & Players, 1714 Delancey St, Rittenhouse",
+          "website": "https://1812productions.org",
+          "deals": [
+              {
+                  "name": "Student Discount",
+                  "price": "20% off",
+                  "who": "Students w/ ID",
+                  "how": "Show student ID in person before checkout at front desk; max 2 tickets per production.",
+                  "url": "https://www.1812productions.org/tickets-for-students-educators"
+              },
+              {
+                  "name": "Student Day Pass",
+                  "price": "$24",
+                  "who": "Students w/ current ID",
+                  "how": "Show student ID in person before checkout at front desk. Monday–Friday before 5pm only.",
+                  "url": "https://www.1812productions.org/tickets-for-students-educators"
+              },
+              {
+                  "name": "ACCESS Philly",
+                  "price": "$2",
+                  "who": "ACCESS (SNAP/EBT) cardholders",
+                  "how": "Up to 4 tickets per production, by credit/debit card, no handling fees.",
+                  "url": "https://www.1812productions.org/access-philly-tickets"
+              }
+          ]
+      },
+      {
+          "id": "interact",
+          "group": "theater",
+          "name": "InterAct Theatre Company",
+          "kind": "Issue-driven contemporary theater",
+          "location": "The Drake, 302 S Hicks St, Center City",
+          "website": "https://www.interacttheatre.org",
+          "deals": [
+              {
+                  "name": "Pay-What-You-Can dress rehearsal",
+                  "price": "Pay what you can",
+                  "who": "Anyone",
+                  "how": "The Thursday before a show's first ticketed performance; in person.",
+                  "url": "https://www.interacttheatre.org/box-office"
+              },
+              {
+                  "name": "ACCESS Philly",
+                  "price": "$2",
+                  "who": "ACCESS (SNAP/EBT) cardholders",
+                  "how": "In person; groups get up to 20% off too.",
+                  "url": "https://www.interacttheatre.org/box-office"
+              }
+          ]
+      },
+      {
+          "id": "quintessence",
+          "group": "theater",
+          "name": "Quintessence Theatre Group",
+          "kind": "Classic-repertory theater — Mt. Airy",
+          "location": "7137 Germantown Ave, Mt. Airy",
+          "website": "https://www.quintessencetheatre.org",
+          "deals": [
+              {
+                  "name": "Rush",
+                  "price": "$10",
+                  "who": "Anyone",
+                  "how": "In person only, on sale 1 hour before curtain, first-come (call 215-987-4450). One of the best walk-up deals in the city.",
+                  "url": "https://www.quintessencetheatre.org/ticket-prices"
+              },
+              {
+                  "name": "Student",
+                  "price": "$15",
+                  "who": "Students",
+                  "how": "Online or by phone, no code needed.",
+                  "url": "https://www.quintessencetheatre.org/ticket-prices"
+              }
+          ]
+      },
+      {
+          "id": "peoples-light",
+          "group": "theater",
+          "name": "People's Light",
+          "kind": "Regional theater — Chester County",
+          "location": "39 Conestoga Rd, Malvern",
+          "website": "https://www.peopleslight.org",
+          "deals": [
+              {
+                  "name": "Preview & Access Dates",
+                  "price": "$30–$35",
+                  "who": "Anyone",
+                  "how": "Applied automatically on preview and designated Access dates — no code.",
+                  "url": "https://www.peopleslight.org/visit/ticket-discounts/"
+              },
+              {
+                  "name": "Student",
+                  "price": "$15",
+                  "who": "Students with valid ID or student email",
+                  "how": "Redeem online with promo code STUDENT26, or call Box Office at 610.644.3500.",
+                  "url": "https://www.peopleslight.org/visit/ticket-discounts/"
+              },
+              {
+                  "name": "Youth",
+                  "price": "$5 off",
+                  "who": "Anyone 17 and under",
+                  "how": "Select Youth Ticket price online or ask Box Office (610.644.3500) when ordering.",
+                  "url": "https://www.peopleslight.org/visit/ticket-discounts/"
+              },
+              {
+                  "name": "Industry",
+                  "price": "$15",
+                  "who": "Theatre community members with proof of affiliation",
+                  "how": "Redeem online with promo code INDUSTRY26, or call Box Office at 610.644.3500. Provide ID and proof.",
+                  "url": "https://www.peopleslight.org/visit/ticket-discounts/"
+              }
+          ]
+      },
+      {
+          "id": "fringearts",
+          "group": "theater",
+          "name": "FringeArts",
+          "kind": "Contemporary performance — Sept Fringe Festival",
+          "location": "140 N Columbus Blvd, Penn's Landing",
+          "website": "https://fringearts.com",
+          "deals": [
+              {
+                  "name": "Students & 25-and-under",
+                  "price": "Flat $15",
+                  "who": "Students or anyone 25 & under",
+                  "how": "Flat $15 on most shows (or $5 off shows over $20); show student/age ID at pickup. Pay-What-You-Can on select shows.",
+                  "url": "https://fringearts.com/box-office/"
+              },
+              {
+                  "name": "FringeACCESS",
+                  "price": "$2",
+                  "who": "ACCESS (SNAP/EBT) cardholders",
+                  "how": "Up to 4 tickets at $2 each, fees waived.",
+                  "url": "https://fringearts.com/box-office/"
+              }
+          ]
+      },
+      {
+          "id": "philadelphia-orchestra",
+          "group": "classical",
+          "name": "The Philadelphia Orchestra",
+          "kind": "Symphony orchestra — Marian Anderson Hall",
+          "location": "300 S Broad St, Avenue of the Arts",
+          "website": "https://www.ensembleartsphilly.org",
+          "deals": [
+              {
+                  "name": "Student Circle",
+                  "price": "$8 tickets",
+                  "who": "Enrolled students 14+",
+                  "how": "~$30 season membership, then $8 (often Tuesday) concerts via code STUDENTS with student ID. Registration reopens summer 2026 for the 2026–27 season.",
+                  "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/student-circle"
+              },
+              {
+                  "name": "Community Rush",
+                  "price": "$29",
+                  "who": "Anyone",
+                  "how": "Day-of/week-of Orchestra rush through the Ensemble Arts Community Rush program (see Major Stages).",
+                  "url": "https://www.ensembleartsphilly.org/tickets-and-events/ways-to-save/community-rush"
+              }
+          ],
+          "note": "The old eZseatU $25-unlimited pass and the free neighborhood-concert series are discontinued/suspended."
+      },
+      {
+          "id": "opera-philadelphia",
+          "group": "classical",
+          "name": "Opera Philadelphia",
+          "kind": "Opera company — Academy of Music",
+          "location": "240 S Broad St, Avenue of the Arts",
+          "website": "https://www.operaphila.org",
+          "deals": [
+              {
+                  "name": "Pick Your Price",
+                  "price": "From $11",
+                  "who": "Anyone — no ID",
+                  "how": "Any available seat starts at $11; pay what you choose above that. Buy online, by phone (215.732.8400), or in person.",
+                  "url": "https://www.operaphila.org/your-visit/tickets-packages/pick-your-price/"
+              },
+              {
+                  "name": "Rush",
+                  "price": "$10",
+                  "who": "Anyone",
+                  "how": "Purchase at the Academy of Music Box Office two hours before each performance.",
+                  "url": "https://www.operaphila.org/your-visit/tickets-packages/pick-your-price/"
+              }
+          ],
+          "note": "The flagship $11 program confirmed for 2025–26 season. Additional $10 rush tickets available at the box office."
+      },
+      {
+          "id": "philadelphia-ballet",
+          "group": "classical",
+          "name": "Philadelphia Ballet",
+          "kind": "Professional ballet — Academy of Music",
+          "location": "240 S Broad St, Avenue of the Arts",
+          "website": "https://philadelphiaballet.org",
+          "deals": [
+              {
+                  "name": "PBSTUDENT10",
+                  "price": "$10 ($29 for The Nutcracker)",
+                  "who": "Students w/ ID",
+                  "how": "Code PBSTUDENT10 online starting 72 hours before a performance, or at the box office; pick up with valid student ID.",
+                  "url": "https://philadelphiaballet.org/student-tickets/"
+              },
+              {
+                  "name": "Student/Community Rush",
+                  "price": "$10 student, $45 community",
+                  "who": "Students & general public",
+                  "how": "Student rush: online 72h before (PBSTUDENT10), or box office 1h before curtain. Community rush: box office 1h before curtain, when available.",
+                  "url": "https://philadelphiaballet.org/rush-tickets/"
+              },
+              {
+                  "name": "Opening Night Student Tickets",
+                  "price": "Free",
+                  "who": "Students w/ ID",
+                  "how": "Box office only, starting 1 hour before curtain on opening night.",
+                  "url": "https://philadelphiaballet.org/rush-tickets/"
+              }
+          ]
+      },
+      {
+          "id": "balletx",
+          "group": "classical",
+          "name": "BalletX",
+          "kind": "Contemporary ballet",
+          "location": "Suzanne Roberts Theatre, 480 S Broad St",
+          "website": "https://www.balletx.org",
+          "deals": [
+              {
+                  "name": "Student tickets",
+                  "price": "$25",
+                  "who": "Under 21, or any age w/ valid student ID",
+                  "how": "Contact the box office to book (215-225-5389 x250) — not always purchasable online.",
+                  "url": "https://www.balletx.org/about-us/faqs/"
+              }
+          ]
+      },
+      {
+          "id": "pcms",
+          "group": "classical",
+          "name": "Philadelphia Chamber Music Society",
+          "kind": "Chamber-music presenter — ~50 concerts/yr",
+          "location": "Kimmel, Curtis & other halls, Center City",
+          "website": "https://www.pcmsconcerts.org",
+          "deals": [
+              {
+                  "name": "Unlimited Student Pass",
+                  "price": "$40 / season",
+                  "who": "Full-time students 35 & under",
+                  "how": "One-time $40 covers every season concert; reserve online + will-call. Single student tickets are $10.",
+                  "url": "https://www.pcmsconcerts.org/community/students-young-friends/"
+              },
+              {
+                  "name": "Young Friends Pass",
+                  "price": "$80 / season",
+                  "who": "Anyone 40 & younger",
+                  "how": "One-time $80 for unlimited concerts; email-list members also get occasional comp tickets and a $10 Day sale.",
+                  "url": "https://www.pcmsconcerts.org/community/students-young-friends/"
+              }
+          ]
+      },
+      {
+          "id": "tkts",
+          "group": "free",
+          "name": "TKTS Philly",
+          "kind": "Day-of discount booth — TDF & Visit Philadelphia",
+          "location": "Independence Visitor Center, 599 Market St",
+          "website": "https://www.phlvisitorcenter.com/tkts",
+          "deals": [
+              {
+                  "name": "Walk-up discount",
+                  "price": "30–50% off",
+                  "who": "Anyone — no ID",
+                  "how": "Tickets to shows within 72 hours across 30+ Greater Philadelphia venues. In person only, daily 10am–5pm (call 267-514-4758 to confirm). No online sales.",
+                  "url": "https://www.phlvisitorcenter.com/tkts"
+              }
+          ]
+      },
+      {
+          "id": "curtis",
+          "group": "free",
+          "name": "Curtis Institute of Music",
+          "kind": "Conservatory — student recitals & orchestra",
+          "location": "1726 Locust St, Rittenhouse",
+          "website": "https://www.curtis.edu",
+          "deals": [
+              {
+                  "name": "Student recitals",
+                  "price": "Free",
+                  "who": "Anyone",
+                  "how": "100+ free student recitals during the school year (often Mon/Wed/Fri 7:30pm); free but advance registration required. Friday/graduation recitals are also livestreamed.",
+                  "url": "https://www.curtis.edu/curtis-performances/curtis-recital-series/"
+              },
+              {
+                  "name": "Curtis Symphony student tickets",
+                  "price": "$9",
+                  "who": "K-12 & university students w/ ID",
+                  "how": "For ticketed Curtis Symphony Orchestra concerts at Marian Anderson Hall, via the Ensemble Arts Box Office.",
+                  "url": "https://www.curtis.edu/curtis-performances/curtis-subscriptions-and-discounts/discounts-and-community-partners/"
+              }
+          ]
+      },
+      {
+          "id": "world-cafe-live",
+          "group": "free",
+          "name": "World Cafe Live",
+          "kind": "Independent music venue — with WXPN",
+          "location": "3025 Walnut St, University City",
+          "website": "https://worldcafelive.org",
+          "deals": [
+              {
+                  "name": "WXPN Free at Noon",
+                  "price": "Free",
+                  "who": "Anyone",
+                  "how": "A free concert every Friday at noon; reserve free tickets online (max 2 per email). Also streamed.",
+                  "url": "https://xpn.org/free-at-noon/"
+              }
+          ]
+      }
   ];
   // PA-END
 
@@ -5380,7 +5665,7 @@
     { name: "Mann Center Grounds", neighborhood: "West Fairmount Park", location: "Georges Hill Dr, West Fairmount Park", lat: 39.9867, lon: -75.2113, website: "https://manncenter.org", desc: "The sweeping lawns around the Mann Center for the Performing Arts — an especially great picnic spot before a summer concert, with a tree canopy and natural amphitheater feel throughout.", bring: "A full spread, a blanket, and concert tickets if you’re staying for the show. Check the Mann calendar for the summer lineup." },
     { name: "Marine Parade Grounds", neighborhood: "Navy Yard", location: "Marine Parade Grounds, Navy Yard, South Philly", lat: 39.8929, lon: -75.1741, website: "https://navyyard.org", desc: "A massive open lawn at the center of the Navy Yard framed by historic brick industrial buildings — home to the regular food truck rotation (Tue–Thu) and plenty of open space for a big group.", bring: "A blanket for the open lawn and check the food truck rotation on the Navy Yard Instagram beforehand.", geo: { lat: 39.892585, lon: -75.175332, ph: 'places/ChIJq6qqrpfFxokRy3SpCmaSFBE/photos/AaVGc3k2jeRfi0WGBero3Cc9I7D5Ja32NySl-6QQWbz6Vxbk_hrb-Gry8f8h0TkM9SDqyyTiLE6w0CZrZwRxqDiD5O-CHbQbv0Y6iXJreyi7rb1ADPHDxaUTh5f-B2ineLntqkQHUjIgKHGBoUO2uYJVBLenL5hhy3x3mG2IHrDsh0UWV4jhiIl45f7WfIrFejs19QxGdW3yofYUJMStNp6zbl0imSUEbhqLZiarHWxiEDcN4QM1vEBARDc6mWMpS_Z_XPiJoFtmGQCWi0ggK0aPMXTsEyzjWTiFCbBdStv1FVNZuABq3I39jFTJ7ONKxODbYP_kuiIFUYHq91djqMXNmzCza986FJZjB9Xx_AOfOwOAw82E9Qipu_i9VVo6dwdoKMV6fAVyAA2oF3aNWs7jAvPxMEjz1SYOxjFl2fAwLovqOhqbz3AnBTY32w9UmA' } },
     { name: "Memorial Hall Grounds", neighborhood: "West Fairmount Park", location: "4231 Avenue of the Republic, West Fairmount Park", lat: 39.9838, lon: -75.2057, website: "", desc: "The grand lawn surrounding the Please Touch Museum’s stunning Beaux-Arts Memorial Hall — built for the 1876 Centennial Exhibition, with wide open grass, a reflecting pool, and Fairmount Park trails everywhere.", bring: "A blanket for the sweeping lawns, and food from the museum café if you’re visiting inside too.", geo: { lat: 39.979567, lon: -75.209141, ph: '' } },
-    { name: "Palmer Park", neighborhood: "Port Richmond", location: "2100 E Palmer St, Port Richmond", lat: 39.9737, lon: -75.1121, website: "", desc: "A spacious neighborhood park at the Fishtown/Port Richmond border with open lawns, basketball courts, and mature shade trees — more room to spread out than most of the smaller squares nearby.", bring: "A blanket, a frisbee, and takeout from the Fishtown spots on Frankford Ave a few blocks away." },
+    { name: "Palmer Park", neighborhood: "Port Richmond", location: "2100 E Palmer St, Port Richmond", lat: 39.9737, lon: -75.1121, website: "", desc: "A spacious neighborhood park at the Fishtown/Port Richmond border with open lawns, basketball courts, and mature shade trees — more room to spread out than most of the smaller squares nearby.", bring: "A blanket, a frisbee, and takeout from the Fishtown spots on Frankford Ave a few blocks away.", geo: { lat: 39.97489, lon: -75.132542, ph: 'places/ChIJ0cFmtmrIxokRPX_t7cF9wWM/photos/AaVGc3kqQ6LglC_qxgneIS5EdtC8dajc9kButLXP5uJVEfI1tZvR_N9UWeUjxGktxOXXWl8WPKDRDHvHRMcnw2EZBmCKCc3JWmPP_dpLi5dlFoeymKucxtRFdX2LZuokaOMZ1VEBLnWOs1c2JdoO-iSnLMy9SscWwfgEvgsBmOAC3m9m9kckSXqfDTxXRheRcNTQbRUJO0MPHjUpiJ7dL-E2CC7m4NDZ7xfBi9YynWxuER2O8RWd1pP-QagQTHT5KPula9Uu5oi3yD59BjA-dVyYhFKtJ6dejlrALwSR4P8UFEyqUmsZJ9ELuEsTv9VYvKyu0laKWRxOmG8QFfOLWIdKtSMXUOHhEtka_LUP1Fz8V3RHu8ve9tqJWew31OyEMScinzLD7945eoDMHeo1JfyiEO46uitetPW2fe2ltyfycrOEZg' } },
     { name: "Shofuso Japanese House", neighborhood: "West Fairmount Park", location: "Lansdowne Dr & Horticultural Dr, West Fairmount Park", lat: 39.9857, lon: -75.2143, website: "https://japanesehouse.org", desc: "A 16th-century-style Japanese house and garden with a koi pond and raked gravel garden in the middle of Fairmount Park. The surrounding lawns make for a uniquely serene picnic spot. Open Wed–Sun seasonally.", bring: "A quiet mindset and a light lunch. Check seasonal hours before heading out — it’s worth combining with the Horticultural Center nearby." },
     { name: "Smith Memorial Grounds", neighborhood: "West Fairmount Park", location: "Concourse Dr, West Fairmount Park", lat: 39.9855, lon: -75.2045, website: "", desc: "The open meadow and grand granite arch of the Smith Civil War Memorial, with wide lawns stretching in every direction and the full West Fairmount Park trail network branching out from here.", bring: "A blanket for the open meadow and sturdy shoes if you plan to explore the surrounding trails after lunch." },
     { name: "The Waterworks", neighborhood: "Fairmount", location: "640 Waterworks Dr, Fairmount", lat: 39.9657, lon: -75.1825, website: "https://fairmountwaterworks.org", desc: "The stunning 19th-century neoclassical Fairmount Water Works complex right on the Schuylkill bank — a museum, a riverside outdoor terrace, and one of the most scenic spots in the city, strangely often overlooked.", bring: "A blanket for the riverbank, and check whether the café is open. Perfect before or after heading up the hill to the Art Museum." },
@@ -5411,7 +5696,7 @@
     { name: 'East Passyunk Farmers Market', location: '1430 Passyunk Ave., Philadelphia', neighborhood: 'East Passyunk', desc: "Chester County's Cherri Blossom Farm offers fresh eggs and dairy alongside Coal's Creek Cottage Bakery and Primordia Mushroom Farm. Sits in the driveway of the South Philadelphia Older Adult Center.", website: 'https://egreenevents.com/east-passyunk-market', days: ['Wednesday'], hours: '2 PM – 6 PM', seasonal: false, season: 'Year-round', geo: { lat: 39.931443, lon: -75.161327, ph: 'places/ChIJMU6pnRvGxokRiRobHmjBe_E/photos/AaVGc3mtSrr2n3vpFFROjVRwBoW6RAD3H0oGUrYutVD1Ex1xRFveEIdjmljAIIa30U1KIR-w7VITn1wd7_u7ofkjzcIT_4AQrU_Ej-HKvWfdxJoikJuw0OjLPD5DCOu3Jp6yYadtrr-bw1IxJvnf_oHAu6OFBlwUoVF_sPzsKrb1ccygMSJx2w1D7cX39my_N2rVFqFM0B6aDohuHgVM6DIgBHwVyPmmKgRwys-sO-xAdtjj6C2C1GSDJ5pZawk5hF-5CXgNEGnCgVA9YEw7dgE-JlNOyZ-gngQzHCovKh1KLPrheK-G6-r_Hn7IKypTqmClZgo-hqKyPUTHsmXYfq10rDNfWmm7k4ktYfcdrvIVyeYL1tFMqCzsEk8bjlxZGGqMJTg6ehGAkTL8o1KHojVqxkUp1SZ3_7lkTuQXgkqilmqYEqHt' } },
     { name: 'Fairmount Farmers Market', location: '2200 Fairmount Ave., Philadelphia', neighborhood: 'Fairmount', desc: "Thursdays near Eastern State Penitentiary: vegan fruit tarts from Amira's Delites, cheese from Chester Springs, and organic veggies from Mount Joy, Pa.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/fairmount/', days: ['Thursday'], hours: '3 PM – 7 PM', seasonal: false, season: 'Year-round', geo: { lat: 39.967348, lon: -75.174051, ph: 'places/ChIJ_YiRdFLHxokRO5d7Oz_fSQM/photos/AaVGc3mu3Rdc4-E7VRERfQCi9rjrgMr_mdmoMy2cyfb77Jf8f9hl5zRcnG6ma1dlaLuKg3DobxzuRuK1ze2EkzzSgHe-d4Z2jZK7F0z2s-eVj3cGpt4yL9DmuCaDW2c44A9H5DH7xy8r3VYagN2O2F23vqPBTb48xSgufVFLF4ULaL39c0srLFKyeUSS3lNUvM2G-aXOCJFGcubtPtbfWoT-OCBlKxNjGbCjx9J0omwFhhLWAAVIrwCMJstcHeFO4KKQhuXXhN49XWoidIhyYWRgTB2JAx3dnMaCBCC4JwYBG01u7JrXYVHqdgSkKtpd6iWHzKlHq-Y5LSxwVBaLpN9SsWgeKeqE6aICRZEBDWAe3p1MlKLVGizpP7U4Zu2S8_qwTfG9iXnV6KpcorYYUKJz_fJnDI3UQCYfhAzMjdGMwSp8aYG6' } },
     { name: 'Fitler Square Farmers Market', location: '2300 Pine St., Philadelphia', neighborhood: 'Center City', desc: 'Center City residents and visitors can spend Saturday mornings perusing fresh produce and herbs from Brogue Hydroponics in Brogue, Pa.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/fitler-square/', days: ['Saturday'], hours: '9 AM – 12 PM', seasonal: false, season: 'Year-round', geo: { lat: 39.947525, lon: -75.179326, ph: 'places/ChIJqV0XFkfGxokRO7l7PJHnltI/photos/AaVGc3mghsJSYNelicsEjjRpemFjsR39GY_448Fg4-3sGWRdYuun3_ybXfRS5t1oPt83tpMmmbg_Td-_FedpA9xrwsgrE6PwCBUq8m0l5qcgcSSuXswpUy8QYVACmEG51EDG7e7brDvZz7j3p41UDMXh0XFHfh-5kqpy68ccoJ0kzFSAmcZvQeWGL7rdOnMkjILCY3eGtfWkw2eI5IYSy2Z7x86voKERotFhUvYei0b5d9GQeZhbiYItzm5_Wd3EHai9aAC9yi5UzdBPE6DtCeqSoDEW9Q_EE7ZrDNXDKeiA-tjdX8uRNFhxkOZj4WJG3omIFHlYbYot5uINNlJib-6dnireTRlrv2Nn0dW0E7G1Ci1gruAvng7mtxCtI5xpB3TG9ujgJKcMWC4s2obCqXrbvQoSn8xn7ND0bSiqnjfKL8qZTzC0' } },
-    { name: 'Frankford Transportation Center Farmers Market', location: '5272 Frankford Ave., Philadelphia', neighborhood: 'Northeast Philadelphia', desc: 'Pick up fresh produce from Root Mass Farm at the bustling Frankford Transportation Center. Early summer offerings include beets, broccoli, strawberries, basil, thyme, and scallions.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/frankford-transportation-center/', days: ['Tuesday'], hours: '2 PM – 6 PM', seasonal: true, season: 'Seasonal' },
+    { name: 'Frankford Transportation Center Farmers Market', location: '5272 Frankford Ave., Philadelphia', neighborhood: 'Northeast Philadelphia', desc: 'Pick up fresh produce from Root Mass Farm at the bustling Frankford Transportation Center. Early summer offerings include beets, broccoli, strawberries, basil, thyme, and scallions.', website: 'https://thefoodtrust.org/what-we-do/farmers-markets/frankford-transportation-center/', days: ['Tuesday'], hours: '2 PM – 6 PM', seasonal: true, season: 'Seasonal', geo: { lat: 40.023084, lon: -75.077948, ph: 'places/ChIJL859i2O2xokRD-VDPLJ1o8U/photos/AaVGc3k-i1ARu6GoRmMD3f0XkYO_t8X17eR8jox-WcbrsyR-2mynlf3SReEQq-AFdossiksEAyXsGEhImcmjeLS6ofLq55_wyvSyVjKYd6DVQQ1_FHfA5IT-eMBX0ckzGBxj2_a19PN-Bpr0PYsF-mj_5NvU6FT1NS-FkjG49BVVpWlcUTb9xUU7A4Tzndra3Ua8dMmZU5j0q76OG1ZAhxWymY-3se8Cs1ZsYiMOBpW8LGSxpWnR_tQentPWu_g89bjlT4bE6JZjUhap5SP-DHw0DJdvd2Kef-r7qIqfHb4bDnbYxkwgklyS5qqf_wxCoHxSg76gpvEOL0C-7j8wTzs-WwtDy3dgdw61LOXBddTabDe8hsUewmhYnC56BJ6ZpcchvFo9Ud9tTn1zqnPEXLAkkaYjJpmmwOTFdVCRzxhyyVZrjhA8' } },
     { name: 'Headhouse Farmers Market', location: '200 Lombard St., Philadelphia', neighborhood: 'Society Hill', desc: "Society Hill's largest weekly market with 25+ rotating vendors: Griggstown Quail Farm fruit pies and quail eggs, High Street breads, and fresh produce. One of the Food Trust's flagship markets.", website: 'https://thefoodtrust.org/what-we-do/farmers-markets/headhouse/', days: ['Sunday'], hours: '10 AM – 2 PM', seasonal: false, season: 'Year-round', geo: { lat: 39.942279, lon: -75.145421, ph: 'places/ChIJOV62LprIxokR2wPzZ66HUJM/photos/AaVGc3k0V5P3aN6SSJ-8FSVulaCvwEY5TcKjHHLu_rr4njlG0Vw8g_i8MbTmqr3CzMhg0L4axGxLsUhhkQzTFLxlqr1GZNs7RDXmwGjIse6-OdFtyw1PNmg7OBc0MEzOsXttGsjAjKJHqawA2QvCABb268FjHZ2nSFDSTMq9B2rO3qJC0DgQYR1NLQQsVQkGAUw7xsCq5aaXAiqD1zjYm-cBID_1DIUU4mpHKdAFhDf9OrLXlHNZRbnUmJuP33tvd1w23z_tq5xDg38wbniFyIXixvFHpmcz10PoBHZcB7IuXI8PFIZ1-31DenJaYKtcscGkuN3hBg2JtMnt_253PIBZX1FQImEDgzYKZk116K2CndxyzZjnq8lpftwWEff_vmaZaeCQ9Zi3Is5GmIzLdbZiz2dTafafUo0lwKI2v4Yh7tGhmg' } },
     { name: 'Jenkintown Farmers Market', location: '460 York Rd., Jenkintown', neighborhood: 'Montgomery County', desc: 'Thursday evening market with handmade stuffed cookies from MR. Big Stuff Cookie Co., fresh fruit and vegetables from Holtwood Farm, and pound cakes from Aunt Orphia\'s Delicious Homemade Pound Cake.', website: '', days: ['Thursday'], hours: '4 PM – 8 PM', seasonal: true, season: 'Seasonal', geo: { lat: 40.095321, lon: -75.126769, ph: 'places/ChIJLV6wDOqwxokRnaAEBGedCcs/photos/AaVGc3m1CQ5ssOglDLZZ4XY5tw4T_Q2kVwYUhJ7_NKv_Sa56hO-LubH3wspioVzOUUFgzkxZD1abKMK_UC8S-j0Iund5Fpx6TcigPEZTieg4ha9bJGe6gqoj1cYVL0EPCgNl4xixwAvgM4cykZmYjxjaQPQ1_km4VgMOLbw2AFwwT3sde3e_UtXgAz-9qzJ-1UMsPknfDS7RY4rQLQHIVqhlocunpX4tPtY0hN3QUAEqqYXESdBONk20YHy-vxxPnlik06mAZi9VWXarX6MvMCrSge5UBKP2kyi1KKSLfrRBSNvisNxid6vKDdpbPLaGdjMSMOXOgvNR6u2Ts59Hhbx_dVlkQy9dIU3r2ULjLXi6PsoOoMpmcMDJFeahh6Iz34fOlijp9-AhYBTtD2faudT8f6dVFk7SUpPfvgNR-y8AkPdSm_bc' } },
     { name: 'Kennett Square Farmers Market', location: '600 South Broad St., Kennett Square', neighborhood: 'Chester County', desc: 'Friday market near the Creamery. Swallow Hill Farm is a regular produce supplier, as is Casa Carmen Farm & Winery slightly further out in West Grove.', website: 'https://www.ksqfarmersmarket.com/', days: ['Friday'], hours: '3 PM – 6 PM', seasonal: true, season: 'Seasonal', geo: { lat: 39.840527, lon: -75.709772, ph: 'places/ChIJZ7EF16n5xokRy9BB88RJmvg/photos/AaVGc3njnj2UXz9sVx453eooAccpRSPa5AlpjsS74EQSrjyciS27mqZo-JFPDb1MV0awpe4_JCNnu89ugqHlSK1rc10EdbLYqAMIpgQOfjtxj1et76-Il8gw7PEYD5mf44zV6GeFzmwo5xaBUuH-cvQ-tIA01qrWakWwTd1UeEwHx5fPesiI_OGv0_drMrugbay3jvyJlcPAFChX7zQYoFlLzm1bkd43SrF049fgS8MMwe81TaqJ5RD1jp_YJ8o36yzh4wS-uefsjatzSBis7Ef9DHrsYHiuNUtVOV04MuhtC_HgQe2BxLmJtiRuawSw7KiV5v7912JZ9oP-7dooYD49F03QdJUcrNK5v0wVcCXtUobxCypghiR31GQnFWOKwxpo-ijM9mljPNkiyutB0fw91PWf8kqeqCSCeI4GjhKBZvPajw' } },
