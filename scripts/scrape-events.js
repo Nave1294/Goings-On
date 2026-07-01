@@ -51,6 +51,11 @@ const SOURCES = [
     label: 'Hidden City',
     hint: 'Hidden City Philadelphia\'s ticketed walking tours and events. Its editorial blog at hiddencityphila.org rarely lists dated events — the actual schedule lives at hiddencityphila.org/tours/ and on its ticketing platforms, hiddencityphila.ticketleap.com and eventbrite.com/o/hidden-city-philadelphia-22593391359. Search those specifically for upcoming dated tours (e.g. Lost Jewish Quarter, Mount Moriah Cemetery, North Central Philly, Forgotten North Broad Street) and any special members-only site visits.',
   },
+  {
+    id: 'citycast',
+    label: 'CityCast Philly',
+    hint: 'CityCast Philly\'s curated local events roundup, published at philly.citycast.fm/events — a regularly-updated list of specific dated happenings around Philadelphia (festivals, markets, concerts, comedy, talks, community and neighborhood events). Read that events page directly and follow through to each dated listing it names; the page is the schedule, not an editorial article.',
+  },
 ];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

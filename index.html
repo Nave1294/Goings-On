@@ -3167,7 +3167,7 @@
   // them as machine-added. Primary signal is a token in the description (always
   // returned to public API-key reads); extendedProperties is a belt-and-suspenders
   // fallback. Keep these source ids in sync with SOURCES in scrape-events.js.
-  const AUTO_SOURCE_LABELS = { visitphilly: 'Visit Philly', hiddencity: 'Hidden City' };
+  const AUTO_SOURCE_LABELS = { visitphilly: 'Visit Philly', hiddencity: 'Hidden City', citycast: 'CityCast Philly' };
 
   function autoEventSource(ev) {
     const fromProp = ev.extendedProperties?.private?.goingsOnSource;

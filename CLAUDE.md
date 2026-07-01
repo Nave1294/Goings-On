@@ -26,7 +26,7 @@ explicitly asks to hold that specific change for review.
   missing addresses, removes permanently-closed spots.
 - **update-trendy.yml** — scrapes Eater Philly into the Trending tab.
 - **scrape-events.yml** — Mondays; uses Claude web-search to pull
-  upcoming Visit Philly / Hidden City events and writes them to the Google
+  upcoming Visit Philly / Hidden City / CityCast Philly events and writes them to the Google
   Calendar (not this repo). Each gets a `[goings-on:auto:*]` marker so the app
   shows a 🤖 auto-added badge. Needs the `GCAL_SERVICE_ACCOUNT` secret — see
   `scripts/ADDING-PLACES.md` §7.

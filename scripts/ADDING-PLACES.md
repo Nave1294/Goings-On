@@ -124,10 +124,11 @@ Calendar (`CALENDAR_ID` in `index.html`). To add an event, add it to that
 calendar; it shows up on the next load, with weather and (for the Picnic Planner)
 nearby-park awareness handled automatically.
 
-### Auto-scraped events (Visit Philly + Hidden City)
+### Auto-scraped events (Visit Philly + Hidden City + CityCast Philly)
 
 `scripts/scrape-events.js` (workflow `.github/workflows/scrape-events.yml`, runs
-**Mondays**) finds upcoming events from Visit Philly and Hidden City
+**Mondays**) finds upcoming events from Visit Philly, Hidden City, and CityCast
+Philly (`philly.citycast.fm/events`)
 and **writes them into the Google Calendar**, so they flow into the app like any
 other event. Those sites block direct scraping (HTTP 403 to datacenter IPs), so —
 exactly like the discount-rules job — it uses Claude's server-side `web_search`
