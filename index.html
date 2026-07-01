@@ -461,6 +461,25 @@
     .event-map:hover { background: #c4ddbf; }
     .event-map svg { stroke: var(--accent); }
 
+    /* Row holding the event's action buttons (Website, View on map) */
+    .event-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
+    .event-links .event-map, .event-links .event-site { margin-top: 0; }
+    .event-site {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      transition: background 0.15s ease;
+    }
+    .event-site:hover { background: #c4ddbf; }
+    .event-site svg { stroke: var(--accent); }
+
     .event-time-block {
       flex-shrink: 0;
       min-width: 68px;
@@ -3176,11 +3195,14 @@
     return m ? m[1].toLowerCase() : null;
   }
 
-  // Strip the auto-added marker (and its "Auto-added from …" line) before display.
+  // Strip the auto-added marker, its "Auto-added from …" line, and the raw
+  // "More info: <url>" line (that link is surfaced as the Website button now)
+  // before display.
   function cleanEventDescription(desc) {
     return (desc || '')
       .replace(/\[goings-on:auto:[a-z0-9-]+\]/ig, '')
       .replace(/^[ \t]*Auto-added from .+$/img, '')
+      .replace(/^[ \t]*More info:\s*https?:\/\/\S+[ \t]*$/img, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
@@ -3286,6 +3308,16 @@
     const autoBadge = autoSrc
       ? `<span class="event-auto-badge" title="Automatically added from ${escapeAttr(AUTO_SOURCE_LABELS[autoSrc] || autoSrc)}">🤖 ${escapeHtml(AUTO_SOURCE_LABELS[autoSrc] || 'Auto')}</span>`
       : '';
+    const siteUrl = eventSiteUrl(ev);
+    const siteBtn = siteUrl ? `
+      <a class="event-site" href="${escapeAttr(siteUrl)}" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+        </svg>
+        Website
+      </a>` : '';
     const mapBtn = locStr ? `
       <a class="event-map" href="${escapeAttr(mapUrl(locStr))}" target="_blank" rel="noopener">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3294,6 +3326,7 @@
         </svg>
         View on map
       </a>` : '';
+    const links = (siteBtn || mapBtn) ? `<div class="event-links">${siteBtn}${mapBtn}</div>` : '';
 
     return `
       <div class="event${allDay ? ' all-day' : ''}" data-event-idx="${idx}">
@@ -3306,7 +3339,7 @@
             <div class="event-title">${escapeHtml(ev.summary || '(No title)')}${autoBadge}</div>
             ${weatherChipHTML(ev, idx, contextDay)}
           </div>
-          ${loc}${eventDistanceHTML(ev)}${desc}${mapBtn}
+          ${loc}${eventDistanceHTML(ev)}${desc}${links}
           ${weatherDetailHTML(ev, idx, contextDay)}
         </div>
       </div>`;
