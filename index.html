@@ -3218,6 +3218,33 @@
     if (an.length >= 8 && (an.includes(bn) || bn.includes(an))) return true;
     return evJaccard(at, bt) >= 0.7;
   }
+  // Distinctive venue words (street numbers, road types, directionals and city
+  // noise dropped) — a second duplicate signal so the same event listed by two
+  // sources with different titles but the same venue+day still collapses.
+  const EV_VENUE_STOPWORDS = new Set([
+    'the','at','in','on','of','and','a','to','st','street','ave','avenue','blvd',
+    'boulevard','rd','road','dr','drive','ln','lane','pl','place','sq','ste','suite',
+    'fl','floor','unit','philadelphia','philly','phila','pa','us','usa',
+    'n','s','e','w','north','south','east','west',
+  ]);
+  function evVenueTokens(loc) {
+    return new Set(
+      String(loc || '')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w && !/^\d+$/.test(w) && !EV_VENUE_STOPWORDS.has(w))
+    );
+  }
+  // Two same-day events are duplicates if their titles match, OR they share a
+  // venue and have a real (looser) title overlap — the cross-source case where
+  // each source writes its own headline for one festival at one place.
+  function evIsDuplicate(a, b) {
+    if (evTitlesMatch(a.n, a.t, b.n, b.t)) return true;
+    if (a.v.size && b.v.size && evJaccard(a.v, b.v) >= 0.5 && evJaccard(a.t, b.t) >= 0.35) return true;
+    return false;
+  }
   // Higher score = the copy we keep when two collapse: a hand-added event beats
   // an auto-scraped one, a located event beats an unlocated one, a timed event
   // beats a vague all-day, and more description wins the final tiebreak.
@@ -3231,14 +3258,16 @@
   }
   // Collapse near-identical events within one day, keeping the richest copy.
   function dedupeDayEvents(arr) {
-    const kept = []; // { ev, n, t }
+    const kept = []; // { ev, n, t, v }
     for (const ev of arr) {
       const n = evNormTitle(ev.summary);
       const t = new Set(n.split(' ').filter(Boolean));
-      if (!n) { kept.push({ ev, n, t }); continue; }
-      const hit = kept.find(k => evTitlesMatch(n, t, k.n, k.t));
-      if (!hit) { kept.push({ ev, n, t }); continue; }
-      if (evRichness(ev) > evRichness(hit.ev)) { hit.ev = ev; hit.n = n; hit.t = t; }
+      const v = evVenueTokens(ev.location);
+      const rec = { ev, n, t, v };
+      if (!n) { kept.push(rec); continue; }
+      const hit = kept.find(k => evIsDuplicate(rec, k));
+      if (!hit) { kept.push(rec); continue; }
+      if (evRichness(ev) > evRichness(hit.ev)) { hit.ev = ev; hit.n = n; hit.t = t; hit.v = v; }
     }
     return kept.map(k => k.ev);
   }

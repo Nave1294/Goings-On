@@ -114,6 +114,28 @@ function jaccard(a, b) {
   return inter / (a.size + b.size - inter);
 }
 
+// Distinctive venue words, dropping street numbers, directionals, road types
+// and city noise — so "Franklin Square" and "Franklin Square, 200 N 6th St"
+// reduce to the same {franklin, square}. Used as a second duplicate signal:
+// two events on the same day at the same venue are almost certainly the same
+// event even when two sources headline it differently.
+const VENUE_STOPWORDS = new Set([
+  'the','at','in','on','of','and','a','to','st','street','ave','avenue','blvd',
+  'boulevard','rd','road','dr','drive','ln','lane','pl','place','sq','ste','suite',
+  'fl','floor','unit','philadelphia','philly','phila','pa','us','usa',
+  'n','s','e','w','north','south','east','west',
+]);
+function venueTokens(loc) {
+  return new Set(
+    String(loc || '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w && !/^\d+$/.test(w) && !VENUE_STOPWORDS.has(w))
+  );
+}
+
 // Every calendar day an event touches (capped so a year-long entry can't blow up).
 function expandDates(startISO, endISO) {
   const out = [];
@@ -147,14 +169,22 @@ function isDuplicate(existing, source, e) {
   const norm = normTitle(e.title);
   if (!norm) return false;
   const tokens = new Set(norm.split(' ').filter(Boolean));
+  const venue  = venueTokens(e.location);
 
   for (const day of candidateDates(e)) {
     const list = existing.byDay.get(day);
     if (!list) continue;
     for (const x of list) {
+      // Title-only signals (safe on their own).
       if (x.norm === norm) return true;
       if (norm.length >= 8 && (x.norm.includes(norm) || norm.includes(x.norm))) return true;
       if (jaccard(tokens, x.tokens) >= 0.7) return true;
+      // Cross-source signal: same day at the same venue, with a real (if looser)
+      // title relation. Different sources headline the same festival differently,
+      // so the venue match lets us relax the title bar without merging two
+      // genuinely different events at the same big venue (those share no title).
+      if (venue.size && x.venue && x.venue.size &&
+          jaccard(venue, x.venue) >= 0.5 && jaccard(tokens, x.tokens) >= 0.35) return true;
     }
   }
   return false;
@@ -162,13 +192,14 @@ function isDuplicate(existing, source, e) {
 
 // Record an event (existing or just-inserted) in the day index so later
 // candidates in the same run dedup against it too.
-function indexEvent(existing, title, dates) {
+function indexEvent(existing, title, dates, location) {
   const norm = normTitle(title);
   if (!norm) return;
   const tokens = new Set(norm.split(' ').filter(Boolean));
+  const venue  = venueTokens(location);
   for (const day of dates) {
     if (!existing.byDay.has(day)) existing.byDay.set(day, []);
-    existing.byDay.get(day).push({ norm, tokens });
+    existing.byDay.get(day).push({ norm, tokens, venue });
   }
 }
 
@@ -333,7 +364,7 @@ async function loadExisting(cal, todayISO, untilISO) {
     });
     for (const ev of res.data.items || []) {
       if (ev.status === 'cancelled' || !ev.summary) continue;
-      indexEvent(existing, ev.summary, eventDates(ev));
+      indexEvent(existing, ev.summary, eventDates(ev), ev.location);
       const sig = ev.extendedProperties?.private?.goingsOnSig;
       if (sig) existing.sigs.add(sig);
     }
@@ -381,7 +412,7 @@ async function main() {
         added++;
         // Index it immediately so later candidates this run dedup against it.
         existing.sigs.add(signature(source.id, e.title, e.date));
-        indexEvent(existing, e.title, candidateDates(e));
+        indexEvent(existing, e.title, candidateDates(e), e.location);
       } catch (err) {
         console.warn(`  ! failed to insert "${e.title}": ${err.message}`);
       }
