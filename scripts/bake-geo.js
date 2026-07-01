@@ -97,20 +97,32 @@ function nameMatches(a, b) {
   return short.every(t => words.has(t));
 }
 
+// A rejected request (bad key, missing API enablement, or — most commonly — an
+// HTTP-referrer-restricted key called from CI) must fail loudly rather than
+// masquerade as "not found" for every place.
+function assertPlacesOk(data) {
+  if (!data.error) return;
+  throw new Error(
+    `Places API rejected the request (${data.error.status || data.error.code || 'error'}): ${data.error.message || ''}\n` +
+    `Hint: a browser key restricted to HTTP referrers will NOT work from GitHub Actions — ` +
+    `server-side calls send no referrer. Set the PLACES_API_KEY secret to a key with no ` +
+    `HTTP-referrer restriction (restrict it to the Places API instead).`
+  );
+}
+
+// Great-circle distance in km — used to sanity-check a park lookup against the
+// coordinate already on file.
+function haversineKm(aLat, aLon, bLat, bLon) {
+  const R = 6371, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(bLat - aLat), dLon = toRad(bLon - aLon);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
 async function lookupGeo(name, location) {
   const query = location ? `${name}, ${location}` : name;
   const data = await placesSearch(query);
-  // A rejected request (bad key, missing API enablement, or — most commonly —
-  // an HTTP-referrer-restricted key called from CI) must fail loudly rather
-  // than masquerade as "not found" for every place.
-  if (data.error) {
-    throw new Error(
-      `Places API rejected the request (${data.error.status || data.error.code || 'error'}): ${data.error.message || ''}\n` +
-      `Hint: a browser key restricted to HTTP referrers will NOT work from GitHub Actions — ` +
-      `server-side calls send no referrer. Set the PLACES_API_KEY secret to a key with no ` +
-      `HTTP-referrer restriction (restrict it to the Places API instead).`
-    );
-  }
+  assertPlacesOk(data);
   const place = data.places?.[0];
   if (!place || !place.location) return null;
   // Guard against a mis-match returning a far-off or wrong venue.
@@ -125,6 +137,42 @@ async function lookupGeo(name, location) {
     lon: Number(lon.toFixed(6)),
     ph:  place.photos?.[0]?.name || '',
   };
+}
+
+// Parks are named landmarks whose official Google name often adds or drops a
+// descriptor word ("Grounds", "Gardens", "Water Works"), so the strict
+// all-tokens guard used for businesses wrongly rejects them — and a park's
+// address string ("Central Green, S Broad St") can steer Google to a
+// differently-named sub-spot. So for parks: query by NAME ONLY, and accept a
+// name mismatch as long as the result sits within PARK_PROXIMITY_KM of the
+// coordinate already on file (i.e. it's plainly the same place, just corrected).
+const PARK_PROXIMITY_KM = 4;
+async function lookupGeoPark(name, hand) {
+  const data = await placesSearch(name);
+  assertPlacesOk(data);
+  const place = data.places?.[0];
+  if (!place || !place.location) return null;
+  const lat = Number(place.location.latitude);
+  const lon = Number(place.location.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const nameOk = place.displayName?.text ? nameMatches(name, place.displayName.text) : true;
+  const near   = hand ? haversineKm(lat, lon, hand.lat, hand.lon) <= PARK_PROXIMITY_KM : false;
+  if (!nameOk && !near) return null;
+  return {
+    lat: Number(lat.toFixed(6)),
+    lon: Number(lon.toFixed(6)),
+    ph:  place.photos?.[0]?.name || '',
+  };
+}
+
+// Pull the coordinate already written on a place line (parks carry inline
+// lat/lon), so a park lookup can verify a name-mismatched result is nearby.
+function parseInlineLatLon(raw) {
+  const la = raw.match(/\blat:\s*(-?[\d.]+)/);
+  const lo = raw.match(/\blon:\s*(-?[\d.]+)/);
+  if (!la || !lo) return null;
+  const lat = Number(la[1]), lon = Number(lo[1]);
+  return (Number.isFinite(lat) && Number.isFinite(lon)) ? { lat, lon } : null;
 }
 
 // ─── Line parsing / rewriting ─────────────────────────────────────────────────
@@ -180,14 +228,16 @@ async function main() {
     { start: 'EAT-PLACES-START',  end: 'EAT-PLACES-END',  label: 'Restaurants' },
     { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
     { start: 'FM-PLACES-START',   end: 'FM-PLACES-END',   label: 'Farmers Markets' },
-    { start: 'PARK-PLACES-START', end: 'PARK-PLACES-END', label: 'Picnic Parks' },
+    { start: 'PARK-PLACES-START', end: 'PARK-PLACES-END', label: 'Picnic Parks', kind: 'park' },
   ];
 
   // Gather every place across all marked sections in stable file order, so a
   // rolling validate slice can span restaurants, bookstores, and markets uniformly.
   const allPlaces = [];
   for (const section of sections) {
-    for (const p of extractPlaceLines(html, section.start, section.end)) allPlaces.push(p);
+    for (const p of extractPlaceLines(html, section.start, section.end)) {
+      allPlaces.push({ ...p, kind: section.kind || 'place' });
+    }
   }
 
   const log = { filled: [], refreshed: [], stillLive: 0, notFound: [], unchanged: 0 };
@@ -201,7 +251,11 @@ async function main() {
     if (place.geo) continue;
     process.stdout.write(`  Baking: ${place.name} … `);
     let geo;
-    try { geo = await lookupGeo(place.name, place.location); }
+    try {
+      geo = place.kind === 'park'
+        ? await lookupGeoPark(place.name, parseInlineLatLon(place.raw))
+        : await lookupGeo(place.name, place.location);
+    }
     catch (e) {
       if (/RESOURCE_EXHAUSTED/.test(e.message)) { console.log('quota reached'); quotaReached = true; break; }
       throw e;
