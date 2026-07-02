@@ -131,7 +131,7 @@ Rules:
 
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 700,
+    max_tokens: 2048,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -139,7 +139,9 @@ Rules:
     .replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   try {
     const obj = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
-    return { line: (obj.line || '').trim(), confidence: Number(obj.confidence) || 0 };
+    // Reject an unparseable or geo-mangling rewrite by zeroing confidence.
+    const line = safeRewrite(obj.line, original.raw);
+    return { line: line || '', confidence: line ? (Number(obj.confidence) || 0) : 0 };
   } catch {
     return { line: '', confidence: 0 };
   }
@@ -179,6 +181,22 @@ function extractPlaceLines(html, startMarker, endMarker) {
 
 // ─── Claude update ───────────────────────────────────────────────────────────
 
+// A rewritten line is only safe to write if it still parses as a single JS
+// object literal AND leaves the baked geo (coords + long photo ref) byte-for-byte
+// intact. Claude rewrites occasionally truncate the ~300-char photo hash or
+// unbalance a quote (an apostrophe in a single-quoted desc); such a line would
+// break the whole file, so it must never reach disk — we keep the original.
+function safeRewrite(updated, originalRaw) {
+  const out = String(updated || '').trim();
+  if (!out) return null;
+  const bare = out.replace(/,\s*$/, '');
+  try { new Function('return (' + bare + ')')(); }
+  catch { return null; }                                   // not a valid object literal
+  const origGeo = (originalRaw.match(/geo:\s*\{[^}]*\}/) || [])[0];
+  if (origGeo && !out.includes(origGeo)) return null;      // geo altered or truncated
+  return out;
+}
+
 async function getUpdatedLine(client, original, apiData) {
   const prompt = `You are updating a JavaScript object literal inside a single HTML file.
 
@@ -200,12 +218,14 @@ Rules:
 
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 512,
+    // Must comfortably exceed a full place line (a baked photo ref alone is
+    // ~300 chars); too tight a budget truncates the line mid-hash.
+    max_tokens: 2048,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  // Empty/non-text reply → return the original so the caller treats it as "no change".
-  return (msg.content[0]?.text || '').trim() || original.raw.trim();
+  // Reject any unparseable or geo-mangling rewrite — keep the original line.
+  return safeRewrite(msg.content[0]?.text, original.raw) || original.raw.trim();
 }
 
 // ─── Daily slice scheduling ──────────────────────────────────────────────────
