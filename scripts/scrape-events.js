@@ -217,15 +217,24 @@ async function findEvents(client, source) {
     // right when there are many events to list (max_uses=8 search calls plus
     // a 10+ event source can easily run past 4096).
     max_tokens: 8192,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
+    // Higher cap than before: confirming each event's date on its own page
+    // costs an extra search or two per event, so give the model room.
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 12 }],
     messages: [{
       role: 'user',
       content: `You curate a Philadelphia events calendar. Using web search, find specific, real, upcoming events from ${source.hint}.
 
-Today is ${todayISO}. Only include events whose date falls between ${todayISO} and ${untilISO} (inclusive). Search whatever pages that source actually publishes its dated schedule on — that might be a "this week / this weekend" blog roundup, a dedicated tours/events page, or a third-party ticketing platform it sells through — and follow through to the specific events listed there, not just the homepage or editorial articles.
+Today is ${todayISO}. Only include events whose date falls between ${todayISO} and ${untilISO} (inclusive). A roundup ("this week / this weekend / upcoming concerts") is a fine STARTING point to discover event names — but it is NOT an acceptable source for the DATE.
 
-INCLUDE only events you can tie to a CONCRETE calendar date (a festival, concert, tour, exhibit opening, market, talk, etc. happening on a known day). EXCLUDE:
-- Anything without a specific date, or only a vague month/"all summer".
+DATE ACCURACY IS THE MOST IMPORTANT RULE. Getting a date wrong is far worse than missing an event.
+- For every event, CONFIRM the exact date on a page dedicated to THAT specific event — the venue's own event page or a ticketing listing (Ticketmaster, Live Nation, Eventbrite, the venue's box office). Search for the event by name to find it.
+- NEVER infer, guess, or carry over a date from a roundup/listicle, a nearby event, or the article you found the name in. If a page lists many events, do not assume the date printed near one applies to another.
+- If you cannot open a specific dated page confirming the date, DROP the event. No date confirmation → exclude it.
+- Put the URL of that confirming page in "dateSource". If you could not confirm the date on a specific page, you must not include the event at all.
+- Double-check the day of week matches the date, and that the year is correct (e.g. a September show is not this week).
+
+INCLUDE only events you can tie to a CONCRETE, CONFIRMED calendar date (a festival, concert, tour, exhibit opening, market, talk, etc. happening on a known day). EXCLUDE:
+- Anything without a specific, confirmed date, or only a vague month/"all summer".
 - Permanent attractions, generic "things to do", restaurants, or evergreen listicles.
 - Events outside the greater Philadelphia area, or already past.
 - Anything you are not confident is real — when in doubt, leave it out. Accuracy matters far more than quantity.
@@ -233,14 +242,15 @@ INCLUDE only events you can tie to a CONCRETE calendar date (a festival, concert
 For each event return an object:
 {
   "title": "Event name",
-  "date": "YYYY-MM-DD",            // first/only day
+  "date": "YYYY-MM-DD",            // first/only day — the date you CONFIRMED on a specific event page
   "endDate": "YYYY-MM-DD or \"\"", // last day if multi-day, else ""
   "allDay": true/false,            // true if no specific start time
   "startTime": "HH:MM or \"\"",    // 24-hour local time if known
   "endTime": "HH:MM or \"\"",
   "location": "Venue, address or neighborhood, else \"\"",
   "description": "1-2 sentence summary of what it is",
-  "url": "official or source link"
+  "url": "the specific event/ticketing page (NOT a roundup) when one exists, else the source link",
+  "dateSource": "URL of the specific page where you confirmed this exact date"
 }
 
 Return ONLY a valid JSON array (no markdown, no commentary). Return [] if you find nothing you are confident about.`,
@@ -263,15 +273,34 @@ Return ONLY a valid JSON array (no markdown, no commentary). Return [] if you fi
   }
 }
 
+// A URL that lists MANY events (a roundup / "things to do" / "upcoming X"
+// article) is not acceptable proof of a single event's date — the scraper's
+// worst mistakes come from a date read off one of these. Reject a dateSource
+// that looks like one so a confirmed, event-specific page is required.
+const ROUNDUP_URL_RE = /things-to-do|upcoming-|this-week|this-weekend|\/weekend|\/guide|\/guides|\/articles?\/|\/blog\/|calendar-of-events|events-calendar|whats-on|what-to-do|roundup|best-.*-in-phil(ly|adelphia)/i;
+
 // Validate + normalize one raw event. Returns null if it should be skipped.
 function normalizeEvent(raw, todayISO, untilISO) {
   if (!raw || !raw.title || !isISODate(raw.date)) return null;
   if (raw.date < todayISO || raw.date > untilISO) return null;
 
+  // Require the model to cite a specific page where it confirmed the date, and
+  // reject that citation if it's a roundup/listicle URL. This directly blocks
+  // the "grabbed a name off an 'upcoming concerts' list and guessed the date"
+  // failure mode.
+  const dateSource = /^https?:\/\//i.test(raw.dateSource) ? raw.dateSource.trim() : '';
+  if (!dateSource) return null;
+  if (ROUNDUP_URL_RE.test(dateSource)) return null;
+
   const endDate   = isISODate(raw.endDate) && raw.endDate >= raw.date ? raw.endDate : '';
   const startTime = isHM(raw.startTime) ? raw.startTime : '';
   const allDay    = raw.allDay === true || !startTime;
   const endTime   = (!allDay && isHM(raw.endTime)) ? raw.endTime : '';
+
+  // Prefer a specific event/ticketing URL for "More info"; fall back to the
+  // confirming dateSource, but never a roundup.
+  let url = /^https?:\/\//i.test(raw.url) ? raw.url.trim() : '';
+  if (!url || ROUNDUP_URL_RE.test(url)) url = dateSource;
 
   return {
     title:       String(raw.title).trim().slice(0, 200),
@@ -282,7 +311,7 @@ function normalizeEvent(raw, todayISO, untilISO) {
     endTime,
     location:    String(raw.location || '').trim().slice(0, 250),
     description: String(raw.description || '').trim().slice(0, 600),
-    url:         /^https?:\/\//i.test(raw.url) ? raw.url.trim() : '',
+    url,
   };
 }
 
