@@ -2,16 +2,26 @@
 'use strict';
 
 /**
- * Keeps the seasonal Pools tab's open-hours current, straight from the official
+ * Keeps the seasonal Pools tab's open-hours current from the official
  * Philadelphia Parks & Recreation pool schedule (phila.gov).
  *
- * Why a script instead of a plain fetch: phila.gov's pool pages sit behind bot
- * protection that returns HTTP 403 to datacenter IPs like GitHub Actions
- * runners, so a direct scrape can't read them. Instead — exactly like the
- * performing-arts and events jobs — we let Claude run its server-side
- * `web_search` tool, which executes on Anthropic's infrastructure (not the
- * runner) and gets through. Claude returns each pool's current hours and we
- * splice them into the POOL-PLACES block in index.html.
+ * Why web-search and not a data feed: the City publishes a structured
+ * *location* dataset for pools (ArcGIS/Carto `ppr_swimming_pools`), but there
+ * is NO machine-readable feed of pool HOURS anywhere — hours are seasonal,
+ * vary by site, and live only on a weekly phila.gov HTML announcement, which
+ * returns HTTP 403 to datacenter IPs (GitHub Actions runners included). So a
+ * plain fetch can't read it. Instead — like the performing-arts and events
+ * jobs — we let Claude run its server-side `web_search` tool, which executes
+ * on Anthropic's infrastructure (search-engine index, not a direct fetch of
+ * the blocked page) and gets through. Claude reads the current schedule and
+ * returns each pool's status/hours; we splice them into the POOL-PLACES block.
+ *
+ * What "hours" realistically means here: the City's schedule gives each pool's
+ * SEASON-OPENING DATE (rolling mid-June → early July) plus a city-wide baseline
+ * of public swim ~1–4pm daily, with extended hours that "vary by site." So the
+ * best confirmable per-pool value is an opening/status string — e.g.
+ * "Opens July 7", "Open — public swim 1–4pm daily (extended hours vary)", or
+ * "Closed for the season". We ask for exactly that, and take '' when unsure.
  *
  * SAFETY: this only ever rewrites the `hours:` field of a pool line. It never
  * touches name/location/coords/geo, and it validates that each edited line
@@ -19,7 +29,7 @@
  * never corrupt the file (a single dropped comma once took the whole site
  * down; that class of bug is designed out here).
  *
- * Conservative by design: if Claude can't confirm a pool's hours it returns an
+ * Conservative by design: if Claude can't confirm a pool's status it returns an
  * empty string and we leave that pool's existing value untouched.
  *
  * Run manually:  node scripts/update-pool-hours.js
@@ -33,7 +43,16 @@ const Anthropic = require('@anthropic-ai/sdk');
 const INDEX_PATH   = path.join(__dirname, '..', 'index.html');
 const START_MARKER = 'POOL-PLACES-START';
 const END_MARKER   = 'POOL-PLACES-END';
-const BATCH_SIZE   = 12;   // pools per web-search call (schedules are centralized)
+// The whole schedule lives on one announcement page, so a big batch means the
+// model reads that page once and maps many pools from it in a single call.
+const BATCH_SIZE   = 25;
+const MODEL        = 'claude-sonnet-4-6';   // stronger reader than Haiku for a dense schedule page
+// Stable landing pages; the model follows these to the current-year schedule
+// announcement (its dated URL changes each season, so we don't hard-code it).
+const SCHEDULE_URLS = [
+  'https://www.phila.gov/programs/summer/pools/',
+  'https://www.phila.gov/services/culture-recreation/find-a-swimming-pool/',
+];
 
 // ─── read the marked pool lines ──────────────────────────────────────────────
 
@@ -87,28 +106,47 @@ function spliceHours(raw, hours) {
 
 async function fetchHoursForBatch(client, pools) {
   const list = pools.map(p => `- ${p.name}${p.location ? ` (${p.location})` : ''}`).join('\n');
+  const year = new Date().getUTCFullYear();
   const msg = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+    model: MODEL,
+    max_tokens: 3000,
+    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 8 }],
     messages: [{
       role: 'user',
-      content: `You maintain a Philadelphia summer guide. Find the CURRENT open hours for these free Philadelphia Parks & Recreation public swimming pools, using the official city schedule on phila.gov (start at https://www.phila.gov/programs/summer/pools/ and the current-season pool schedule / "find a pool" pages). Base hours ONLY on the official city source — do not guess.
+      content: `You maintain a Philadelphia summer guide. Determine the CURRENT (${year} season) open status and hours for these free Philadelphia Parks & Recreation public swimming pools, using ONLY the official City of Philadelphia source.
+
+Authoritative sources (search these — the City blocks direct scraping, but the pages are indexed):
+${SCHEDULE_URLS.map(u => `- ${u}`).join('\n')}
+- the City's "${year} public pool opening schedule" announcement on phila.gov (find the current one; its URL changes each year).
+
+How Philadelphia actually publishes this (important):
+- Each pool has a SEASON-OPENING DATE; pools open on a rolling basis from about mid-June into early July, and close around Labor Day.
+- Once open, the city-wide baseline is public swim roughly 1–4pm daily; some pools add extended/evening hours that "vary by site."
+- There is no precise per-pool hours table, so do NOT fabricate exact daily hours.
+
+For EACH pool below, return the most accurate SHORT status string you can CONFIRM from the official source, choosing the pattern that fits:
+- Not yet open:        "Opens July 7"
+- Open, baseline only: "Open — public swim 1–4pm daily (extended hours vary)"
+- Open with confirmed extra hours: "Open — public swim 1–4pm daily; also 5–7pm Mon–Fri"
+- Closed/not operating this season: "Closed for the season"
+If you cannot CONFIRM a pool's status from the official source, return an empty string "" for it. Never guess a date or "closed"; empty is correct when unsure. Today's date is ${new Date().toISOString().slice(0, 10)}.
 
 POOLS:
 ${list}
 
-For each pool return a SHORT hours string, e.g. "Daily 11am–7pm", "Mon–Fri 1–7pm, Sat–Sun 11am–5pm", "Opens June 27", or "Closed for the season". If you cannot confirm a pool's current hours from the official source, return an empty string "" for it (do NOT invent hours).
-
-Return ONLY minified JSON: an object mapping each pool name EXACTLY as written above to its hours string. No markdown, no commentary. Example: {"Cruz Pool":"Daily 11am–7pm","Lee Pool":""}`,
+Return ONLY minified JSON: an object mapping each pool name EXACTLY as written above to its status string. No markdown, no commentary. Example: {"Cruz Pool":"Open — public swim 1–4pm daily (extended hours vary)","Lee Pool":"Opens July 7","Tustin Pool":""}`,
     }],
   });
 
   const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) return {};
-  try { return JSON.parse(match[0]); }
-  catch (e) { console.warn(`  batch JSON parse failed: ${e.message}`); return {}; }
+  // Grab the LAST JSON object in the text (web-search turns can emit earlier braces).
+  const matches = text.match(/\{[\s\S]*\}/g);
+  if (!matches) return {};
+  for (let i = matches.length - 1; i >= 0; i--) {
+    try { return JSON.parse(matches[i]); } catch { /* try the previous one */ }
+  }
+  console.warn('  batch JSON parse failed for all candidates');
+  return {};
 }
 
 // ─── main ────────────────────────────────────────────────────────────────────
