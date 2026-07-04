@@ -641,6 +641,21 @@
     }
     .loc-guess { color: var(--text-tertiary); font-size: 0.72rem; font-style: italic; }
 
+    /* Full event blurb, but capped so a long one scrolls inside the card
+       instead of being chopped off mid-sentence. */
+    .event-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 0.3rem;
+      line-height: 1.4;
+      max-height: 8.4em;                 /* ~6 lines, then scroll for the rest */
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .event-desc::-webkit-scrollbar { width: 5px; }
+    .event-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
+
     .empty {
       text-align: center;
       padding: 3.5rem 1.5rem;
@@ -1052,7 +1067,16 @@
       overflow: hidden;
       transition: max-height 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
-    .resto-tile.expanded .resto-expand { max-height: 360px; }
+    /* Scroll the panel when its content is taller than the cap, so long
+       descriptions are fully readable instead of clipped by overflow:hidden. */
+    .resto-tile.expanded .resto-expand {
+      max-height: 360px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .resto-expand::-webkit-scrollbar { width: 5px; }
+    .resto-expand::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
     .resto-expand-inner {
       padding: 0.25rem 0.95rem 0.95rem;
       border-top: 1px solid var(--divider);
@@ -1695,7 +1719,9 @@
     }
     .dn-pair-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.4rem; }
     .dn-pair-meta { display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
-    .dn-pair-desc { font-size: 0.88rem; line-height: 1.5; margin-top: 0.55rem; color: var(--text); }
+    .dn-pair-desc { font-size: 0.88rem; line-height: 1.5; margin-top: 0.55rem; color: var(--text); max-height: 9em; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .dn-pair-desc::-webkit-scrollbar { width: 5px; }
+    .dn-pair-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
     .dn-pair-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
     .dn-pair-action {
       font: inherit;
@@ -2101,7 +2127,9 @@
       border-top: 1px solid var(--divider);
       font-size: 0.8rem;
     }
-    .ob-pick-detail-desc { color: var(--text-secondary); line-height: 1.45; margin-bottom: 0.4rem; }
+    .ob-pick-detail-desc { color: var(--text-secondary); line-height: 1.45; margin-bottom: 0.4rem; max-height: 9em; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .ob-pick-detail-desc::-webkit-scrollbar { width: 5px; }
+    .ob-pick-detail-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
     .ob-pick-detail-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .ob-pick-emoji { font-size: 1.35rem; flex-shrink: 0; margin-top: 1px; }
     .ob-pick-info { flex: 1 1 0; min-width: 0; }
@@ -3303,7 +3331,7 @@
       ? `<div class="event-meta">${escapeHtml(ev.location)}</div>`
       : (ev._foundLocation ? `<div class="event-meta">🔎 ${escapeHtml(ev._foundLocation)} <span class="loc-guess">(found online)</span></div>` : '');
     const cleanDesc = cleanEventDescription(ev.description);
-    const desc = cleanDesc ? `<div class="event-meta">${escapeHtml(stripTags(cleanDesc)).slice(0, 140)}</div>` : '';
+    const desc = cleanDesc ? `<div class="event-desc">${escapeHtml(stripTags(cleanDesc))}</div>` : '';
     const autoSrc = autoEventSource(ev);
     const autoBadge = autoSrc
       ? `<span class="event-auto-badge" title="Automatically added from ${escapeAttr(AUTO_SOURCE_LABELS[autoSrc] || autoSrc)}">🤖 ${escapeHtml(AUTO_SOURCE_LABELS[autoSrc] || 'Auto')}</span>`
@@ -7969,7 +7997,7 @@ Valid types: "meal", "activity", "dessert"`;
             emoji: '🎟️', eyebrow: 'Activity',
             title: ev.summary || pick.name,
             meta: [when && ('🕒 ' + when), ev.location && ('📍 ' + ev.location.split(',')[0])].filter(Boolean),
-            desc: ev.description ? stripTags(ev.description).slice(0, 200) : '',
+            desc: ev.description ? stripTags(ev.description) : '',
             actions: [
               ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
               eventSiteUrl(ev) && { label: '🌐 Website', href: eventSiteUrl(ev) },
@@ -8507,7 +8535,7 @@ Valid types: "meal", "activity", "dessert"`;
         </div>
         <div class="resto-expand">
           <div class="resto-expand-inner">
-            ${ev.description ? `<div class="resto-desc">${escapeHtml(stripTags(ev.description).slice(0, 140))}</div>` : ''}
+            ${ev.description ? `<div class="resto-desc">${escapeHtml(stripTags(ev.description))}</div>` : ''}
             <div class="resto-actions">
               ${siteUrl ? `<a class="resto-action" href="${escapeAttr(siteUrl)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
               ${mapHref ? `<a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>` : ''}
@@ -9408,7 +9436,7 @@ Valid types: "meal", "activity", "dessert"`;
     function itemHTML(p, rank, total, isFar) {
       const idx = pool.indexOf(p);
       const it = p.item || {};
-      const desc = it.desc || (p.type === 'event' && it.description ? stripTags(it.description).slice(0, 200) : '');
+      const desc = it.desc || (p.type === 'event' && it.description ? stripTags(it.description) : '');
       const metaParts = [
         it.cuisine && ('🍴 ' + it.cuisine),
         it.price,
