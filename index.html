@@ -2003,6 +2003,22 @@
     }
     .picnic-bring strong { color: var(--text); }
 
+    /* Pools (seasonal) */
+    .pool-note {
+      font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;
+      background: rgba(0,151,167,0.08); border-radius: 12px;
+      padding: 0.7rem 0.85rem; margin-bottom: 0.9rem;
+    }
+    .pool-note a { color: #0097a7; font-weight: 600; }
+    .pool-note-date { display: block; margin-top: 0.25rem; color: var(--text-tertiary); font-size: 0.76rem; }
+    .pool-hours {
+      font-size: 0.85rem; color: var(--text); line-height: 1.45; margin-top: 0.5rem;
+      padding: 0.55rem 0.7rem; background: rgba(0,151,167,0.1); border-radius: 10px;
+    }
+    .pool-hours strong { color: var(--text); }
+    .pool-hours--tbd { color: var(--text-secondary); background: rgba(0,151,167,0.06); }
+    .pool-hours--tbd a { color: #0097a7; font-weight: 600; }
+
     /* Picnic Planner result */
     .picnic-seed-note { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
     .picnic-result { display: flex; flex-direction: column; gap: 0.85rem; }
@@ -2347,6 +2363,27 @@
       </div>
     </div>
     <div id="picnicList"></div>
+  </div>
+</div>
+
+<div class="container view" id="view-pools">
+  <div class="brand-row">
+    <button class="hamburger-btn" type="button" aria-label="Open categories">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">Pools</div>
+    <button class="back-btn" data-view="home" type="button">← Back</button>
+  </div>
+  <div class="cat-nav"></div>
+  <div class="day-panel">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <div class="day-eyebrow">Summer</div>
+        <div class="day-title">Free public pools</div>
+        <div class="day-subtitle">Philly Parks &amp; Rec outdoor pools — where they are &amp; current hours</div>
+      </div>
+    </div>
+    <div id="poolsList"></div>
   </div>
 </div>
 
@@ -5767,6 +5804,71 @@
     if (p.geo && p.geo.lat != null) { p.lat = p.geo.lat; p.lon = p.geo.lon; }
   }
 
+  // ── Public pools (seasonal) ─────────────────────────────────────
+  // Free Philadelphia Parks & Rec outdoor pools. Hand-entered lat/lon are an
+  // instant fallback; bake-geo bakes a precise `geo` (coords + photo) on push.
+  // The `hours` field is refreshed from the official phila.gov schedule by
+  // scripts/update-pool-hours.js — leave it as '' for a new pool; the updater
+  // fills it. POOLS_UPDATED is stamped by that same script.
+  const POOLS_UPDATED = '';
+  const POOLS = [
+    // POOL-PLACES-START — bake-geo.js bakes a precise `geo` here. Pools are seasonal city facilities, NOT audited as businesses. Inline lat/lon are address-derived fallbacks; bake-geo refines them. `hours` is filled by update-pool-hours.js.
+    { name: 'Hunting Park Pool', neighborhood: 'Hunting Park', location: '1101 W Hunting Park Ave, Philadelphia', lat: 39.99930, lon: -75.14900, hours: '' },
+    { name: 'Kelly Pool', neighborhood: 'Fairmount Park', location: '4231 Lansdowne Dr, Philadelphia', lat: 39.98400, lon: -75.20000, hours: '' },
+    { name: 'Max Myers Pool', neighborhood: 'Oxford Circle', location: '1601 Hellerman St, Philadelphia', lat: 40.03780, lon: -75.08650, hours: '' },
+    { name: 'Sacks Pool', neighborhood: 'Pennsport', location: '400 Washington Ave, Philadelphia', lat: 39.93880, lon: -75.14900, hours: '' },
+    { name: 'Gathers Pool', neighborhood: 'Sharswood', location: '2501 W Diamond St, Philadelphia', lat: 39.98430, lon: -75.17200, hours: '' },
+    { name: 'Bridesburg Pool', neighborhood: 'Bridesburg', location: '4625 Richmond St, Philadelphia', lat: 40.00050, lon: -75.06850, hours: '' },
+    { name: 'Lee Cultural Center Pool', neighborhood: 'Mantua', location: '4328 Haverford Ave, Philadelphia', lat: 39.96480, lon: -75.20650, hours: '' },
+    { name: 'East Poplar Pool', neighborhood: 'Poplar', location: '820 N 8th St, Philadelphia', lat: 39.96380, lon: -75.15200, hours: '' },
+    { name: 'Fox Chase Pool', neighborhood: 'Fox Chase', location: '7901 Ridgeway St, Philadelphia', lat: 40.07850, lon: -75.08150, hours: '' },
+    { name: 'Vare Pool', neighborhood: 'Point Breeze', location: '2600 Morris St, Philadelphia', lat: 39.93130, lon: -75.18550, hours: '' },
+    { name: 'Barry Pool', neighborhood: 'Girard Estate', location: '1800 Johnston St, Philadelphia', lat: 39.91500, lon: -75.17850, hours: '' },
+    { name: 'Christy Pool', neighborhood: 'Kingsessing', location: '728 S 55th St, Philadelphia', lat: 39.95250, lon: -75.22900, hours: '' },
+    { name: 'Murphy Pool', neighborhood: 'Whitman', location: '300 Shunk St, Philadelphia', lat: 39.91650, lon: -75.14900, hours: '' },
+    { name: 'Shepard Pool', neighborhood: 'Haddington', location: '5700 Haverford Ave, Philadelphia', lat: 39.96700, lon: -75.23500, hours: '' },
+    { name: 'Lederer Pool', neighborhood: 'Fishtown', location: '1219 E Montgomery Ave, Philadelphia', lat: 39.97220, lon: -75.12980, hours: '' },
+    { name: 'Piccoli Pool', neighborhood: 'Juniata Park', location: '1501 E Bristol St, Philadelphia', lat: 40.01550, lon: -75.09200, hours: '' },
+    { name: 'Heitzman Pool', neighborhood: 'Frankford', location: '2136 Castor Ave, Philadelphia', lat: 40.00750, lon: -75.09750, hours: '' },
+    { name: 'Ridgway Pool', neighborhood: 'Hawthorne', location: '1301 Carpenter St, Philadelphia', lat: 39.93770, lon: -75.16250, hours: '' },
+    { name: 'Belfield Pool', neighborhood: 'East Germantown', location: '2109 W Chew Ave, Philadelphia', lat: 40.04900, lon: -75.16500, hours: '' },
+    { name: 'Cione Pool', neighborhood: 'Port Richmond', location: '2600 E Aramingo Ave, Philadelphia', lat: 39.98350, lon: -75.11600, hours: '' },
+    { name: 'Mitchell Pool', neighborhood: 'Academy Gardens', location: '3700 Whitehall Lane, Philadelphia', lat: 40.06450, lon: -75.00900, hours: '' },
+    { name: 'Mander Pool', neighborhood: 'Strawberry Mansion', location: '2140 N 33rd St, Philadelphia', lat: 39.99050, lon: -75.18900, hours: '' },
+    { name: 'Kingsessing Pool', neighborhood: 'Kingsessing', location: '4901 Kingsessing Ave, Philadelphia', lat: 39.94250, lon: -75.22300, hours: '' },
+    { name: 'Samuel Pool', neighborhood: 'Port Richmond', location: '3539 Gaul St, Philadelphia', lat: 39.99300, lon: -75.10850, hours: '' },
+    { name: 'Cruz Pool', neighborhood: 'Fairhill', location: '1431 N 6th St, Philadelphia', lat: 39.97200, lon: -75.14350, hours: '' },
+    { name: 'Francisville Pool', neighborhood: 'Francisville', location: '1737 Francis St, Philadelphia', lat: 39.97000, lon: -75.16900, hours: '' },
+    { name: 'Pleasant Pool', neighborhood: 'Mount Airy', location: '6720 Boyer St, Philadelphia', lat: 40.05550, lon: -75.18850, hours: '' },
+    { name: 'Waterloo Pool', neighborhood: 'Fairhill', location: '2502 N Howard St, Philadelphia', lat: 39.99300, lon: -75.13300, hours: '' },
+    { name: "O'Connor Pool", neighborhood: 'Southwest Center City', location: '2601 South St, Philadelphia', lat: 39.94480, lon: -75.18150, hours: '' },
+    { name: 'Chew Pool', neighborhood: 'Point Breeze', location: '1800 Washington Ave, Philadelphia', lat: 39.93850, lon: -75.17550, hours: '' },
+    { name: 'Johnny Sample Pool', neighborhood: 'Cobbs Creek', location: '280 Cobbs Creek Pkwy, Philadelphia', lat: 39.95400, lon: -75.25600, hours: '' },
+    { name: 'Marian Anderson Pool', neighborhood: 'Graduate Hospital', location: '740 S 17th St, Philadelphia', lat: 39.94380, lon: -75.17200, hours: '' },
+    { name: 'Jacobs Pool', neighborhood: 'Torresdale', location: '4500 Linden Ave, Philadelphia', lat: 40.04200, lon: -75.01300, hours: '' },
+    { name: 'Scanlon Pool', neighborhood: 'Harrowgate', location: '1099 E Tioga St, Philadelphia', lat: 39.99700, lon: -75.11200, hours: '' },
+    { name: 'Lonnie Young Pool', neighborhood: 'East Germantown', location: '1100 E Chelten Ave, Philadelphia', lat: 40.04300, lon: -75.16000, hours: '' },
+    { name: 'Ziehler Pool', neighborhood: 'Olney', location: '200 E Olney Ave, Philadelphia', lat: 40.03480, lon: -75.13000, hours: '' },
+    { name: 'Simpson Pool', neighborhood: 'Frankford', location: '1010 Arrott St, Philadelphia', lat: 40.02250, lon: -75.08550, hours: '' },
+    { name: 'Houseman Pool', neighborhood: 'Lawncrest', location: '5091 Summerdale Ave, Philadelphia', lat: 40.02900, lon: -75.08700, hours: '' },
+    { name: 'Dendy Pool', neighborhood: 'Yorktown', location: '1501 N 10th St, Philadelphia', lat: 39.97650, lon: -75.15400, hours: '' },
+    { name: 'Athletic Pool', neighborhood: 'Brewerytown', location: '1401 N 26th St, Philadelphia', lat: 39.97400, lon: -75.18100, hours: '' },
+    { name: 'Kendrick Pool', neighborhood: 'Roxborough', location: '5822 Ridge Ave, Philadelphia', lat: 40.02700, lon: -75.21600, hours: '' },
+    { name: 'Tustin Pool', neighborhood: 'Overbrook', location: '5901 W Columbia Ave, Philadelphia', lat: 39.97200, lon: -75.25000, hours: '' },
+    { name: 'Awbury Pool', neighborhood: 'Germantown', location: '6101 Ardleigh St, Philadelphia', lat: 40.04900, lon: -75.17200, hours: '' },
+    { name: 'Baker Pool', neighborhood: 'Wynnefield', location: '5431 Lansdowne Ave, Philadelphia', lat: 39.97650, lon: -75.22800, hours: '' },
+    { name: 'Ford Pool', neighborhood: 'Pennsport', location: '609 Snyder Ave, Philadelphia', lat: 39.92150, lon: -75.15550, hours: '' },
+    { name: 'Stinger Pool', neighborhood: 'Grays Ferry', location: '1400 S 32nd St, Philadelphia', lat: 39.93800, lon: -75.19300, hours: '' },
+    { name: 'Guerin Pool', neighborhood: 'Girard Estate', location: '2201 S 16th St, Philadelphia', lat: 39.92100, lon: -75.17700, hours: '' },
+    { name: '12th & Cambria Pool', neighborhood: 'Hartranft', location: '2900 N 11th St, Philadelphia', lat: 39.99900, lon: -75.14700, hours: '' },
+    { name: 'Rivera Pool', neighborhood: 'Fairhill', location: '3201 N 5th St, Philadelphia', lat: 40.00300, lon: -75.13700, hours: '' },
+    { name: 'Waterview Pool', neighborhood: 'Germantown', location: '5826 McMahon St, Philadelphia', lat: 40.04300, lon: -75.17700, hours: '' },
+    // POOL-PLACES-END
+  ];
+  for (const p of POOLS) {
+    if (p.geo && p.geo.lat != null) { p.lat = p.geo.lat; p.lon = p.geo.lon; }
+  }
+
   // ── Farmers Market data ─────────────────────────────────────────
   const FARMERS_MARKETS = [
     // FM-PLACES-START — bake-geo.js bakes coords here so the map geocodes them for free. Not audited as businesses.
@@ -6183,10 +6285,22 @@
   }
 
   // Categories shown when the hamburger expands. Add more here as new views are built.
+  // Philadelphia's free public pools run only in the warm months, so the Pools
+  // tab shows itself seasonally — roughly mid-May through mid-September (the
+  // real season is late June–Labor Day; the shoulder gives "opening soon" lead
+  // time). Hidden the rest of the year so the menu isn't cluttered off-season.
+  function isPoolSeason(d = new Date()) {
+    const m = d.getMonth() + 1, day = d.getDate();       // m: 1–12
+    const afterStart = (m > 5) || (m === 5 && day >= 15); // on/after May 15
+    const beforeEnd  = (m < 9) || (m === 9 && day <= 15); // on/before Sep 15
+    return afterStart && beforeEnd;
+  }
+
   const CATEGORIES = [
     { view: 'home',            emoji: '📅', label: 'Goings On' },
     { view: 'places-to-eat',   emoji: '🍽️', label: 'Places to Eat' },
     { view: 'picnic',          emoji: '🧺', label: 'Picnic' },
+    ...(isPoolSeason() ? [{ view: 'pools', emoji: '🏊', label: 'Pools' }] : []),
     { view: 'bookstores',      emoji: '📚', label: 'Bookstores' },
     { view: 'farmers-markets', emoji: '🌽', label: 'Farmers Markets' },
     { view: 'performing-arts', emoji: '🎭', label: 'Performing Arts' },
@@ -6215,6 +6329,8 @@
     { id: 'books',   emoji: '📚', label: 'Bookstores',      color: '#795548' }, // brown — old books
     { id: 'markets', emoji: '🌽', label: 'Farmers Markets', color: '#f57c00' }, // orange — harvest/produce
     { id: 'arts',    emoji: '🎭', label: 'Performing Arts', color: '#8e24aa' }, // purple — theater curtains
+    // Pools ride along on the map only in season (matches the seasonal tab).
+    ...(isPoolSeason() ? [{ id: 'pools', emoji: '🏊', label: 'Pools', color: '#0097a7' }] : []), // teal — water
   ];
   let _masterMap = null;
   const _mapLayerGroups = {};   // id -> L.layerGroup
@@ -6363,6 +6479,16 @@
       addMapMarker('picnic', p.lat, p.lon, {
         eyebrow: 'Picnic spot', name: p.name, meta: p.neighborhood || '',
         actions: mapActionLinks({ website: p.website, mapQuery: p.name + ', Philadelphia' }),
+      });
+    }
+    // Pools — inline lat/lon (seasonal; the 'pools' group only exists in season,
+    // so addMapMarker is a no-op off-season).
+    for (const p of POOLS) {
+      if (p.lat == null) continue;
+      addMapMarker('pools', p.lat, p.lon, {
+        eyebrow: 'Public pool', name: p.name,
+        meta: [p.neighborhood, p.hours].filter(Boolean).join(' · '),
+        actions: mapActionLinks({ mapQuery: p.name + (p.location ? ', ' + p.location : ', Philadelphia') }),
       });
     }
     // Bookstores — baked geo
@@ -7022,6 +7148,75 @@
     if (!list) return;
     list.addEventListener('click', onRestoMainClick);
     renderPicnicView();
+  }
+
+  // ── Pools (seasonal) ────────────────────────────────────────────────────────
+  // Free Philadelphia Parks & Rec outdoor pools. Same tile look as parks; the
+  // `hours` line is kept current by scripts/update-pool-hours.js (reads the
+  // official phila.gov pool schedule via Claude web-search).
+  const PARKS_REC_POOLS_URL = 'https://www.phila.gov/programs/summer/pools/';
+
+  function poolTileHTML(p) {
+    const query = `${p.name}, ${p.location || 'Philadelphia'}`;
+    const mapHref = mapUrl(query);
+    const hoursLine = p.hours
+      ? `<div class="pool-hours"><strong>🕒 Hours:</strong> ${escapeHtml(p.hours)}</div>`
+      : `<div class="pool-hours pool-hours--tbd">🕒 Hours not posted yet — <a href="${escapeAttr(PARKS_REC_POOLS_URL)}" target="_blank" rel="noopener">check Parks &amp; Rec</a></div>`;
+    return `
+      <div class="resto-tile pool-tile" data-place="${escapeAttr(p.name)}" data-query="${escapeAttr(query)}">
+        <div class="resto-main">
+          <div class="resto-img-placeholder">🏊</div>
+          <div class="resto-info">
+            <div class="resto-name">${escapeHtml(p.name)}</div>
+            <div class="resto-meta">
+              <span class="resto-meta-item">🏊 Public pool</span>
+              ${p.neighborhood ? `<span class="resto-meta-item">📍 ${escapeHtml(p.neighborhood)}</span>` : ''}
+            </div>
+            <div class="resto-dist"></div>
+          </div>
+        </div>
+        <div class="resto-expand">
+          <div class="resto-expand-inner">
+            ${hoursLine}
+            ${p.location ? `<div class="resto-desc">${escapeHtml(p.location)}</div>` : ''}
+            <div class="resto-actions">
+              <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderPoolsView() {
+    const list = document.getElementById('poolsList');
+    if (!list) return;
+    if (!POOLS.length) {
+      list.innerHTML = `<div class="eat-empty"><div class="eat-empty-text">Pool list is being loaded — check back soon.</div></div>`;
+      return;
+    }
+    const updated = (typeof POOLS_UPDATED === 'string' && POOLS_UPDATED) ? POOLS_UPDATED : '';
+    // Alphabetical so a long list stays easy to scan.
+    const pools = [...POOLS].sort((a, b) => a.name.localeCompare(b.name));
+    list.innerHTML = `
+      <div class="eat-content">
+        <div class="pool-note">
+          Philadelphia's free public pools, run by
+          <a href="${escapeAttr(PARKS_REC_POOLS_URL)}" target="_blank" rel="noopener">Parks &amp; Recreation</a>.
+          Hours are pulled from the city's schedule and can change with weather and staffing — always confirm before you go.
+          ${updated ? `<span class="pool-note-date">Hours updated ${escapeHtml(updated)}.</span>` : ''}
+        </div>
+        <div class="eat-section-header">🏊 ${pools.length} public pool${pools.length === 1 ? '' : 's'}</div>
+        ${pools.map(poolTileHTML).join('')}
+      </div>`;
+    // Lazy Places photo + "X mi away" distance, same as the restaurant/park tiles.
+    loadRestoImages(list);
+  }
+
+  function setupPoolsView() {
+    const list = document.getElementById('poolsList');
+    if (!list) return;
+    list.addEventListener('click', onRestoMainClick);
+    renderPoolsView();
   }
 
   async function renderEatCategory(catId) {
@@ -8729,6 +8924,7 @@ Valid types: "meal", "activity", "dessert"`;
     setupBookTabs();
     setupFmTabs();
     setupPicnicView();
+    setupPoolsView();
     setupPATabs();
   }
 

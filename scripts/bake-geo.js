@@ -229,6 +229,10 @@ async function main() {
     { start: 'BOOK-PLACES-START', end: 'BOOK-PLACES-END', label: 'Bookstores'  },
     { start: 'FM-PLACES-START',   end: 'FM-PLACES-END',   label: 'Farmers Markets' },
     { start: 'PARK-PLACES-START', end: 'PARK-PLACES-END', label: 'Picnic Parks', kind: 'park' },
+    // Pools carry inline lat/lon and a city-facility name Google often renders
+    // differently ("… Recreation Center" vs "… Pool"), so they use the same
+    // proximity-guarded, name-only lookup as parks.
+    { start: 'POOL-PLACES-START', end: 'POOL-PLACES-END', label: 'Public Pools', kind: 'park' },
   ];
 
   // Gather every place across all marked sections in stable file order, so a

@@ -161,3 +161,31 @@ you just share the calendar with the service account.
 Then run it by hand from the **Actions** tab ("Scrape Events into Calendar" →
 *Run workflow*) to verify, or wait for the next Monday run. Until the
 secret is set the job exits cleanly with a reminder and changes nothing.
+
+## 8. Public pools (seasonal tab)
+
+Free Philadelphia Parks & Rec pools show up under their own **Pools** tab, which
+only appears in the app during pool season (roughly **mid-May through mid-Sept** —
+see `isPoolSeason()` in `index.html`). Off-season the tab and its map layer are
+hidden automatically.
+
+Pools live in the `POOLS` array between the `POOL-PLACES-START` / `POOL-PLACES-END`
+markers, kept **outside** the EAT-PLACES markers so the business audit never tries
+to "close" a city pool. Add one line per pool:
+
+```js
+{ name: 'Cruz Pool', neighborhood: 'Fairhill', location: '600 W Master St, Philadelphia', lat: 39.9776, lon: -75.1440, hours: '' },
+```
+
+- **Required:** `name`, `neighborhood`, `location`, `lat`, `lon`.
+- **`hours`:** leave it as `''`. The **update-pool-hours** Action (Mondays,
+  May–Sept) reads the official phila.gov pool schedule via Claude web-search and
+  splices in the current hours — it only ever edits the `hours` field, and
+  re-validates the line before saving, so it can't corrupt the file.
+- **Do NOT add a `geo` field.** bake-geo bakes precise coords + a Google photo on
+  the next push (pools use the same proximity-guarded lookup as parks). The inline
+  `lat`/`lon` are the instant fallback until it does.
+
+Run the hours updater by hand anytime from the **Actions** tab ("Update
+Public-Pool Hours" → *Run workflow*). It needs the `ANTHROPIC_API_KEY` secret
+(already configured).
