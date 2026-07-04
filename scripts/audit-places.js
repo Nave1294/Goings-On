@@ -194,7 +194,35 @@ function safeRewrite(updated, originalRaw) {
   catch { return null; }                                   // not a valid object literal
   const origGeo = (originalRaw.match(/geo:\s*\{[^}]*\}/) || [])[0];
   if (origGeo && !out.includes(origGeo)) return null;      // geo altered or truncated
-  return out;
+  // Force the trailing comma to match the original line. These lines are array
+  // elements, so nearly all end in a comma — but Claude routinely returns a bare
+  // object literal ("{ … }" with no comma). Writing that back fuses two entries
+  // and breaks the ENTIRE array (a single dropped comma took the whole site down
+  // repeatedly). A comma-less object still parses on its own, so the object-parse
+  // check above can't catch it; normalize the trailing punctuation to the
+  // original's regardless of what the model returned.
+  const origHadComma = /,\s*$/.test(originalRaw);
+  return bare + (origHadComma ? ',' : '');
+}
+
+// Whole-file safety net: confirm every inline <script> in the HTML still parses
+// as JavaScript before we write it. Throws (aborting the run) on the first
+// script that doesn't, so a structural break can never be committed to main.
+function assertScriptParses(html) {
+  const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let m, n = 0;
+  while ((m = re.exec(html))) {
+    n++;
+    try { new Function(m[1]); }
+    catch (e) {
+      const lineNo = html.slice(0, m.index).split('\n').length;
+      throw new Error(
+        `Refusing to write index.html: inline script #${n} (near line ${lineNo}) ` +
+        `no longer parses — ${e.message}. The audit's edits would break the site, ` +
+        `so nothing was written. Original file left intact.`
+      );
+    }
+  }
 }
 
 async function getUpdatedLine(client, original, apiData) {
@@ -356,7 +384,16 @@ async function main() {
       await new Promise(r => setTimeout(r, 200));
     }
 
-  fs.writeFileSync(INDEX_PATH, lines.filter((_, i) => !removeIdx.has(i)).join('\n'), 'utf8');
+  const nextHtml = lines.filter((_, i) => !removeIdx.has(i)).join('\n');
+
+  // Final structural gate: never write an index.html whose inline script no
+  // longer parses. Per-line guards can't see cross-line damage (e.g. a dropped
+  // array comma), so validate the whole app script as one unit here. If it
+  // doesn't parse, abort with a non-zero exit and leave the file untouched —
+  // a failed audit is recoverable; a broken site is not.
+  assertScriptParses(nextHtml);
+
+  fs.writeFileSync(INDEX_PATH, nextHtml, 'utf8');
 
   // Print summary
   const today = new Date().toISOString().slice(0, 10);
