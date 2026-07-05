@@ -30,11 +30,6 @@ explicitly asks to hold that specific change for review.
   Calendar (not this repo). Each gets a `[goings-on:auto:*]` marker so the app
   shows a 🤖 auto-added badge. Needs the `GCAL_SERVICE_ACCOUNT` secret — see
   `scripts/ADDING-PLACES.md` §7.
-- **update-pool-hours.yml** — Mondays **May–Sept only**; uses Claude web-search
-  to read the official phila.gov pool schedule and splice each pool's current
-  `hours` into the `POOL-PLACES` block (only that field is touched, and the line
-  is re-validated before writing). The **Pools** tab is itself seasonal — it only
-  appears in the app roughly mid-May–mid-Sept (`isPoolSeason()` in `index.html`).
 - **GitHub Pages** — auto-deploys `main` (plain branch deploy; `.nojekyll` is
   required at the repo root — do not delete it).
 
@@ -51,9 +46,10 @@ pier, or cemetery as a closeable business.
 
 Public pools live in the `POOLS` array (between `POOL-PLACES-START`/`POOL-PLACES-END`),
 also outside the EAT-PLACES markers. Add a pool with `name`, `neighborhood`,
-`location`, `lat`, `lon`, and `hours: ''` (leave hours empty — the
-`update-pool-hours` job fills it from phila.gov). bake-geo bakes precise coords +
-a photo. See `scripts/ADDING-PLACES.md` §8.
+`location`, `lat`, `lon`. bake-geo bakes precise coords + a photo. The Pools tab
+is seasonal (`isPoolSeason()`) and location-focused — per-pool hours aren't in any
+reliable feed, so it shows the citywide public-swim baseline and links to Parks &
+Rec rather than scraping hours. See `scripts/ADDING-PLACES.md` §8.
 
 Events come from the linked Google Calendar (`CALENDAR_ID`), not from this repo.
 

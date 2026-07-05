@@ -174,18 +174,18 @@ markers, kept **outside** the EAT-PLACES markers so the business audit never tri
 to "close" a city pool. Add one line per pool:
 
 ```js
-{ name: 'Cruz Pool', neighborhood: 'Fairhill', location: '600 W Master St, Philadelphia', lat: 39.9776, lon: -75.1440, hours: '' },
+{ name: 'Cruz Pool', neighborhood: 'Fairhill', location: '600 W Master St, Philadelphia', lat: 39.9776, lon: -75.1440 },
 ```
 
 - **Required:** `name`, `neighborhood`, `location`, `lat`, `lon`.
-- **`hours`:** leave it as `''`. The **update-pool-hours** Action (Mondays,
-  May–Sept) reads the official phila.gov pool schedule via Claude web-search and
-  splices in the current hours — it only ever edits the `hours` field, and
-  re-validates the line before saving, so it can't corrupt the file.
 - **Do NOT add a `geo` field.** bake-geo bakes precise coords + a Google photo on
   the next push (pools use the same proximity-guarded lookup as parks). The inline
   `lat`/`lon` are the instant fallback until it does.
 
-Run the hours updater by hand anytime from the **Actions** tab ("Update
-Public-Pool Hours" → *Run workflow*). It needs the `ANTHROPIC_API_KEY` secret
-(already configured).
+**Hours:** the Pools tab is location-focused. Philadelphia doesn't publish
+per-pool hours in any reliable machine-readable form (they're seasonal, vary by
+site, and live only on a bot-blocked phila.gov page), so the tab shows the
+citywide public-swim baseline (~1–4pm daily) up top and links to Parks & Rec for
+exact times — there is no hours bot. If you ever want to show a specific pool's
+hours, add an optional `hours: 'Daily 1–4pm'` field to that pool's line by hand;
+it'll render on the card.

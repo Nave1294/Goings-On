@@ -5810,12 +5810,11 @@
   // ── Public pools (seasonal) ─────────────────────────────────────
   // Free Philadelphia Parks & Rec outdoor pools. Hand-entered lat/lon are an
   // instant fallback; bake-geo bakes a precise `geo` (coords + photo) on push.
-  // The `hours` field is refreshed from the official phila.gov schedule by
-  // scripts/update-pool-hours.js — leave it as '' for a new pool; the updater
-  // fills it. POOLS_UPDATED is stamped by that same script.
-  const POOLS_UPDATED = '2026-07-04';
+  // `hours` is optional and hand-entered — per-pool hours aren't published in
+  // any reliable feed, so the Pools tab leans on the citywide baseline note
+  // (public swim ~1–4pm daily) and the Parks & Rec link instead.
   const POOLS = [
-    // POOL-PLACES-START — bake-geo.js bakes a precise `geo` here. Pools are seasonal city facilities, NOT audited as businesses. Inline lat/lon are address-derived fallbacks; bake-geo refines them. `hours` is filled by update-pool-hours.js.
+    // POOL-PLACES-START — bake-geo.js bakes a precise `geo` here. Pools are seasonal city facilities, NOT audited as businesses. Inline lat/lon are address-derived fallbacks; bake-geo refines them.
     { name: 'Hunting Park Pool', neighborhood: 'Hunting Park', location: '1101 W Hunting Park Ave, Philadelphia', lat: 39.99930, lon: -75.14900, hours: '' },
     { name: 'Kelly Pool', neighborhood: 'Fairmount Park', location: '4231 Lansdowne Dr, Philadelphia', lat: 39.98400, lon: -75.20000, hours: '' },
     { name: 'Max Myers Pool', neighborhood: 'Oxford Circle', location: '1601 Hellerman St, Philadelphia', lat: 40.03780, lon: -75.08650, hours: '' },
@@ -7154,17 +7153,21 @@
   }
 
   // ── Pools (seasonal) ────────────────────────────────────────────────────────
-  // Free Philadelphia Parks & Rec outdoor pools. Same tile look as parks; the
-  // `hours` line is kept current by scripts/update-pool-hours.js (reads the
-  // official phila.gov pool schedule via Claude web-search).
+  // Free Philadelphia Parks & Rec outdoor pools. Same tile look as parks. The
+  // Pools tab is location-focused: it shows each pool's spot, distance, and the
+  // citywide public-swim baseline, and links to Parks & Rec for exact hours
+  // (which the city doesn't publish in any reliable per-pool feed).
   const PARKS_REC_POOLS_URL = 'https://www.phila.gov/programs/summer/pools/';
 
   function poolTileHTML(p) {
     const query = `${p.name}, ${p.location || 'Philadelphia'}`;
     const mapHref = mapUrl(query);
+    // Per-pool hours aren't published in any reliable machine-readable form, so
+    // we show them only if hand-entered; the citywide baseline note up top and
+    // the Parks & Rec link cover the rest.
     const hoursLine = p.hours
       ? `<div class="pool-hours"><strong>🕒 Hours:</strong> ${escapeHtml(p.hours)}</div>`
-      : `<div class="pool-hours pool-hours--tbd">🕒 Hours not posted yet — <a href="${escapeAttr(PARKS_REC_POOLS_URL)}" target="_blank" rel="noopener">check Parks &amp; Rec</a></div>`;
+      : '';
     return `
       <div class="resto-tile pool-tile" data-place="${escapeAttr(p.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
@@ -7197,7 +7200,6 @@
       list.innerHTML = `<div class="eat-empty"><div class="eat-empty-text">Pool list is being loaded — check back soon.</div></div>`;
       return;
     }
-    const updated = (typeof POOLS_UPDATED === 'string' && POOLS_UPDATED) ? POOLS_UPDATED : '';
     // "Near me" sorts by straight-line distance using each pool's baked/inline
     // coords (no lookup needed — pools carry lat/lon). Otherwise alphabetical.
     const nearMe = proximityActive && userLoc;
@@ -7216,7 +7218,6 @@
           <a href="${escapeAttr(PARKS_REC_POOLS_URL)}" target="_blank" rel="noopener">Parks &amp; Recreation</a>.
           Pools open on a rolling schedule from late June; once open, most offer public swim around
           <strong>1–4pm daily</strong>, with extended hours that vary by site. Always confirm before you go.
-          ${updated ? `<span class="pool-note-date">Hours updated ${escapeHtml(updated)}.</span>` : ''}
         </div>
         <div class="eat-section-header">${nearMe ? '📍 Nearest first' : `🏊 ${pools.length} public pool${pools.length === 1 ? '' : 's'}`}</div>
         ${pools.map(poolTileHTML).join('')}
