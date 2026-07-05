@@ -2375,6 +2375,9 @@
     <button class="back-btn" data-view="home" type="button">← Back</button>
   </div>
   <div class="cat-nav"></div>
+  <div class="proximity-bar">
+    <button class="near-btn" data-scope="pools" type="button" title="Sort by distance from you">📍 Near me</button>
+  </div>
   <div class="day-panel">
     <div class="day-heading">
       <div class="day-heading-left">
@@ -7195,8 +7198,17 @@
       return;
     }
     const updated = (typeof POOLS_UPDATED === 'string' && POOLS_UPDATED) ? POOLS_UPDATED : '';
-    // Alphabetical so a long list stays easy to scan.
-    const pools = [...POOLS].sort((a, b) => a.name.localeCompare(b.name));
+    // "Near me" sorts by straight-line distance using each pool's baked/inline
+    // coords (no lookup needed — pools carry lat/lon). Otherwise alphabetical.
+    const nearMe = proximityActive && userLoc;
+    const pools = [...POOLS].sort((a, b) => {
+      if (nearMe) {
+        const da = (a.lat != null) ? haversineMiles(userLoc.lat, userLoc.lon, a.lat, a.lon) : Infinity;
+        const db = (b.lat != null) ? haversineMiles(userLoc.lat, userLoc.lon, b.lat, b.lon) : Infinity;
+        if (da !== db) return da - db;
+      }
+      return a.name.localeCompare(b.name);
+    });
     list.innerHTML = `
       <div class="eat-content">
         <div class="pool-note">
@@ -7206,7 +7218,7 @@
           <strong>1–4pm daily</strong>, with extended hours that vary by site. Always confirm before you go.
           ${updated ? `<span class="pool-note-date">Hours updated ${escapeHtml(updated)}.</span>` : ''}
         </div>
-        <div class="eat-section-header">🏊 ${pools.length} public pool${pools.length === 1 ? '' : 's'}</div>
+        <div class="eat-section-header">${nearMe ? '📍 Nearest first' : `🏊 ${pools.length} public pool${pools.length === 1 ? '' : 's'}`}</div>
         ${pools.map(poolTileHTML).join('')}
       </div>`;
     // Lazy Places photo + "X mi away" distance, same as the restaurant/park tiles.
@@ -8875,6 +8887,7 @@ Valid types: "meal", "activity", "dessert"`;
     if (currentEatCat) renderEatCategory(currentEatCat);
     if (currentBookCat) renderBookCategory(currentBookCat);
     if (currentFmDay) renderFmDay(currentFmDay);
+    if (isPoolSeason() && document.getElementById('poolsList')) renderPoolsView();
     if (lastRender) render(lastRender.days, lastRender.byDay, lastRender.activeIdx);
   }
 
