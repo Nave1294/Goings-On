@@ -29,7 +29,15 @@ explicitly asks to hold that specific change for review.
   upcoming Visit Philly / Hidden City / CityCast Philly events and writes them to the Google
   Calendar (not this repo). Each gets a `[goings-on:auto:*]` marker so the app
   shows a 🤖 auto-added badge. Needs the `GCAL_SERVICE_ACCOUNT` secret — see
-  `scripts/ADDING-PLACES.md` §7.
+  `scripts/ADDING-PLACES.md` §7. **Date accuracy is defended in two layers:**
+  each candidate must cite a non-roundup event page for its date (`normalizeEvent`),
+  and then `verify-event-date.js` does an INDEPENDENT second confirmation before
+  insert — unconfirmed events are dropped, a confirmed-different date is corrected.
+- **audit-events.yml** — Thursdays; re-verifies the date of every upcoming
+  **auto-added** calendar event via `verify-event-date.js`, moving ones with a
+  confirmed-wrong date and removing ones it can't confirm after 2 strikes. Catches
+  wrong dates that predate the scraper's verify gate. Only ever touches events we
+  auto-added; hand-added events are never modified.
 - **GitHub Pages** — auto-deploys `main` (plain branch deploy; `.nojekyll` is
   required at the repo root — do not delete it).
 

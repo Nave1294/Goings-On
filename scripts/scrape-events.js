@@ -32,6 +32,7 @@
 
 const { google } = require('googleapis');
 const Anthropic   = require('@anthropic-ai/sdk');
+const { verifyEventDate } = require('./verify-event-date');
 
 const CALENDAR_ID  = process.env.CALENDAR_ID
   || '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
@@ -433,6 +434,32 @@ async function main() {
         console.log(`  = already on calendar, skipping: ${e.date}  ${e.title}`);
         skippedDup++;
         continue;
+      }
+
+      // ── Verify-before-add ──
+      // The model already claimed a dateSource, but claims aren't proof. Do an
+      // INDEPENDENT second confirmation of this exact event's date against an
+      // authoritative event page. Only add if confirmed; if the check turns up a
+      // different real date, correct it; otherwise drop the event. This is the
+      // gate that stops a wrong-date guess (the Boyz II Men failure) from ever
+      // reaching the calendar.
+      let verdict;
+      try { verdict = await verifyEventDate(client, e); }
+      catch (err) { console.warn(`  ~ verify failed for "${e.title}" (${err.message}) — skipping`); skippedBad++; continue; }
+
+      if (verdict.status === 'wrong') {
+        if (verdict.correctDate < todayISO || verdict.correctDate > untilISO) {
+          console.log(`  ~ real date ${verdict.correctDate} outside window, skipping: ${e.title}`);
+          skippedBad++; continue;
+        }
+        console.log(`  ~ corrected date ${e.date} → ${verdict.correctDate}: ${e.title}`);
+        e.date = verdict.correctDate;
+        e.endDate = '';                                  // single-day after a date correction
+        if (verdict.url) e.url = verdict.url;
+        if (isDuplicate(existing, source, e)) { skippedDup++; continue; }
+      } else if (verdict.status !== 'confirmed') {
+        console.log(`  ~ unverified date, skipping: ${e.date}  ${e.title}`);
+        skippedBad++; continue;
       }
 
       try {

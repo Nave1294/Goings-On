@@ -1,0 +1,32 @@
+name: Audit Auto-Added Event Dates
+
+on:
+  schedule:
+    # Weekly: 11:00 UTC every Thursday (a few days after the Monday scrape, so
+    # newly-added events get an independent second date-check too).
+    - cron: '0 11 * * 4'
+  workflow_dispatch:
+    # Allow manual runs from the Actions tab
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Re-verify auto-added event dates
+        run: node scripts/audit-events.js
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GCAL_SERVICE_ACCOUNT: ${{ secrets.GCAL_SERVICE_ACCOUNT }}
