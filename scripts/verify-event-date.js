@@ -31,7 +31,10 @@ async function verifyEventDate(client, ev, model = 'claude-haiku-4-5-20251001') 
   const msg = await client.messages.create({
     model,
     max_tokens: 1024,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+    // Cost-conscious: 4 searches is enough to find one authoritative
+    // event-specific page (venue site or ticketing listing) without letting a
+    // hard case spiral into a long, expensive search chain.
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
     messages: [{
       role: 'user',
       content: `Verify the exact calendar date of ONE specific Philadelphia-area event.

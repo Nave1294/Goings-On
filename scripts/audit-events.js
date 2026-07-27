@@ -9,10 +9,18 @@
  *
  * For each FUTURE event we added (extendedProperties.private.goingsOnAuto ==
  * 'true'), it independently re-confirms the date via verify-event-date.js:
- *   - confirmed            → leave it (and clear any prior "unverified" strike).
- *   - wrong + real date    → MOVE it to the correct date (preserving time & length).
+ *   - confirmed            → stamp goingsOnVerifiedAt, leave it (clear any strike).
+ *   - wrong + real date    → MOVE it to the correct date (preserving time & length),
+ *                            stamp goingsOnVerifiedAt.
  *   - unverifiable / wrong-without-date → strike it; REMOVE after 2 consecutive
  *                            strikes, so one flaky search can't delete a real event.
+ *
+ * COST CONTROL: an event stamped goingsOnVerifiedAt within the last
+ * VERIFIED_SKIP_DAYS is skipped with NO API call. scrape-events.js already
+ * stamps every event it inserts (it just independently verified the date right
+ * before adding it), so in steady state this job only spends money on the
+ * one-time legacy backlog and on events whose stamp has aged out — not on
+ * re-checking the same confirmed date every single week forever.
  *
  * It ONLY ever touches events we auto-added; hand-added calendar events are never
  * modified or removed.
@@ -27,9 +35,10 @@ const { verifyEventDate } = require('./verify-event-date');
 
 const CALENDAR_ID = process.env.CALENDAR_ID
   || '1d79153a3e99e53af1c993acfbf2b3f120c5d78d210297c80de3581d5e924f71@group.calendar.google.com';
-const TZ            = 'America/New_York';
-const HORIZON_DAYS  = 60;   // only audit events within this many days ahead
-const REMOVE_AFTER  = 2;    // consecutive unverifiable audits before deletion
+const TZ                = 'America/New_York';
+const HORIZON_DAYS      = 30;   // only audit events within this many days ahead (was 60 — narrower window, less to check)
+const REMOVE_AFTER      = 2;    // consecutive unverifiable audits before deletion
+const VERIFIED_SKIP_DAYS = 21;  // don't re-spend on an event confirmed this recently
 
 const pad = n => String(n).padStart(2, '0');
 const toISODate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -40,6 +49,13 @@ function addDaysISO(iso, n) {
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + n);
   return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+}
+
+function daysSinceISO(iso, todayISO) {
+  if (!isISODate(iso)) return Infinity;
+  const [y1, m1, d1] = iso.split('-').map(Number);
+  const [y2, m2, d2] = todayISO.split('-').map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
 }
 
 // Number of all-day days an event spans (Calendar all-day end date is exclusive).
@@ -109,14 +125,22 @@ async function main() {
   const untilISO = addDaysISO(todayISO, HORIZON_DAYS);
 
   const events = await listAutoEvents(cal, todayISO, untilISO);
-  console.log(`Auditing ${events.length} auto-added event(s) between ${todayISO} and ${untilISO}`);
+  console.log(`${events.length} auto-added event(s) between ${todayISO} and ${untilISO}`);
 
-  let confirmed = 0, moved = 0, removed = 0, struck = 0, errored = 0;
+  let confirmed = 0, moved = 0, removed = 0, struck = 0, errored = 0, skipped = 0;
 
   for (const ev of events) {
     const startISO = ev.start?.date || (ev.start?.dateTime || '').slice(0, 10);
     if (!isISODate(startISO)) continue;
     const title = ev.summary;
+
+    // Cost control: already confirmed recently — no need to spend an API call
+    // re-proving the same date again this soon.
+    const verifiedAt = ev.extendedProperties?.private?.goingsOnVerifiedAt;
+    if (isISODate(verifiedAt) && daysSinceISO(verifiedAt, todayISO) < VERIFIED_SKIP_DAYS) {
+      skipped++;
+      continue;
+    }
 
     let v;
     try { v = await verifyEventDate(client, { title, date: startISO, location: ev.location || '' }); }
@@ -127,7 +151,7 @@ async function main() {
     if (v.status === 'confirmed') {
       console.log(`  ✓ ${startISO}  ${title}`);
       confirmed++;
-      if (strikes) await clearStrike(cal, ev);          // recovered — reset counter
+      try { await stampVerified(cal, ev, todayISO); } catch (e) { console.warn(`  ! stamp failed for "${title}": ${e.message}`); }
       continue;
     }
 
@@ -136,7 +160,7 @@ async function main() {
       try {
         await cal.events.patch({ calendarId: CALENDAR_ID, eventId: ev.id, requestBody: shiftToDate(ev, v.correctDate) });
         moved++;
-        if (strikes) await clearStrike(cal, ev);
+        await stampVerified(cal, ev, todayISO);
       } catch (e) { console.warn(`  ! move failed for "${title}": ${e.message}`); errored++; }
       continue;
     }
@@ -154,17 +178,20 @@ async function main() {
     }
   }
 
-  console.log(`\nDone — ${confirmed} confirmed, ${moved} moved, ${struck} struck, ${removed} removed, ${errored} error(s).`);
+  console.log(`\nDone — ${confirmed} confirmed, ${moved} moved, ${struck} struck, ${removed} removed, ${skipped} skipped (recently verified), ${errored} error(s).`);
 }
 
-// extendedProperties.private patches merge key-by-key, so we only touch our counter.
+// extendedProperties.private patches merge key-by-key, so each of these only
+// touches its own field — safe to call independently.
 function setStrike(cal, ev, n) {
   return cal.events.patch({ calendarId: CALENDAR_ID, eventId: ev.id,
     requestBody: { extendedProperties: { private: { goingsOnUnverified: String(n) } } } });
 }
-function clearStrike(cal, ev) {
+// Confirmed (or corrected) as of today: stamp the date and clear any strike —
+// this is what lets future runs skip it for VERIFIED_SKIP_DAYS.
+function stampVerified(cal, ev, todayISO) {
   return cal.events.patch({ calendarId: CALENDAR_ID, eventId: ev.id,
-    requestBody: { extendedProperties: { private: { goingsOnUnverified: null } } } });
+    requestBody: { extendedProperties: { private: { goingsOnVerifiedAt: todayISO, goingsOnUnverified: null } } } });
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

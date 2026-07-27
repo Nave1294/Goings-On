@@ -38,6 +38,31 @@ explicitly asks to hold that specific change for review.
   confirmed-wrong date and removing ones it can't confirm after 2 strikes. Catches
   wrong dates that predate the scraper's verify gate. Only ever touches events we
   auto-added; hand-added events are never modified.
+
+## Budget: keep Anthropic spend under $5/month
+The owner has a hard **$5/month** target for Claude API spend across all
+automation. When touching any Claude-powered script, keep this in mind — the
+`web_search` tool's per-search fee (not just tokens) is the dominant cost driver,
+so search budgets (`max_uses`) are kept deliberately tight. Cost-control design
+already in place — don't undo it without re-checking the math:
+- **`audit-events.js`** stamps `goingsOnVerifiedAt` on every event it confirms or
+  moves, and **skips re-verifying anything stamped within `VERIFIED_SKIP_DAYS`
+  (21 days)** — no API call at all for a recently-confirmed event.
+  `scrape-events.js` stamps the same field at insert time (it just independently
+  verified the date via layer 1), so a newly-added event costs nothing extra on
+  the very next audit run. This is the single biggest lever — removing it means
+  the weekly audit re-checks every upcoming event on the calendar, every week,
+  forever.
+- `scrape-events.js` discovery search: `max_uses: 8` (was 12).
+- `verify-event-date.js` confirmation search: `max_uses: 4` (was 6).
+- `audit-events.js` horizon: `HORIZON_DAYS = 30` (was 60) — fewer events ever
+  in the check pool.
+- `audit-places.js` and `update-trendy.js` don't use `web_search` at all (Places
+  API / RSS + plain summarization), so they're cheap by construction — leave as-is.
+
+If you need to raise any of these, do the arithmetic first — rough monthly cost ≈
+runs/month × events-per-run × searches-per-event × ~$0.01/search, plus token cost
+— and check it against the $5 ceiling with real margin.
 - **GitHub Pages** — auto-deploys `main` (plain branch deploy; `.nojekyll` is
   required at the repo root — do not delete it).
 

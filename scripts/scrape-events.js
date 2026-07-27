@@ -215,12 +215,13 @@ async function findEvents(client, source) {
     // Generous budget: with web_search, every search round-trip (queries +
     // result summaries) is counted against this same output-token cap before
     // the final JSON is written, so a tight limit can truncate the answer
-    // right when there are many events to list (max_uses=8 search calls plus
-    // a 10+ event source can easily run past 4096).
+    // right when there are many events to list.
     max_tokens: 8192,
-    // Higher cap than before: confirming each event's date on its own page
-    // costs an extra search or two per event, so give the model room.
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 12 }],
+    // Cost-conscious budget: this discovery pass still needs to confirm a
+    // dateSource per event (normalizeEvent requires one), but every accepted
+    // candidate ALSO gets an independent second check in verify-before-add
+    // below — so this pass doesn't need to be maximally exhaustive on its own.
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
     messages: [{
       role: 'user',
       content: `You curate a Philadelphia events calendar. Using web search, find specific, real, upcoming events from ${source.hint}.
@@ -318,7 +319,7 @@ function normalizeEvent(raw, todayISO, untilISO) {
 
 // ─── build a Google Calendar event resource ───────────────────────────────────
 
-function toEventResource(e, source) {
+function toEventResource(e, source, todayISO) {
   const descParts = [];
   if (e.description) descParts.push(e.description);
   if (e.url)         descParts.push(`More info: ${e.url}`);
@@ -333,6 +334,10 @@ function toEventResource(e, source) {
         goingsOnAuto:   'true',
         goingsOnSource: source.id,
         goingsOnSig:    signature(source.id, e.title, e.date),
+        // Already independently date-verified right before this insert (see
+        // verify-before-add below), so audit-events.js can skip re-checking it
+        // for a while instead of re-spending money to re-prove the same date.
+        goingsOnVerifiedAt: todayISO,
       },
     },
   };
@@ -463,7 +468,7 @@ async function main() {
       }
 
       try {
-        await cal.events.insert({ calendarId: CALENDAR_ID, requestBody: toEventResource(e, source) });
+        await cal.events.insert({ calendarId: CALENDAR_ID, requestBody: toEventResource(e, source, todayISO) });
         console.log(`  + ${e.date}  ${e.title}`);
         added++;
         // Index it immediately so later candidates this run dedup against it.
