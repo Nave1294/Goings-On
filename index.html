@@ -508,6 +508,17 @@
       color: var(--accent);
     }
 
+    /* Longer than a clock time, and shouldn't compete with real times for
+       attention — so it wraps small and muted inside the 68px slot. */
+    .event.time-unknown .event-time {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      line-height: 1.25;
+    }
+
     .event-body {
       flex: 1;
       min-width: 0;
@@ -2607,6 +2618,10 @@
     return m === 0 ? `${h} ${ampm}` : `${h}:${String(m).padStart(2,'0')} ${ampm}`;
   }
 
+  // Shown when an event has no time we can stand behind — better than a blank
+  // slot, which reads as a rendering glitch, and honest about why it's missing.
+  const NO_TIME_LABEL = 'Time unconfirmed';
+
   // Google returns a date-only `start` both for events that genuinely run all
   // day and for anything added without a time (most scraped listings), so
   // `!start.dateTime` only means "no time attached" — not "all day".
@@ -2641,14 +2656,14 @@
 
   // What belongs in an event's time slot. Only claims "All day" when the event
   // actually occupies whole days; otherwise falls back to a time stated in the
-  // event's own text, and failing that says nothing rather than asserting a
-  // span the calendar never specified.
+  // event's own text, and failing that says the time is unconfirmed rather than
+  // asserting a span the calendar never specified.
   function eventTimeLabel(ev) {
     if (!eventIsDateOnly(ev)) return fmtTime(ev.start.dateTime);
     if (eventSpansMultipleDays(ev)) return 'All day';
     return timeFromText(ev.summary, false)
         || timeFromText(stripTags(ev.description || ''), true)
-        || '';
+        || NO_TIME_LABEL;
   }
 
   function relativeLabel(i) {
@@ -3409,6 +3424,7 @@
   function eventHTML(ev, idx, contextDay) {
     const timeLabel = eventTimeLabel(ev);
     const allDay = timeLabel === 'All day';
+    const noTime = timeLabel === NO_TIME_LABEL;
     const endLabel = (!eventIsDateOnly(ev) && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
     const locStr = eventLocationStr(ev);
     const loc = ev.location
@@ -3441,7 +3457,7 @@
     const links = (siteBtn || mapBtn) ? `<div class="event-links">${siteBtn}${mapBtn}</div>` : '';
 
     return `
-      <div class="event${allDay ? ' all-day' : ''}" data-event-idx="${idx}">
+      <div class="event${allDay ? ' all-day' : ''}${noTime ? ' time-unknown' : ''}" data-event-idx="${idx}">
         <div class="event-time-block">
           <div class="event-time">${timeLabel}</div>
           ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
@@ -8775,8 +8791,8 @@
       ? dayEvents.slice(0, 8).map(e => {
           const label = eventTimeLabel(e);
           const when = label === 'All day' ? 'all day (flexible time)'
-                     : label ? label
-                     : 'no listed time (flexible)';
+                     : label === NO_TIME_LABEL ? 'no listed time (flexible)'
+                     : label;
           return '- "' + (e.summary || 'Event') + '" starts at ' + when + (e.location ? ', ' + e.location : '');
         }).join('\n')
       : '(none scheduled this day)';
@@ -9411,7 +9427,6 @@ Valid types: "meal", "activity", "dessert"`;
   function fmCalEventHTML(ev) {
     const date = parseEventDate(ev.start);
     const timeStr = eventTimeLabel(ev);
-    const isAllDay = timeStr === 'All day';
     const dateStr = `${FM_CAL_DAYS[date.getDay()]}, ${FM_CAL_MONTHS[date.getMonth()]} ${date.getDate()}`;
     const loc = ev.location || ev._foundLocation || '';
     const siteUrl = eventSiteUrl(ev);
