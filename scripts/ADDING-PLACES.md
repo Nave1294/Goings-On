@@ -36,6 +36,7 @@ spot. Use as many as apply:
 | tag | puts it in |
 |-----|-----------|
 | `breakfast` / `lunch` / `dinner` / `dessert` | that Eat tab + the matching meal window in the Outing Builder & AI Planner |
+| `cafe` | Cafés tab (coffee, tea, all-day cafés) |
 | `neighborhood` | Neighborhood Spots tab |
 | `unique` | Unique tab |
 | `cheap-eats` | Cheap Eats tab |

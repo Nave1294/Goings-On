@@ -15,8 +15,8 @@
       --bg: #fbf7eb;
       --surface: #faf7f0;
       --text: #1c2616;
-      --text-secondary: #6b7560;
-      --text-tertiary: #9aa08e;
+      --text-secondary: #636d58;  /* ≥4.5:1 on the cream background, even at small sizes */
+      --text-tertiary: #80866f;   /* labels and hints — legible, still clearly quieter */
       --accent: #2d6a4f;
       --accent-soft: #d8ead2;
       --divider: rgba(45, 106, 79, 0.1);
@@ -24,6 +24,15 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* One keyboard focus ring for everything interactive. Offset outward so it
+       reads on filled buttons too; inset on tiles, whose parent clips overflow. */
+    button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible,
+    summary:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .resto-main:focus-visible { outline-offset: -3px; border-radius: 16px; }
 
     html {
       background: rgba(251, 247, 235, 0.4);
@@ -113,7 +122,7 @@
       border-radius: 50%;
       background: var(--surface);
       color: var(--accent);
-      border: 1.5px solid var(--border);
+      border: 1.5px solid var(--divider);
       cursor: pointer;
       box-shadow: 0 8px 22px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06);
       display: flex;
@@ -130,7 +139,7 @@
 
     .to-top-btn {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: 6rem;      /* stacked above the "suggest" button, which owns the corner */
       right: 1.5rem;
       width: 48px;
       height: 48px;
@@ -274,10 +283,10 @@
 
     .add-close {
       position: absolute;
-      top: 0.85rem;
-      right: 0.85rem;
-      width: 30px;
-      height: 30px;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: var(--bg);
       border: none;
@@ -295,7 +304,7 @@
       display: flex;
       gap: 0.4rem;
       overflow-x: auto;
-      padding: 0.25rem 0 1rem;
+      padding: 0.25rem 0.25rem 1rem;
       margin: 0 -0.25rem 2rem;
       scrollbar-width: none;
     }
@@ -454,10 +463,11 @@
       color: var(--accent);
       text-decoration: none;
       padding: 5px 10px;
-      border-radius: 8px;
+      border-radius: 999px; /* same pill as every other action link */
       background: var(--accent-soft);
-      transition: background 0.15s ease;
+      transition: background 0.15s ease, transform 0.12s ease;
     }
+    .event-map:active, .event-site:active { transform: scale(0.96); }
     .event-map { margin-top: 0.55rem; }
     .event-map:hover, .event-site:hover { background: #c4ddbf; }
     .event-map svg, .event-site svg { stroke: var(--accent); }
@@ -749,7 +759,7 @@
       .tab { min-width: 58px; padding: 0.6rem 0.4rem 0.5rem; }
       .event { padding: 0.95rem 1rem; }
       .event-time-block { min-width: 58px; }
-      .to-top-btn { bottom: 1rem; right: 1rem; width: 44px; height: 44px; }
+      .to-top-btn { bottom: 5rem; right: 1rem; width: 44px; height: 44px; }
       .add-btn {
         bottom: 1rem;
         right: 1rem;
@@ -758,6 +768,13 @@
         display: flex !important;
       }
       .add-btn svg { width: 22px; height: 22px; }
+      /* Match the right-hand buttons' tighter phone margins. */
+      .fab-row { bottom: 1rem; left: 1rem; }
+      #mapFab { bottom: 4.5rem; left: 1rem; }
+      /* Room for the bottom-left buttons, so the last card's links stay reachable. */
+      body { padding-bottom: 8.5rem; }
+      /* Seven day chips as 4 + 3 rather than 6 + one stretched across the row. */
+      .dn-days .dn-day-chip { flex: 0 1 calc(25% - 0.3rem); }
       .bg { display: none !important; }
     }
 
@@ -768,7 +785,8 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 6px;
+      padding: 9px 8px;
+      margin: -3px 0 0 -2px; /* keeps the bars where they were; only the hit area grew */
       color: var(--text-secondary);
       display: flex;
       flex-direction: column;
@@ -849,10 +867,21 @@
       to   { opacity: 1; transform: translateY(0); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .view.active { animation: none; }
+      .view.active, .day-panel, .weather-detail, .eat-content, .eat-sheet, .eat-rec-overlay,
+      .spin-name, .eat-scope, .indec-top-pick, .indec-swipe-card, .picks-fab.bump, .pick-btn.pop,
+      .spin-rolling, .user-loc-marker .ring { animation: none !important; }
+      .cat-btn, .cat-nav { transition: none; }
+      .pl-wx-strip-hours { scroll-behavior: auto; }
     }
 
     /* ── Sub-category tabs (within a view) ── */
+    /* Every horizontal strip fades at its trailing edge so it's clear there's
+       more to scroll — the day tabs, the category menu, the map layers and the
+       sub-tabs all get the same treatment. */
+    .tabs, .cat-nav, .sub-tabs, .map-layer-bar {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
+    }
     .sub-tabs {
       display: flex;
       gap: 0.4rem;
@@ -861,9 +890,6 @@
       cursor: grab;
       padding: 0.1rem 0.25rem 1rem;
       margin: 0 -0.25rem 0.5rem;
-      /* fade the trailing edge so it's clear there's more to scroll */
-      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
-      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
     }
     .tabs.dragging, .sub-tabs.dragging, .cat-nav.dragging { cursor: grabbing; scroll-behavior: auto; }
     .tabs.dragging .tab,
@@ -1097,8 +1123,8 @@
 
     /* ── Performing-arts discount cards ── */
     .pa-card {
-      background: var(--card, #fff);
-      border: 1px solid var(--border, rgba(0,0,0,0.08));
+      background: var(--surface);
+      border: 1px solid var(--divider);
       border-radius: 16px;
       padding: 1rem 1.05rem 1.1rem;
       margin-bottom: 0.85rem;
@@ -1123,7 +1149,7 @@
       margin-top: 3px;
     }
     .pa-deal {
-      border-top: 1px solid var(--border, rgba(0,0,0,0.07));
+      border-top: 1px solid var(--divider);
       padding-top: 0.7rem;
       margin-top: 0.7rem;
     }
@@ -1408,14 +1434,16 @@
 
     /* ── My Picks: the "+" save button on event cards and place tiles ── */
     .pick-btn {
-      flex-shrink: 0;
+      flex-shrink: 0; position: relative;
       width: 26px; height: 26px; border-radius: 50%; padding: 0;
       border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent);
       font: inherit; font-size: 1.05rem; font-weight: 700; line-height: 1; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
       transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
     }
+    .pick-btn::before { content: ''; position: absolute; inset: -8px; } /* 42px thumb target, 26px visual */
     .pick-btn:hover { background: var(--accent-soft); }
+    .pick-btn:active { transform: scale(0.92); }
     .pick-btn .pick-btn-check { display: none; font-size: 0.8rem; }
     .pick-btn.picked { background: var(--accent); color: #fff; }
     .pick-btn.picked .pick-btn-plus { display: none; }
@@ -1425,6 +1453,11 @@
     .event-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
     .resto-main .pick-btn { position: absolute; top: 0.55rem; right: 0.55rem; z-index: 2; }
     .resto-main:has(.pick-btn) .resto-name { padding-right: 2rem; }
+    /* The tile's expand chevron normally sits top-right; with a "+" there it moves
+       to the bottom corner so both stay visible. */
+    .resto-main:has(.pick-btn)::after { top: auto; bottom: 0.6rem; }
+    .pa-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
+    .pa-card-head .pa-card-name { flex: 1; min-width: 0; }
     /* The chip that flies from the "+" to the Build button when something is saved. */
     .pick-fly {
       position: fixed; z-index: 200; pointer-events: none;
@@ -1475,8 +1508,8 @@
       background: var(--divider);
       border: none;
       border-radius: 50%;
-      width: 1.85rem;
-      height: 1.85rem;
+      width: 2.25rem;
+      height: 2.25rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1790,7 +1823,8 @@
       -webkit-appearance: none; appearance: none;
     }
     .pl-input::placeholder { color: var(--text-secondary); }
-    .pl-input:focus { outline: none; border-color: #9b5fa0; }
+    .pl-input:focus { border-color: #9b5fa0; }
+    .pl-input:focus-visible { outline-color: #9b5fa0; }
     .pl-next {
       display: flex; align-items: center; justify-content: center;
       width: 100%; font: inherit; font-size: 0.92rem; font-weight: 700;
@@ -2024,6 +2058,10 @@
       transition: background 0.15s ease, border-color 0.15s ease;
     }
     .ob-cat-btn:hover, .ob-cat-btn:active { border-color: #2aa89a; background: rgba(42,168,154,0.07); }
+    /* The same press feedback the sub-tabs already have, on every chip-style control. */
+    .tab:active, .cat-btn:active, .dn-day-chip:active, .pl-time-chip:active, .pl-chip:active,
+    .picnic-subtab:active, .map-layer-chip:active, .ob-cat-btn:active, .near-btn:active,
+    .add-row:active, .resto-action:active, .dn-pair-action:active, .our-philly-link:active { transform: scale(0.96); }
     .ob-cat-emoji { font-size: 1.45rem; }
     .ob-cat-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
     .ob-cat-desc { font-size: 0.68rem; color: var(--text-secondary); text-align: center; }
@@ -2043,7 +2081,9 @@
     .ob-stop-name { font-size: 0.88rem; font-weight: 700; color: var(--text); flex: 1 1 0; min-width: 0; }
     .ob-stop-rm {
       font: inherit; font-size: 0.75rem; color: var(--text-secondary); background: none;
-      border: none; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 6px; flex-shrink: 0;
+      border: none; cursor: pointer; padding: 0; border-radius: 8px; flex-shrink: 0;
+      min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center;
+      margin: -0.35rem -0.4rem -0.35rem 0; /* bigger target without pushing the row apart */
       opacity: 0.6; transition: opacity 0.15s ease;
     }
     .ob-stop-rm:hover { opacity: 1; }
@@ -2075,7 +2115,13 @@
       font: inherit; font-size: 0.78rem; font-weight: 700; color: #fff; background: #1a7a6e;
       border: none; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
-    .ob-arr-gap-x { font: inherit; background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+    .ob-arr-gap-x {
+      font: inherit; background: none; border: none; color: var(--text-tertiary); cursor: pointer; flex-shrink: 0;
+      min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;
+    }
+    .ob-arr-gap-x:hover { color: var(--text); background: var(--divider); }
+    .ob-arr-gap-btn:hover { filter: brightness(1.06); }
+    .ob-arr-gap-btn:active { transform: scale(0.96); }
     .ob-arr-note { font-size: 0.78rem; color: var(--text-secondary); margin: 0.2rem 0 0.6rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .ob-arr-note em { font-style: normal; color: var(--text-tertiary); }
     .ob-arr-ai {
@@ -2131,7 +2177,6 @@
     .ob-pick-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.12rem; }
     .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
     .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
-    .ob-far-details summary { outline: none; }
     .ob-far-details summary::-webkit-details-marker { color: var(--text-secondary); }
     .indec-swipe-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
     .indec-count-badge { font-size: 0.75rem; font-weight: 700; background: #1a7a6e; color: #fff; border-radius: 999px; padding: 0.22rem 0.7rem; letter-spacing: 0.02em; }
@@ -2173,7 +2218,7 @@
     .indec-btn-no:hover  { transform: scale(1.09); box-shadow: 0 6px 18px rgba(192,57,43,0.18); }
     .indec-btn-yes:hover { transform: scale(1.09); box-shadow: 0 6px 18px rgba(26,122,110,0.28); }
     .indec-btn-no:active, .indec-btn-yes:active { transform: scale(0.95); }
-    .indec-hint { text-align: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; margin-top: 0.5rem; }
+    .indec-hint { text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; }
     .indec-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
     .indec-action {
       font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text);
@@ -2477,7 +2522,7 @@
     </div>
     <!-- Default state -->
     <div id="eatSheetDefault">
-      <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">Pick a random spot for me</button>
+      <button class="eat-sheet-spin-btn" id="eatSpinBtn" type="button">🎲 Pick a random spot for me</button>
       <button class="eat-sheet-indec-btn" id="eatIndecisionBtn" type="button">🃏 Indecision — pick a card</button>
       <button class="eat-sheet-datenight-btn" id="eatPlannerBtn" type="button">🗓️ AI Outing Planner</button>
       <button class="eat-sheet-ob-btn" id="eatOutingBuilderBtn" type="button">🧱 Outing Builder</button>
@@ -3535,7 +3580,7 @@
         { name: 'Royal Boucherie', location: '52 South 2nd St, Old City', cuisine: 'French', price: '$$$', website: 'https://www.royalboucherie.com', reservation: 'https://resy.com/cities/phi/royal-boucherie', desc: 'A hidden upstairs terrace in Old City that doesn’t feel like Philadelphia — oysters and rosé that feel like a mini vacation.', geo: { lat: 39.948711, lon: -75.144117, ph: 'places/ChIJOaE5coXIxokRpQt1kuCvTZs/photos/AVoNoXSszaP0-tMB3YGgNi4UTC0yJjcqWSMBKSG8Yi7YVfYNp_4beICke4EquBrpWYAXuGEiAU-ceZrly7vEBLtrYKHixRGg0B4c1NgZZRJ-GnTF8m70GRJW964zYFUcLdvguIwvVqm-1cUU7ykQWLkipbdB1WawkNIDJxIu9vtEcnAqQw34EaX-pnxOQrCUYXCfWPa2W--TvhdnE7UcHJ2oYLTP8RNupN49qTLNNIW3klF2GzdgIUC1sui7-wLFrK5US4tn1IKxsJ5riwfbnOoJYmMf0GuZswu-eblrTKHNfJgzONnUEtKs9_01E_zeQOWgycrjfITBc6hzY9kOfjT_pSnB58c_L3RbxfHZ1yfJwILl7A5CLGyApjFd8xUaNHg1KdbozvtDVA7Hk44hrjGGsaUWH_YzFfIhKDNhKDC7c7w' } },
         { name: 'El Chingon Fishtown', location: '1431 Frankford Ave, Fishtown', cuisine: 'Mexican', price: '$$', website: 'https://www.elchingonphilly.com', reservation: 'https://resy.com/cities/phi/el-chingon-fishtown', desc: 'The casual, summery Fishtown offshoot of chef Carlos Aparicio’s award-winning spot, with an outdoor “Jardin de Agave” and its own bar.', geo: { lat: 39.973097, lon: -75.133753, ph: 'places/ChIJL1aTewPJxokRqbRjTSYxMAM/photos/AVoNoXRwN-egGqG9-Jcp5MiJn1Yozl9Obi3_zyjP2WLyCrO6N9Qk0cppGuAo2l-qbhx7K8hOvP3Q5oa1BIZ6Qlu81fwL6-H8sKoyqO8fG1UNgZMfoyGWeWoZTkOBgJStZiwQmlSFo0YGOMk8DGlXPTncvQoebk_-II7zB8Mu7MRSL2bKtuebWsPhhXmnL3OWFHSungjskAgdIn4DA4r5Xo0-CcZY_ypYxqHOKIfhGmoMUO-yOIcD3zi91e_JbypIjX7RkTwLTluezZ1J1XN5UAtjnkShAuTPE_n0JXMlZvMNwAdihNHr1Mif-J_jc2Iqno_0KUzIR-HtZTNQBSvvDionrEi_for-3e_8f16FbekXPhI_ImaNi1yWuXEIVe2X3zDxiB41LUNAKg6Z4rp6zsEyGEZCbgZco0eg2WX_AGZKEZTg2ZvbHZKQ-56W72leA1OJ' } },
         { name: "Wm. Mulherin's Sons", location: '1355 North Front St, Fishtown', cuisine: 'Italian & Wood-Fired Pizza', price: '$$$', website: 'https://www.wmmulherinssons.com', reservation: 'https://resy.com/cities/phi/wm-mulherin-s-sons', desc: 'A dreamy outdoor dining spot with plants, twinkle lights, and picnic tables, serving spritzes and wood-fired pizzas.', geo: { lat: 39.97171, lon: -75.135056, ph: 'places/ChIJ16gEx2vIxokRpFQKJwJWOZQ/photos/AVoNoXTrwHVWKW-7COVNGUN7FeqDWoc9VKyIoJHiRYf2Kh7au7gC25uQlOxb-06tjGRpL7Aobh9nAWOl4k6GtN8JSUQr3HiD93ZLidMtVxU5L4qZqf0zQcqwWZ-pVCh_u1b8577z09kCDFn-7sP9Z5Y8sOD9DJClKtCSXc52hPhBpe2W6VjgbR87QtJH0ZT7xIUunHNg4jmsZA_8ilawoxOoS9nfEv7kvA8oq4YMcwuJQTq9f6mjrjBt3QKMhJ65q6IXR3ccPjEGaa6k4v1k4AB6633cAHf2sZiOdJg5hKcFLt-3oZvl75jbhZsmzw3RhZN8ELIowhh4WU_rAIua4djWBlcJt-KLq9wOBG0vND7U4JFsBVrwUzv9YK_x9HHoHQq-od0j30vJavx4NFtU5yUFkL6RCgTdcI7Kygaefjp8nT8' } },
-        { name: 'Front Street Cafe', location: '1253 North Front St, Fishtown', cuisine: 'All-Day Cafe', price: '$$', website: 'https://www.frontstreetcafe.net', desc: 'Fishtown’s all-day cafe with a tucked-away back garden and an outdoor bar — perfect for day-drinking.', geo: { lat: 39.970232, lon: -75.135699, ph: 'places/ChIJXTNZXGnIxokRv7-nfbIT1-I/photos/AVoNoXSS-yffO7-uUWAFU1PRsNR5p4xsO78Jmk8D-VA6x-WrObEf1aCl8vF5hvFcsB9KZGeq-VWD_7xqn0CwBZIuoCMODcECUH5K_nCU7DO8oJW2iT2fCf9AEy8lnoqTO2L4L7o_znYYop8QZv8ns-6_XBiF4Mjwxwqu13jnXF476Pnv9czSoHGiGzBzMV64zR8Eg0YarysyXe4uDAjzuJet2L4bi6mxAdDhhgCZDdgBh2Xke7qwTa27Vmgxka3ZZ1nuzmD7ufluwvWZeezRmKL3EYNGhLCowvy_CmZJu4h0e407KCX6DXKf-enEqTr_-g8ZHzkAaD_cQgvm7Yl-CqRxLBd922uy312-WgE2UR9k4DsPfzqwnvNt2TN8B7yr3WpHxTkHvtV4UUEjxhrf8t7Zv3RNS66PO2pk4MNqYgVHzFeJLQ' } },
+        { name: 'Front Street Cafe', location: '1253 North Front St, Fishtown', cuisine: 'All-Day Cafe', tags: ['cafe'], price: '$$', website: 'https://www.frontstreetcafe.net', desc: 'Fishtown’s all-day cafe with a tucked-away back garden and an outdoor bar — perfect for day-drinking.', geo: { lat: 39.970232, lon: -75.135699, ph: 'places/ChIJXTNZXGnIxokRv7-nfbIT1-I/photos/AVoNoXSS-yffO7-uUWAFU1PRsNR5p4xsO78Jmk8D-VA6x-WrObEf1aCl8vF5hvFcsB9KZGeq-VWD_7xqn0CwBZIuoCMODcECUH5K_nCU7DO8oJW2iT2fCf9AEy8lnoqTO2L4L7o_znYYop8QZv8ns-6_XBiF4Mjwxwqu13jnXF476Pnv9czSoHGiGzBzMV64zR8Eg0YarysyXe4uDAjzuJet2L4bi6mxAdDhhgCZDdgBh2Xke7qwTa27Vmgxka3ZZ1nuzmD7ufluwvWZeezRmKL3EYNGhLCowvy_CmZJu4h0e407KCX6DXKf-enEqTr_-g8ZHzkAaD_cQgvm7Yl-CqRxLBd922uy312-WgE2UR9k4DsPfzqwnvNt2TN8B7yr3WpHxTkHvtV4UUEjxhrf8t7Zv3RNS66PO2pk4MNqYgVHzFeJLQ' } },
         { name: 'Suraya', location: '1528 Frankford Ave, Fishtown', cuisine: 'Lebanese', price: '$$$', website: 'https://surayaphilly.com', reservation: 'https://resy.com/cities/phi/suraya', desc: 'A beautiful 5,000-sq-ft Levantine courtyard framed by Persian ironwood trees, with its own bar so the cocktails keep flowing.', geo: { lat: 39.973713, lon: -75.133928, ph: 'places/ChIJww__4mrIxokRiwIwVq26cxI/photos/AVoNoXSl2LYcRxzPHuk8AqAbMC0UVxCADPN3VzMaBwqW_KaiFlE2HHjZSQNbjSQMcRNNoUv8OHUbCMBRJnCE4t6M5RuA3FzxC19EtKQn4FQHQnUagrpX4GKH4b0IT1IsSztyAPsL6cJ0l57421M9cwRIC7OpkZSkqeOopbh2QIH3lI_zzSOGc9lLuRSFVEzgkTrxHzbskGlQp84cxK66gmndZIecju2WmHOL61fvkMsxBV3M8wyfkMuWv1dQa_kXsndeJtssYx_VPdgPOTM7LGx6WZN98G7BWVSxDsLWikjEgS6lKANbnMMY4UgsYV7IVk6qV08N4fe4u5oEbrUdXRwD2O800flIhO9B2E4N5B1JxyFGaixL44M7jeZsB404mtGwmJjovnlpb3I6cdcX0i_LQbC9zMcMduc1-1bnOshVpcE-RLfC' } },
         { name: 'Sor Ynéz', location: '1800 North American St, Kensington', cuisine: 'Mexican', price: '$$', website: 'https://www.sorynezmexicankitchen.com', reservation: 'https://www.exploretock.com/sorynez', desc: 'Laidback Kensington Mexican spot with a cute enclosed patio and a working garden that flavors the dishes. Bonus: lots of free parking.' },
         { name: 'Le Virtù', location: '1927 East Passyunk Ave', cuisine: 'Italian (Abruzzo)', price: '$$$', website: 'https://www.levirtu.com', reservation: 'https://resy.com/cities/phi/le-virtu', desc: 'Elegant East Passyunk Abruzzese spot with an ample, partially covered patio, homemade pastas, an antipasti board, and an olive-oil martini.', geo: { lat: 39.925988, lon: -75.167836, ph: 'places/ChIJtaDAFQ_GxokReejnTfRLY94/photos/AVoNoXQE7mpleT3YFRkC_xlt8NviXZiGshwHFt7Hy-lElVzujbhzGKNEo6hzWmJzN5FsucJxyAeIKrIMWO3hG3Tyu8IshMopkdInO4PqBWkBgJXABKofW7wN0MgG7cG-M16MRlmTUaRGn_Q1ESklBGjIw9uk1X9lNaRJpEG6nEPiEeWnlEcya5w6RR5bNvANCqFAuBHb-ugyx3VVv0gDbgIqF2Sc_nLtGgBMcbYkusXKr-_q4nruaHI_lCRoMu7s5vP5XQysJljpc4F49Uy4SEWBRx2naGTXwPf22y49a9xSnOZNT9_ugcFodwIUxWOAO4kBjB0Cx7Op8jSa8NtK16LxLW1xXMrLc5-H83eZ9O7HHuvhksO0xESD96GXG602wnfnuD7JOn1R5DcxT3LcIXYtjv5tMWpf-UxHM8U6dEK9TO-8wTNcW7sTY4Jx09Y7Sw' } },
@@ -6106,7 +6151,7 @@
     { name: "Honey's Sit 'n Eat", location: '800 N 4th St, Philadelphia, PA 19123', cuisine: 'Jewish-Southern', price: '$$', website: 'http://honeysphilly.com', desc: 'Jewish deli meets Southern American — matzo ball soup, latkes, challah French toast, and shrimp and grits on the same menu. A Northern Liberties classic.', tags: ['breakfast'], geo: { lat: 39.963866, lon: -75.14448, ph: 'places/ChIJf0FsGXvIxokRPY5rQTmTMJA/photos/AVoNoXS24tedZBFdOBxNTfJts2g90cuOSVhnMK1WL-kk5dmu-3XfRjLFFWWV6rCV3fTqiceRS73w3GWR1n2zQDnDhJOTtb24b35JuizwTEz55TghEMW79bEMR0L9z7Tsr7WfZPqcyPCnQ4AHujR_G7RpDxIBu_4tTbaeLlnmFWEja-U1QCEBZ2QLDh8hrbAj7E7sc35moqdXX6cdg6DbobWmxCDPlYMWHkFZmdhTylxuuLiq1vm73YzFQZBSzDchES17klHM6chUF-Fa8IeQP5usvtfzCE8m-5CoD1wfDehuwzrU-cLPP3WMbCdHVnz35GVWabRdtxuVRCXHRJtdO4C4XSbH4srhtniiAEVNVwC9X3OjSPy6UFUoFomaUpoSqO4dOnVLDbZOiVMQMICxr6qFETK4Ra-Y0yigJGDjUmiUlg0Mcw' } },
     { name: 'Green Eggs Cafe', location: '1301 Locust St, Philadelphia', cuisine: 'New American Brunch', price: '$$', website: 'https://www.greeneggscafe.com', desc: 'Playful, creative brunch with multiple Philly locations. Long waits, worth it — pumpkin pancakes, crab cake Benedicts, and the best fried chicken and waffles in town.', tags: ['breakfast'] },
     { name: "Sabrina's Cafe", location: '1804 Callowhill St, Art Museum', cuisine: 'New American Brunch', price: '$$', website: 'http://www.sabrinascafe.com/', reservation: 'https://www.exploretock.com/sabrinascafe', desc: 'Philly brunch institution across several locations — overstuffed Benedicts, stuffed French toast, and a warm family-run vibe. The Art Museum location is the original.', tags: ['breakfast'], geo: { lat: 39.960251, lon: -75.168709, ph: 'places/ChIJxV6oLs3HxokRAzDNE-V7_pQ/photos/AVoNoXRUkFnmQT1tSwl9yCBNjEdd7rbKe21Tafpt2RRJ_AWWLf6wlNK4I0W4sL4dWRPatx7EgLYLNt1NWYfqeB33WtF0ynK3l1h8Dkce8glVBpQCahj2t_HiWVCTCMhMT7ETw7QU-7L2R1JRLccYgAKpBaEpjg1bVk_WXFMhxGfhwPsB4COfdLWz0mduGZXrwQzZ4nKtPlHb5fqBCIRy-3L8lRWI93gOE8RBv9r8VTrh8iJyb9qgXu88Pw5O9yMpfzl6uwC-o98WPMW02tVJc9iDGU7tt1F-oXY8bIE3lG14uZy5UAHOhveaDrQ5xEP-L9a70O4gpfDCDTPfBp19PdTwCPlArP0mQGKf5iKBA3jOaZ8BSKGYarFfAOmhnfStfRM6f7VU4DRnda2z9sg-dVWPU-80FqQwd6KxUAyQaUlKbNY9Tmh-MyxmK_0hGbuZzw' } },
-    { name: 'Ants Pants Café', location: '2212 South St, Philadelphia, PA 19146', cuisine: 'Australian Café', price: '$$', website: 'https://antspantscafe.com/', desc: 'Australian-style breakfast done right since 2004 — flat whites, smashed avo, and a rotating hash that is always excellent. Low-key, dog-friendly patio in good weather.', tags: ['breakfast'] },
+    { name: 'Ants Pants Café', location: '2212 South St, Philadelphia, PA 19146', cuisine: 'Australian Café', price: '$$', website: 'https://antspantscafe.com/', desc: 'Australian-style breakfast done right since 2004 — flat whites, smashed avo, and a rotating hash that is always excellent. Low-key, dog-friendly patio in good weather.', tags: ['cafe', 'breakfast'] },
     { name: 'Cafe Lift', location: '1124 Spring Garden St, Philadelphia, PA 19123', cuisine: 'New American Brunch', price: '$$', website: 'http://www.cafelift.com/', desc: "All-day brunch in an airy industrial space. Olivia's Big Pancake (massive malted buttermilk with honey butter) is the move, alongside solid Eggs Benedict and a good boozy brunch cocktail.", tags: ['breakfast'], geo: { lat: 39.961565, lon: -75.157135, ph: 'places/ChIJPUNfmtTHxokRir8bf3A7X1w/photos/AVoNoXRWC-Wm2P0LQSwWHeDluWsHfrxLKAXXTgXhoviEO19ZxdOlJ9NYGa0O8qnocTfjUvg79OXAjodr_KsN71USIH136R_GvaGxebCYXV_1EVWxfVlJ4Ty92eV8K3tZk0mqKHC2CFB0LnherVgL9I5Ng2kwQCxfyBetBVG1EEG2JTgG8tbAS8FXa5LtoTC68dagXCtDV55eHt2vBo8kiQT-VDyCDPwaF9gR_rjpIfWl_4ukctW-DMK_XENi7E7ZYCCgoG1MgKGOCUd68aYHpqLIcB8wsSf36Gc2DW9KpAGpYFCqy-cgW58qHHLGjALcakTunc77ChyrbM-OvzjC0j5SoB3gRLAhBT3lQxNYm53kkk0BfzVjpKHPmzli4-jqGzAkSHzG1koOReSYGQcmmqxzJIsXfX2RPgSREij6JCmF6Dl2xQ8' } },
 
     // ── Quick, casual & fast-casual lunch ──
@@ -6119,8 +6164,8 @@
     { name: 'Reap Mini Mart', location: '1325 Frankford Ave, Fishtown', cuisine: 'Plant-Based', price: '$', website: 'http://reapwellness.com/', desc: "Plant-based glow bowls — basically not-boring salads — that will keep you well-fed. Great for those who can't be bothered with meal prep.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.970987, lon: -75.134277, ph: 'places/ChIJOa-M2sjJxokRbwX6pIknLWM/photos/AVoNoXR0I0rqCEQZZcFnY0hAb273zy5cCTIQhhipL5ur4EPp-XxkmUgFxiXePwmNKgfAdRVh2p9jPeObis1NGV0ARLDm-EI_TmuKd-QykzsTJxpza2d39VPxG30_tbaO_Y0V_09kgGUEWmaBeAQUBmdjFrrFwE80mJx2lhMq7AJMZwzD2wQ4Z8zH1FLCjrrUSZkpWGhfuTKDEIfrPG9Evl8xhOGAtFfvmFlDxdnfi6nROHPwrp7Z6Lyzd4jvcB9AfHXMMvG5f58-aalX34gN2_vdUOBEqHGtZqr0cMt9AcbdYADYBjYcOEfoktbTabqYDOqSo2Lg3gBcUXC1mTOeuWTZ78As7ndZXm-aIpkXD35OQbXwaK89YMdH-bcFUlxOIN-eP_BwwHN1Jl2eD8g7W3WJDBSlvpg0tRGywnbWYIfFVL2WDIfm' } },
     { name: 'Liberty Kitchen PHL', location: '1400 N Front St, Philadelphia, PA 19122', cuisine: 'Hoagies', price: '$', website: 'http://www.libertykitchenphl.com/', desc: "A hulking hoagie stuffed with hot capicola, roasted eggplant and fresh mozzarella. Maybe it's Friday and productivity isn't so important.", tags: ['lunch', 'cheap-eats'], geo: { lat: 39.972033, lon: -75.135421, ph: 'places/ChIJm66zTvnJxokR7JBLBewUZ40/photos/AVoNoXTg16M0bGpfnp38j2G6-5oWtL-SxwMBOhefdi5TxfT8W2OgnngL3W8bGoyv_3dVBRBh9ugdSUORNxQLGWS3Pc6UnibmwcRvorYlm_Pte93sNyqkNBHtmGYYSHfHVfJMIKRXqCJSTqSGkxLEh7DxU6qy8ExlQjNaTEg2FFkn-RVHq_xqY4CWRcW-NfpKOzw5zx8x7WBpMP3lubOVNhemKur0RjrHHkxbBc86V4sQoIoSnFbdquXNOr3flBFNzh38iJogd0oEhpTkY0F-qJV_X-ZBjyHOJKBEdCjoGUtUoLFwWEJXowB3MgnKnLHwDGylV34FLKh-T96RsW2vJRUebRcJubezZ4exEwJ4Q7wetTAtAgWfuVCx3TQ2l08kUeg2Yq8fWaUGH9inH_byjlk6itlf8pk3Dd1EpUwCO7TYhFfM4w' } },
     { name: 'Stargazy', location: '1838 Passyunk Ave, Philadelphia', cuisine: 'British Pies', price: '$', website: 'https://www.stargazywastaken.com/', desc: 'Sam Jacobson makes British-style meat pies out of this small East Passyunk storefront. Get a savory pie with mash and parsley liquor, or grab a sausage roll for your walk back.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.926781, lon: -75.167354, ph: 'places/ChIJoZYFdA_GxokRix-Wdpw7nO4/photos/AVoNoXQ86N8YihBwN7HUGxUAMNUdlcBoy2ef6NtAVSe6vlklLqfCyj-7uOaG1HwMxTm-N2syJKS8Uwt9bx-QSLc2p9E3F4FmFo_OnZUx0Ylwl3NuDqZMDrRFKhf-ZxGzrZH7vvd5k9QZ3J4sK40kCYthCfI-aqKRZ-Z5gEc-6twprXndRkm_M02i8TucynIJ3XNeUciMKodT_BZ2FUenuvtq4ymccJwcrwzQsi_vYmFYowThbgD9Y-JvOG9Wcrt6cAy7oP8oU064N9n_lwiuW6uz2JAjruL8lmuGJjSjRrnnobeb1OZSVouCwoCmwcO6ZZyN4lQLRxOocsqOESuTmSbvwAtXzo9Nt9QdgZb6v2vNeG-luFmT7u31h5cpgfPSAwECa5KhlXccgDDfXnzHXsMkSrYYvcTfYT-NKxjuO7VrH5E' } },
-    { name: 'Gilda', location: '300 E Girard Ave, Philadelphia, PA 19125', cuisine: 'Portuguese Café', price: '$', website: 'http://gildaphilly.com/', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich.", tags: ['lunch', 'cheap-eats', 'picnic'], geo: { lat: 39.969594, lon: -75.131551, ph: 'places/ChIJp8QWF0jJxokRchGZ5KcNzKQ/photos/AVoNoXSmep_f2QnoMHB09g-OY8OCO49rx451VeXz9pu-2rQV9WcNjAsF3dRlZOdN-hgmRVcVVzaSrxPDPVQ4uQ0azkqGZaPYHbmWkRVd_1yTOQYtl1QKCJ0His_wcQlkSqk5v2-rVj153L7li3aLAab_F8aoATOzweMTTALY1j-D81bpOWxc-UZ1DU-6yQVJWC6iZteLuvBWYZ93fbuQD4uyg72DHdFwTBtjGvNkr4LtHAiENazmbNLarwU72vOLhdKg4FtIRacjV2Ih8czEe0TCfq0y0Uz59-p8AWfj_vI8IXdFJRT2YbKS-dJxK_ztuJyiuU4JkDPFP3bw5tGyBeLL19v7JLkAZQiYz1cyFA9liG5FT9wVq0BfQSMPqUETm6dhODk4jUPCt4oxpbAf1AzPDlzRh3gZbSBs6pCF2bz_Jmto5bkD92iedA6ht9dPgQ' } },
-    { name: 'Paffuto', location: '1009 S 8th St, Philadelphia, PA 19147', cuisine: 'Italian Café', price: '$', website: 'https://www.paffutophl.com/', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.936848, lon: -75.156488, ph: 'places/ChIJi8N5IoHHxokRWKWtl8SjHWs/photos/AVoNoXQz4bcBcg_iNDqffkZ1LhmlNd6KvPIXTUjsMcwVuGN88eze7Huz4JKHnzUKN_mMPxYQ6sEsbYmJnlDN47vLxZBq4AcdEXuK7yVlXypNjicpFNeeLjUvG01Rs57hwukYOOoX9nYMwOOz6c4Q-gYBlU7UjbyPe94wYMqQ7fKJnFTlxqfup5B2Y-gRsO1h9aLnw1oDpTPKlHdSfzbgwK5GjeCFOr6Rucacdwh81SO_VfPvRx-JCJNh5ykSI1970WObYTEYqlTURt6DZh-ezS6UA3nY4hABcyD-HBLAH46-6HQWZUaSlPk83RDjKECGmg0ChmH9nvxtAiZx0u7BcKplVxmePoSeHlER5gJMdltDpJn_SgjdPbT9aUzmGwHEb74xwN43mICU2CzzlnLOkEjPTYFq0hyRrnEFfssYYXkGH7ht4g' } },
+    { name: 'Gilda', location: '300 E Girard Ave, Philadelphia, PA 19125', cuisine: 'Portuguese Café', price: '$', website: 'http://gildaphilly.com/', desc: "Brian Mattera's Portuguese cafe is the coolest place to be in Fishtown on weekdays. Bring your laptop and work through the menu, from potato, kale and sausage soup to a hearty pork cutlet sandwich.", tags: ['cafe', 'lunch', 'cheap-eats', 'picnic'], geo: { lat: 39.969594, lon: -75.131551, ph: 'places/ChIJp8QWF0jJxokRchGZ5KcNzKQ/photos/AVoNoXSmep_f2QnoMHB09g-OY8OCO49rx451VeXz9pu-2rQV9WcNjAsF3dRlZOdN-hgmRVcVVzaSrxPDPVQ4uQ0azkqGZaPYHbmWkRVd_1yTOQYtl1QKCJ0His_wcQlkSqk5v2-rVj153L7li3aLAab_F8aoATOzweMTTALY1j-D81bpOWxc-UZ1DU-6yQVJWC6iZteLuvBWYZ93fbuQD4uyg72DHdFwTBtjGvNkr4LtHAiENazmbNLarwU72vOLhdKg4FtIRacjV2Ih8czEe0TCfq0y0Uz59-p8AWfj_vI8IXdFJRT2YbKS-dJxK_ztuJyiuU4JkDPFP3bw5tGyBeLL19v7JLkAZQiYz1cyFA9liG5FT9wVq0BfQSMPqUETm6dhODk4jUPCt4oxpbAf1AzPDlzRh3gZbSBs6pCF2bz_Jmto5bkD92iedA6ht9dPgQ' } },
+    { name: 'Paffuto', location: '1009 S 8th St, Philadelphia, PA 19147', cuisine: 'Italian Café', price: '$', website: 'https://www.paffutophl.com/', desc: 'Three chefs opened this Italian-inspired cafe after top kitchens around town. A must-visit for hefty sandwiches and dough-based treats — panzerotti and maritozzi (cream-and-jam-filled brioche).', tags: ['cafe', 'lunch', 'cheap-eats'], geo: { lat: 39.936848, lon: -75.156488, ph: 'places/ChIJi8N5IoHHxokRWKWtl8SjHWs/photos/AVoNoXQz4bcBcg_iNDqffkZ1LhmlNd6KvPIXTUjsMcwVuGN88eze7Huz4JKHnzUKN_mMPxYQ6sEsbYmJnlDN47vLxZBq4AcdEXuK7yVlXypNjicpFNeeLjUvG01Rs57hwukYOOoX9nYMwOOz6c4Q-gYBlU7UjbyPe94wYMqQ7fKJnFTlxqfup5B2Y-gRsO1h9aLnw1oDpTPKlHdSfzbgwK5GjeCFOr6Rucacdwh81SO_VfPvRx-JCJNh5ykSI1970WObYTEYqlTURt6DZh-ezS6UA3nY4hABcyD-HBLAH46-6HQWZUaSlPk83RDjKECGmg0ChmH9nvxtAiZx0u7BcKplVxmePoSeHlER5gJMdltDpJn_SgjdPbT9aUzmGwHEb74xwN43mICU2CzzlnLOkEjPTYFq0hyRrnEFfssYYXkGH7ht4g' } },
     { name: "Schlesinger's", location: '1521 Locust St, Philadelphia', cuisine: 'Jewish Deli', price: '$$', website: 'http://www.schlesingersdeli.com/', desc: 'Sometimes you need a gigantic pastrami on rye or a bowl of matzo ball soup. For those times, this is your spot.', tags: ['lunch'], geo: { lat: 39.948777, lon: -75.167192, ph: 'places/ChIJt5BHIDLGxokR_Qs88HLiAmM/photos/AVoNoXRn1CWNt0CIQIndNONx9ppOlU6rXfNv_pvDlivJYYaImEXxIrOk8zY9FcES1_URS8tf1CDnKIpRIXB7_4NHJCh-Rb92_UhvgjLD90z2IaHCwQwcs170F5CASSsTe9vjW_MIMwOEa2WEPUW3iDjV9hIJ7WCpbHs-jaAFl6Xyh6v-4WagRDcOuIOioW70-i70oqtDwWtgmv7h8g49AG5t34l6aBhoyiulMI0qgrdDqa2e-u7gCWVJa_kwKRGHu44hc8yqPW3HYFVU3tV19kGw2-_IjRwdXMVlTKS0HvnBh4fo29IokvF76L63wjmLi1eqJPTI6zV-BSwqKgE8oL0Kj597ZvxdzST13OojgWsrGSCd7NChXkIInPEeLAW-frjAim6y1NLZm5CHtq_1is-xPtQ6uwgDBRo_0y_eDafQ2zOTzCA' } },
     { name: 'Huda', location: '32 S 18th St, Philadelphia, PA 19103', cuisine: 'Sandwiches', price: '$', website: 'http://www.hudaphl.com/', desc: 'All sandwiches come on house-baked milk-bread buns. The standout: a fried mushroom sandwich like a fancy Mexican torta with a huge, crispy hunk of maitake mushroom.', tags: ['lunch', 'cheap-eats'], geo: { lat: 39.952158, lon: -75.170464, ph: 'places/ChIJl375cgDHxokRqPDOzYGqAC0/photos/AVoNoXR2fGZ9eLO4fx_GcnmLSdFja0KgfpgkSQxjn-J61o90k1_zRVpoFxMO1_z1YHypvQQ-enWCwEQH1zJpbBflA2AgFCHQrQds0RN_GkWrm_Q-6HPyzwqWmOhvR4Le73YFJIJ89o-6vKJkYLkIew-WZUg4yTSLzlvJttN7U2i62AlrYCIgg-LL11qYu0HWT_r2MEfENwfYIhHFdc83SGYu7ybhiEowe81FX6TuKdvVVVjoBExrr2_x_90aKsEE_q2XcUo139khz8ovHeJAuYpwTteuSVyyjblq9jlbo4U5GDmvRdH9qfUUEGSnJFZqKzc1Wz7jhlpC77BPEdxlC1czn7rXn67x8LJHIArD6PDnrBSpXSKTOvp_AZopEf3nneuyyyg19m4SRTxpGbEzv8bEdTDRmbiLvNR0KsgX6JNZV1jEXH3c' } },
     { name: 'Ocean Harbor', location: '1023 Race St, Philadelphia, PA 19107', cuisine: 'Dim Sum', price: '$$', website: 'http://www.ocean-harbor.com/', desc: 'Cart-style dim sum, served Sundays only. Count us in.', tags: ['lunch'], days: ['Sunday'], season: 'Dim sum Sundays only', geo: { lat: 39.955666, lon: -75.156812, ph: 'places/ChIJq9ZHVyrGxokRWi39t4yVIYo/photos/AVoNoXT2HkdA0hjczBTYnUacuhsItQFzoYzfpRFDSU1X0JgULfkwDWW-HylbymLqm8dCwOSx2m0kXCWVfskJ6kMQnrStw4adGMNW1TS0XXlGWUrwZUs2W6qG5qX1Zi6GQHSicF5zimhIVqbxdapUQiDsfY9K2NKTGCv1GY6UCBnN773_x7OKUdu0U4WuemF1legkVu0R8zLNzLebTh-GyrEE-b-x844McGa02MHdze-EeUiVN436BebXkEfyISW7Im29dxWgeKl7SZhKCMy__OTKLcvl15kpe8b7g2Rt_2MX6WYuYb0sFzjOQT0OfjXqkGdUKGElPrYQolkcDWhPLJWxzr-xp9BinWlc7Tp1-dG2SeXa9MrZfN0Cxce_ml_6k8B5rqrJCb6jpciB09caSkS4Pxgeq6mQFt9srds6Zc0fMrGCP7Ag' } },
@@ -6140,14 +6185,14 @@
 
     // ── Dessert & late-night sweets ──
     { name: "Cuzzy's Ice Cream Parlor", location: '762 S 4th St, Philadelphia, PA 19147', cuisine: 'Ice Cream', price: '$', website: 'https://www.instagram.com/cuzzysicecream', desc: 'Philly Mag Best of Philly winner for ice cream — small-batch rotating flavors like spumoni and cotton candy grape sorbet, with house-made toppings. A Queen Village gem.', tags: ['dessert'], geo: { lat: 39.938797, lon: -75.150037, ph: 'places/ChIJuxSZQz7JxokR8hihP-BCc4I/photos/AVoNoXQbAcODUrP91h6OOTJ2XTyDGXfMTIrSharQXEkTxA5Cgg52T0VSXGs4l6SfFxG-gMZTrW82fsng4x8SK-mMhyZbrmaXWz3Qw9_oOGWTKo7qRLVHF2AUNpG0YOO4HlSg9vnNtl_eiyEpZr_ykAh-Vc0KU1rHs0ymyIGibQr7rn6hqfc8RVLu7qRCjdPNHeUWXHGKeMIYOUD1WTy1P173cbmRWNO-3pmZ4eYMd1MQs9llTXYh0r0cKr1I_f7plO6-FVZwmTGMMWC6H4jJErjAWQG5SuXFKveqAN2ZiH3_6VCiliASCZzTQkZYTrN8vhFJ8UFnLtEqe6i0pTTLRLXJP-zB-I1OqKmLsyvEOEV1CvvsMxlqcLk1xjie_8X97fSZU_AQkWG5VavHLLpJ7O53WH6a6-Og5sHtrwx7UNM7vuJGsClRLFYw94L4jZME7eVK' } },
-    { name: 'A La Mousse', location: '145 N 11th St, Chinatown · 1622 South St, South Street', cuisine: 'Dessert Cafe', price: '$', website: 'http://alamousse.com/', desc: 'A local chain of small-batch bakeries putting a Chinese spin on French and Italian confections — silky crepe cakes in matcha and taro, ultra-thick panna cotta topped with lychee, and aromatic milk teas. Open until midnight on weekends.', tags: ['dessert'], geo: { lat: 39.955168, lon: -75.157309, ph: 'places/ChIJ-58PTSrGxokR_qvFeGvon30/photos/AVoNoXSOn1kyzCA-3AbEEoIMsgnyBXzbwGV0CaANq8_RCYAKOPWBbTRuNEUoCaT_myRBHT6zahfF8UcsawaOoUiJPAgqd6zBN2aIvNBTKC2O7ZxZbs-OYTrGw0W0LNGgGimJNphZAzqJyZZCenQiQj9dqzucUNQv2PgugaulwAympyI2ctpPCv9WV722z_0YDFrafEqZCHl3Z4ore-VwRdb62ERTfPyh6ziNgPSzq5bgXaJlDIdEqywnrXvUt5iyT1RrqsNBkXsWavCJaX53aiN1VMP3oNST9i1azfVgn0k-I89xRmb7HXF7OQhLu1AqomuHUXJvUA605SDwRkPazKHhjH13_l8Dezro8xip8mRcXtvhWtV0HYJlzcXA5uAqT4Hd3TNl9paHS8XJ9gjzZyjSi6brD9kBc5qEH5Zfz5MWUp8e4A' } },
-    { name: 'Cake & Joe', location: '1401 E Moyamensing Ave #3, Philadelphia, PA 19147', cuisine: 'Dessert Cafe', price: '$', website: 'http://www.cakeandjoe.com/', desc: 'A coffee shop, bruncherie, and dessert cafe where French, Japanese, Chinese, and American flavors intertwine — chocolatey mousses, milk bread Benedicts, and riffs on Japanese soft drink Calpis. Co-owned by best friends Sarah Qi and Trista Tang.', tags: ['dessert', 'breakfast'], geo: { lat: 39.930415, lon: -75.149544, ph: 'places/ChIJv5t3hP3JxokRpyBrVsNqgDE/photos/AVoNoXST03XNRPDRNb6FcExbidngzf41doKdxigdMRzOV0m-vch6KsfB1l_sp8c_l99tQOodIYBgUD9aTBe0zv5YSLieKoWV35-UCZ5VvpyBPV7oMCG3Pwvvq5KILWqB4uOLB6Iegxky0fKCMcohapTsUoeCZsQN9yBZ8DssAR9cA5Y8yXdM4d_cSpzdEZd4s12K6onEaDAvw1AqKeDDen0kTznxFwzjHV6kvzKHKvOfQF7lJg6npjQfcGIAkErMQZXftp211iLEH769OqmmCzxyFLiyTuqCbMI-jXb1_o-OZjsU18ehOdpWp0S_yRx0kzBLs1da87Jwo_d2NYVkIEvrAt3f4QQZ2OYK6NytSNScye4Il8N-lL5BcXFGQ8aoyiP7WBUn4P75-kK1c-c0CNoZHFZLw_by39szt_KjIoHMXouX93Ra' } },
+    { name: 'A La Mousse', location: '145 N 11th St, Chinatown · 1622 South St, South Street', cuisine: 'Dessert Cafe', price: '$', website: 'http://alamousse.com/', desc: 'A local chain of small-batch bakeries putting a Chinese spin on French and Italian confections — silky crepe cakes in matcha and taro, ultra-thick panna cotta topped with lychee, and aromatic milk teas. Open until midnight on weekends.', tags: ['cafe', 'dessert'], geo: { lat: 39.955168, lon: -75.157309, ph: 'places/ChIJ-58PTSrGxokR_qvFeGvon30/photos/AVoNoXSOn1kyzCA-3AbEEoIMsgnyBXzbwGV0CaANq8_RCYAKOPWBbTRuNEUoCaT_myRBHT6zahfF8UcsawaOoUiJPAgqd6zBN2aIvNBTKC2O7ZxZbs-OYTrGw0W0LNGgGimJNphZAzqJyZZCenQiQj9dqzucUNQv2PgugaulwAympyI2ctpPCv9WV722z_0YDFrafEqZCHl3Z4ore-VwRdb62ERTfPyh6ziNgPSzq5bgXaJlDIdEqywnrXvUt5iyT1RrqsNBkXsWavCJaX53aiN1VMP3oNST9i1azfVgn0k-I89xRmb7HXF7OQhLu1AqomuHUXJvUA605SDwRkPazKHhjH13_l8Dezro8xip8mRcXtvhWtV0HYJlzcXA5uAqT4Hd3TNl9paHS8XJ9gjzZyjSi6brD9kBc5qEH5Zfz5MWUp8e4A' } },
+    { name: 'Cake & Joe', location: '1401 E Moyamensing Ave #3, Philadelphia, PA 19147', cuisine: 'Dessert Cafe', price: '$', website: 'http://www.cakeandjoe.com/', desc: 'A coffee shop, bruncherie, and dessert cafe where French, Japanese, Chinese, and American flavors intertwine — chocolatey mousses, milk bread Benedicts, and riffs on Japanese soft drink Calpis. Co-owned by best friends Sarah Qi and Trista Tang.', tags: ['cafe', 'dessert', 'breakfast'], geo: { lat: 39.930415, lon: -75.149544, ph: 'places/ChIJv5t3hP3JxokRpyBrVsNqgDE/photos/AVoNoXST03XNRPDRNb6FcExbidngzf41doKdxigdMRzOV0m-vch6KsfB1l_sp8c_l99tQOodIYBgUD9aTBe0zv5YSLieKoWV35-UCZ5VvpyBPV7oMCG3Pwvvq5KILWqB4uOLB6Iegxky0fKCMcohapTsUoeCZsQN9yBZ8DssAR9cA5Y8yXdM4d_cSpzdEZd4s12K6onEaDAvw1AqKeDDen0kTznxFwzjHV6kvzKHKvOfQF7lJg6npjQfcGIAkErMQZXftp211iLEH769OqmmCzxyFLiyTuqCbMI-jXb1_o-OZjsU18ehOdpWp0S_yRx0kzBLs1da87Jwo_d2NYVkIEvrAt3f4QQZ2OYK6NytSNScye4Il8N-lL5BcXFGQ8aoyiP7WBUn4P75-kK1c-c0CNoZHFZLw_by39szt_KjIoHMXouX93Ra' } },
     { name: 'Kouklet & Tanda Brazilian Bakehouse', location: '1647 Passyunk Ave, Philadelphia, PA 19148', cuisine: 'Brazilian Bakery', price: '$', website: 'https://www.kouklet.com/', desc: "Baker/owner Mardhory Cepedas's all-day bakery showcasing the diversity of Brazilian cuisine — bolos (cake rolls), sonhos, brigadeiros, and trifle pastries. Warm breakfast pastries in the morning, more elaborate sweets in the evening.", tags: ['dessert', 'breakfast'], geo: { lat: 39.92899, lon: -75.164338, ph: 'places/ChIJw-G6WCm3xokRitleP4fjT7k/photos/AVoNoXSaKrlVL3dmcraFV4SHOs2X3xsp-4ZVNdffrtdCDp3-ifnVUUoN_Lnc3S028JSR2w3OIjHBPr7RCavYKZkwPY9ihbAQN-oyNPD4ceF2dg1D12NX4joQ81Sh59-yiKeLrQmLOu_5jhNm_dKRNW1Qvnz5HSwPv1EI8tLtbsnZ3t9TROmJxHCqSUBqIwNrVjqzeOQ0pbDkLClq88WDYj5hAQZxmzEgQoUTaOR2Xe0PmEOSjZGH4UX3cGNna5wnQrRo3-Md64Aps1hzaqBi86jagHa8g7TYPDb9PnF2hKixcEmwmygY6gaLQoB9iBOxpcPCtPBYUr_7M8ytu5l7WPrtuWbeOIlEnttaV9kX7gN2dLTWmEbyYTMRT3halRZfq0NIyVuDFtOvRC8AQn9L9RCvRNMTwRisyH10kiUYE-LTGcFXYnd9XJ8k3A8gjGtIpQKX' } },
     { name: 'Mango Mango Dessert', location: '1013 Cherry St, Philadelphia', cuisine: 'Dessert Cafe', price: '$', website: 'http://mangomangodessert.com/', desc: 'NYC-based chain best known for mango sago — a Southeast Asian take on tapioca topped with fresh mango and sweet jellies. Also serves oversized cream puffs, waffle ice cream sandwiches, and classic sundaes. Open until 11pm daily.', tags: ['dessert'], geo: { lat: 39.954623, lon: -75.156606, ph: 'places/ChIJD8aWRyrGxokRe8c8QLqrZ2I/photos/AVoNoXQTy0JvEUy_1pH0ZtvLBKk8FXU_boFeOdCMxDL4XY5z9aPAMi4DmWZTMvZrJKU6k4AeR6lNbYEnti3fCLqAbgDvTf1VEIuBQiAR067kLa7HbOPWc2d-jcLKlAQxYO4Is-4L-vuTjhMlIx1cjbHz3AiolELOqav9VJhti1nbXLNeMoB_WXvixNqhxNG2MSsecLZ9DLq_i78-Ew5EZ3TG1-a6aq3NSSZcUZ7gosG0MZrwak9FZ7yVkGscK7LbiRG8sYg1g4yhjNgyhlqgQFj1T8YE-NOngIzsGGj7PyhTjd_J_4WKnAe_EJ8Y9Rcmm-X3U-dg2ToYIBMABHcjR85hztuKnp74utg_7zkQuIiqw7qG5M_A6ZZ-564FSzozKcMUW_AOxKiL_PUUCZMlTw-rWuMjoZRcj-IXV3FA0KfNtX_9thpf' } },
-    { name: 'Matcha Cafe Maiko', location: '923 Race St, Philadelphia', cuisine: 'Dessert Cafe', price: '$', website: 'https://www.matchacafe-maiko.com/eng/', desc: "Philly's first matcha-dedicated storefront — matcha soft serve coalesces into a perfect swirl atop shaved ice and chiffon cake parfaits, or sinks into rich floats. Open until 10pm weekends.", tags: ['dessert'], geo: { lat: 39.955499, lon: -75.155126, ph: 'places/ChIJs-QeBbfHxokRWBSPk1VJvSA/photos/AVoNoXTs5C7DCH59_ATUVenEvKFkAe2TRYX_P5MDSiwDXInD5kb7D4GqjjO-10TdboOfDwbGPaVtIb7pQinT50ysWP2G4JFH_yxHpwSevSh7moBC8CdnQEYUD0dLIJvanZHRTlnJqRmxPkphggxMpFrBa1OCHZLmj9z7554Lucia3rjL90HCdxI-yw25Mgt9llQjuMpb-X2CeI6P7geL9LrkzpKHLG20-qAnToFl4nnVpuNrKWxTezkiFZi-YaYgDfOHOcbLR5terva6R6nGWP32CL1cpTUgcEzWZQY7xc8u3uOsCDpqxahr_SHR4JyBzcDUlf2Juk3f5euzb17EhjTiOPCXcredyZtf3SmT4aq3TOj9R5RsR6l0FyE4Ct9BQ-5_wwzdpUtUNVMEEX0zx6y9HEDrwBzl9ABdURQtFv3xHsBHONncE0Ys80zmKu_mkg' } },
+    { name: 'Matcha Cafe Maiko', location: '923 Race St, Philadelphia', cuisine: 'Dessert Cafe', price: '$', website: 'https://www.matchacafe-maiko.com/eng/', desc: "Philly's first matcha-dedicated storefront — matcha soft serve coalesces into a perfect swirl atop shaved ice and chiffon cake parfaits, or sinks into rich floats. Open until 10pm weekends.", tags: ['cafe', 'dessert'], geo: { lat: 39.955499, lon: -75.155126, ph: 'places/ChIJs-QeBbfHxokRWBSPk1VJvSA/photos/AVoNoXTs5C7DCH59_ATUVenEvKFkAe2TRYX_P5MDSiwDXInD5kb7D4GqjjO-10TdboOfDwbGPaVtIb7pQinT50ysWP2G4JFH_yxHpwSevSh7moBC8CdnQEYUD0dLIJvanZHRTlnJqRmxPkphggxMpFrBa1OCHZLmj9z7554Lucia3rjL90HCdxI-yw25Mgt9llQjuMpb-X2CeI6P7geL9LrkzpKHLG20-qAnToFl4nnVpuNrKWxTezkiFZi-YaYgDfOHOcbLR5terva6R6nGWP32CL1cpTUgcEzWZQY7xc8u3uOsCDpqxahr_SHR4JyBzcDUlf2Juk3f5euzb17EhjTiOPCXcredyZtf3SmT4aq3TOj9R5RsR6l0FyE4Ct9BQ-5_wwzdpUtUNVMEEX0zx6y9HEDrwBzl9ABdURQtFv3xHsBHONncE0Ys80zmKu_mkg' } },
     { name: 'TingTing\'s', location: '125 N 11th St, Philadelphia, PA 19107', cuisine: 'Dessert Cafe', price: '$', website: 'https://tingtingscafe.com/', desc: 'A newer player on the dessert cafe scene serving large-portion sweets through the evening — frothy lattes and tall box cakes, those square slices layered with whipped cream and custard.', tags: ['dessert'], geo: { lat: 39.954745, lon: -75.157518, ph: 'places/ChIJDSkXpKPHxokRyK8DfLpGXTE/photos/AVoNoXTCj6oHmE-tInilLxpWRBC8U1JMbLyTH2AiHh61YJl7rc3ARCLypN__VdjWG1xGvlnN_ubmsImAV89JPiMKI5I109fZi5fH8nrD-QoHvtTbeGh89zYllY1vr5cYVcH7YE8CQumbt0ZS59gEWCin06CGECIX8nOipV_OU8HAifyFqQ_RPjhc77kR0XIAY_GTgYJzc5t2b15MKQN2MwLoh7jZGdxl08BjGl8mx2NkkaSAM1i5S7urAK2ZHO5cfeTnSaFmx2bIjAEimR7IoknffOu5815L0fo_rRD454TYcT3h5vyVFtn61G_E3pxPhu09s9tHQ3-3qY7UALFTRPGl20vZ2jDneMTeVIBqAotE3Auw-A4VkBGyicLtHa52jiL4jqAIofamrY_8sowchwYu9XGQ4LVUfWsvxgjdNysALm6ExOeg' } },
-    { name: 'Prince Tea House', location: '203 N 9th St, Philadelphia, PA 19107', cuisine: 'Dessert Cafe', price: '$', website: 'http://www.princeteahouse.com/', desc: 'A Queens, NY tea house transplant with a warm, refined vibe — high tea in rose and lavender milk teas, green tea-infused pastries, and nutty red bean ice cream. Open until 11pm on weekends.', tags: ['dessert'], geo: { lat: 39.955367, lon: -75.154109, ph: 'places/ChIJd1GAoTHJxokRBeVt8GK9S4I/photos/AVoNoXRdkh3PokF0lR7C0khbwnlu0nyQ7F5jCRV57GMQgyuY7oqTlsrO6_yycND8tvaPXpIfYYt2OcN2gKSmRmyV0Upyn4YTq80PRnNzokEDsGG0jtcPgnOjdwHaxkjfpEhirbH_U8wGLMHdUDT9aaI80LuaIqANgiAJRn17YtGXsmkhdmkGBzcRRrTco22yxGkZ377tOySTVMVTJyipfN-1n_4zvo7XgtmVPhDOSbPf7WnuqcnCxeoJgUaCsXChPrwn3zh2KbXi5fr4a7wdYb2hxnWthVGOSJMuto_uCWjDg5bB5Mpq90jQgmp__ehu4GMgZTMjAGdpm-UBpshSjA5upET7cS3O_p6xlXcHp_r0F6PMzt5pGjgaExh5o8sTxnU40QQdRQfEjIk2h6iiofm1sXBbSs8MtV9aG-XllVduD_e9jGk' } },
-    { name: 'Rim Cafe', location: '1172 S 9th St, Philadelphia, PA 19147', cuisine: 'Italian Dessert Cafe', price: '$', website: 'http://rimcafe.com/', desc: 'An Italian Market institution owned by Rene Kobeitri (the man behind the 510-foot cheesesteak) — best known for the Volcano, a decadent hot chocolate topped with marshmallows or espresso. Crispy flavored cannolis, gelato, and lots of personal conversation.', tags: ['dessert'], geo: { lat: 39.934399, lon: -75.158993, ph: 'places/ChIJ0aGPvR7GxokRUqGGFqVdng0/photos/AVoNoXTPX_kfjb3HghfjyMBPzmMGXhJRx44qmPkTWoR1nxL8Dh3izXOZypaDP--DSmVh4SP3dKAnS_3R0I3kODmClSHWg0WuhrAbn-LJhuNrTs2SrhA1ScTkJVvEgRoBSfT44-rWoeVGozvbsKMEhYWDqORxeY8ZqrQU-SHg_MnKq90ZoYo2DnoTZ08_SlyfqRs6FBSiZT7kfrK5JtI2U3UUvoS6yz3VerjFAZuTe64m5qwlf3yBPSAaEQIW6HiBnS5B7MgPvdhkNwoZOpWHTs-WbLSlp47h8yZAAcqG01I9KNO9pgUx0BMWOBhq6g1KvNRY2VGq8xSmj-2jxVnt8jfKJ4xkyCjPp-iDvDV7xpUmxle7VTLyapddV2zl_SiYzi9QOxT9F3jk_hHOdM9Ehhw_HTsJeBr5xNVvwxj4t4SBlQe67zOI' } },
+    { name: 'Prince Tea House', location: '203 N 9th St, Philadelphia, PA 19107', cuisine: 'Dessert Cafe', price: '$', website: 'http://www.princeteahouse.com/', desc: 'A Queens, NY tea house transplant with a warm, refined vibe — high tea in rose and lavender milk teas, green tea-infused pastries, and nutty red bean ice cream. Open until 11pm on weekends.', tags: ['cafe', 'dessert'], geo: { lat: 39.955367, lon: -75.154109, ph: 'places/ChIJd1GAoTHJxokRBeVt8GK9S4I/photos/AVoNoXRdkh3PokF0lR7C0khbwnlu0nyQ7F5jCRV57GMQgyuY7oqTlsrO6_yycND8tvaPXpIfYYt2OcN2gKSmRmyV0Upyn4YTq80PRnNzokEDsGG0jtcPgnOjdwHaxkjfpEhirbH_U8wGLMHdUDT9aaI80LuaIqANgiAJRn17YtGXsmkhdmkGBzcRRrTco22yxGkZ377tOySTVMVTJyipfN-1n_4zvo7XgtmVPhDOSbPf7WnuqcnCxeoJgUaCsXChPrwn3zh2KbXi5fr4a7wdYb2hxnWthVGOSJMuto_uCWjDg5bB5Mpq90jQgmp__ehu4GMgZTMjAGdpm-UBpshSjA5upET7cS3O_p6xlXcHp_r0F6PMzt5pGjgaExh5o8sTxnU40QQdRQfEjIk2h6iiofm1sXBbSs8MtV9aG-XllVduD_e9jGk' } },
+    { name: 'Rim Cafe', location: '1172 S 9th St, Philadelphia, PA 19147', cuisine: 'Italian Dessert Cafe', price: '$', website: 'http://rimcafe.com/', desc: 'An Italian Market institution owned by Rene Kobeitri (the man behind the 510-foot cheesesteak) — best known for the Volcano, a decadent hot chocolate topped with marshmallows or espresso. Crispy flavored cannolis, gelato, and lots of personal conversation.', tags: ['cafe', 'dessert'], geo: { lat: 39.934399, lon: -75.158993, ph: 'places/ChIJ0aGPvR7GxokRUqGGFqVdng0/photos/AVoNoXTPX_kfjb3HghfjyMBPzmMGXhJRx44qmPkTWoR1nxL8Dh3izXOZypaDP--DSmVh4SP3dKAnS_3R0I3kODmClSHWg0WuhrAbn-LJhuNrTs2SrhA1ScTkJVvEgRoBSfT44-rWoeVGozvbsKMEhYWDqORxeY8ZqrQU-SHg_MnKq90ZoYo2DnoTZ08_SlyfqRs6FBSiZT7kfrK5JtI2U3UUvoS6yz3VerjFAZuTe64m5qwlf3yBPSAaEQIW6HiBnS5B7MgPvdhkNwoZOpWHTs-WbLSlp47h8yZAAcqG01I9KNO9pgUx0BMWOBhq6g1KvNRY2VGq8xSmj-2jxVnt8jfKJ4xkyCjPp-iDvDV7xpUmxle7VTLyapddV2zl_SiYzi9QOxT9F3jk_hHOdM9Ehhw_HTsJeBr5xNVvwxj4t4SBlQe67zOI' } },
 
     // ── Philly Mag's 50 Best (dinner + the vibes each fits) ──
     { name: 'Kalaya', location: '4 W Palmer St, Philadelphia', cuisine: 'Thai', price: '$$$', website: 'http://kalayaphilly.com/', desc: "One of the finest Thai restaurants in the country. Chef Nok Suntaranon's fiery, complex Southern Thai cooking is unlike anything else in the city — the gaeng kua and catfish laab are essential.", tags: ['dinner', 'date-night', 'unique'], geo: { lat: 39.975649, lon: -75.133089, ph: 'places/ChIJLcLGB3jHxokRtTTgXtRPs34/photos/AVoNoXTjPLpbumJZ0MrETlqyDgG1yBW_OPWcRwOQ1IEWuodB2cEr84RX1PBLmo2Y12ibHRIFMQ4vH4J2k2iamx_mu6Mo8q9TO1e9sXatKzGKAI6-hABtaC7YJygBmTvYct5tVorX0SUq32rmbc2tr9DczNrD3dYUjIilKTk1M2cozejJVtuEk5s0RPXbdJb6YtM7CQjfGQtqCZ7dixk_yTaEWTmKlgf7NnGnS-L9AUADRUIsjoRPfVmeLJFt2Hwso9mdmoDt2jG60DTrBdXegGNHzL_pW6L36mDxe4-VeS_I6LmwMlLLKn5lPM1DpuwMgo0gvJ0OnPQ4q8C22JksoePjXrav8PI8y5myXmSBUgnKysmF1CW3TZ3QIDQE3_exZuy3oLlaN0JArD5DAkUOWD3Qp8KztZ0__FnJAZwa3x1K98DzMw' } },
@@ -6208,10 +6253,25 @@
     { name: 'Picnic', location: '2421 Martha St, Fishtown', cuisine: 'Prepared Foods & Wine', price: '$$', website: '', desc: 'Premade picnic baskets that have perfected the art: Peruvian chicken salad, mussels escabeche, cheese and charcuterie with cherry mostarda, homemade chips with onion dip, and chocolate chip cookies — all in a cute tote. Upgrade with a bottle from their stellar wine selection.', tags: ['picnic', 'lunch'], geo: { lat: 39.982281, lon: -75.127513, ph: 'places/ChIJZcfPCwDJxokRdkFL1BVH-ts/photos/AWCwydiy2r7t-c76yUVYymHlbW1D-g0U8OErqw_2ZzkSAikRlr2z-qRwhV4hv1h2VgTD34Q8E5aYbpOeIGdZCCjaq99AsI9EjcHun0V8Wmly4H5kkqIWuv1vp7D9RvNyoiLKxcp4qs6jP9AASDCn7RMaedAS23gweStw3LKAh65ob7ggcGLG63sU-GKWP0iV3ELcGB_Bx1bF94KVeDNBj4hkZgVhPIdXVDKKiLEAWnWcYZhmOYEeKZyFcNe5TCmMajIjz70EnMfElI3O7MLdqHCe9jt9HYCJSeG6FBoQ0utWUnxFXvucPGnq6pItIaMhLFUxvfA1RNY3WvfF-EtBun7MKTjaenJLg0hUHyYAZeBhSoqPU0iYCskQWua5zfSDvPY2iPu7yKkjQmMDpd1AhC2UWCY2KpSqS1Qv_i7_4sLcTleYrw' } },
     { name: "Weckerly's Ice Cream", location: '9 W Girard Ave, Fishtown', cuisine: 'Ice Cream', price: '$', website: 'https://www.weckerlys.com', desc: 'Freshly made $6 seasonal ice cream sandwiches, wrapped just right with that satisfying cookie crunch — the sweet finish to a Penn Treaty Park spread.', tags: ['picnic', 'dessert'], geo: { lat: 39.968948, lon: -75.134811, ph: 'places/ChIJX2gv2vPGxokRM_OyODsH8Jw/photos/AWCwydg4Q7taMpeoiDE6BTg8KqGsR_Cp2nzDagKFxAef_6dW3xLW5oSEoISyYsd5TsaAjEEiAzjpv32sQf7Ear2Ca-uE_xlkt8u99lgegUR3a_nzGoDJXh-91SeAFpMGuYLjtll3gNtSCKJOHKVKkWYhQHYHSnfpCKFjQh4y8SKtzPFmMzpl7Xp78Ls2dRxdU9NhGQ_a5yGFITNZa8w6qe5vSlL5N3henujS_O6Lj-SE8kug_VHYx9TxS-JZpHmA8Up7qbQ3ksY6LlMRBHATZKPtFfmXMPPNQOpC6VBEEh11CBZIeIZCPDjYM5aMqJ0WcRo9V8NJ6fceoKhgree0gjMDWBj8MajGTmRxZkzzzE0Hd1-9YE_JbezW4hRNjZ39wILCky8NiPni-Nu-TtaLLX6w2fMgM_-bSP1XoP9ylW1jhEkHCFw' } },
     { name: 'Cafe Walnut', location: '703 Walnut St, Washington Square West', cuisine: 'Korean', price: '$', website: '', desc: 'Samgak kimbap — little nori-wrapped rice triangles with kimchi, spicy tuna, or chicken — were made for on-the-go eating. Little and fun enough to try every kind.', tags: ['picnic', 'lunch', 'cheap-eats'], geo: { lat: 39.94757, lon: -75.15239 } },
-    { name: 'Thank You Thank You', location: '700 Sansom St, Washington Square West', cuisine: 'Coffee', price: '$', website: '', desc: 'A cozy coffee window perfect for a grab-and-go cold brew or iced latte to sip while you lounge under the trees on Washington Square.', tags: ['picnic', 'breakfast'], geo: { lat: 39.948434, lon: -75.152668, ph: 'places/ChIJcY6G9ejJxokRcNNaA5E3Sqw/photos/AWCwydhYawbbK_uX33ttesf-rTKiN7fO7YhGGDUr0O8Lc5JfBzQlpWCSnVLTNMQRb4e0GKkfK37uz5j2eeam8958-4r838Onu4Cz-U3fk9l6VchHcaJnPLHLa_3ksJp7Y3Jo8TYZmiY1vDS1qQo9gE9HPVHyx1mkNzf2XhDO8kog78OEvY0tDIZt83vKQlmkL8v8m6UzAqk-T_u16ynV2upW-xsk_Gqnl1M_Zpcxp_vb3kO-rCieIpPlQjU1EzC8w9DYBIiYnAX0D6mgEIB3fgd2XReI61cQVnhFFzZLtDeSTyNEM7k7MGmtVj1Amkk3pedon4Hkpfg4RyME8-3XsHqJyU2k7OA6Zpn33k3Aart9Kv-1vhlQs_Fz7GEO7_-Fn960NRzr3sFLpnVTOpNeldYI68rDYomEPc4oWUNmII65mooaSF8' } },
+    { name: 'Thank You Thank You', location: '700 Sansom St, Washington Square West', cuisine: 'Coffee', price: '$', website: '', desc: 'A cozy coffee window perfect for a grab-and-go cold brew or iced latte to sip while you lounge under the trees on Washington Square.', tags: ['cafe', 'picnic', 'breakfast'], geo: { lat: 39.948434, lon: -75.152668, ph: 'places/ChIJcY6G9ejJxokRcNNaA5E3Sqw/photos/AWCwydhYawbbK_uX33ttesf-rTKiN7fO7YhGGDUr0O8Lc5JfBzQlpWCSnVLTNMQRb4e0GKkfK37uz5j2eeam8958-4r838Onu4Cz-U3fk9l6VchHcaJnPLHLa_3ksJp7Y3Jo8TYZmiY1vDS1qQo9gE9HPVHyx1mkNzf2XhDO8kog78OEvY0tDIZt83vKQlmkL8v8m6UzAqk-T_u16ynV2upW-xsk_Gqnl1M_Zpcxp_vb3kO-rCieIpPlQjU1EzC8w9DYBIiYnAX0D6mgEIB3fgd2XReI61cQVnhFFzZLtDeSTyNEM7k7MGmtVj1Amkk3pedon4Hkpfg4RyME8-3XsHqJyU2k7OA6Zpn33k3Aart9Kv-1vhlQs_Fz7GEO7_-Fn960NRzr3sFLpnVTOpNeldYI68rDYomEPc4oWUNmII65mooaSF8' } },
     { name: 'High Street Bakery', location: '101 S 9th St, suite 350, Center City', cuisine: 'Bakery', price: '$', website: '', desc: "Freshly baked daily — the Epi Baguette pulls apart for easy picnic snacking, and the garlic-rosemary boule is so good you won't be impolite for tearing at it like a raccoon on the porch.", tags: ['picnic', 'breakfast', 'lunch'], geo: { lat: 39.949461, lon: -75.155468, ph: 'places/ChIJjaJHUYTIxokR6hUWfTrQpu4/photos/AWCwydiKpDcofDNjRGwer_g6ccY1ZS7K-ZoNfxK1uru0hYkCgazFc-ELLXPFVsAexj0Fjtt9bJLr8w7LXVSnu7yDGKajYQqnofWBiY1z-vumIO1pLH15gj8fWoVKtDosImf0zkk2MMR7849fgCu8HhLL0wVI_du0RKPL2Fv_U_DklR4TOGzwc9zwvqzRNi973TGWAJD_OS-R4s1iHUG-tej8cim56tBN5Rnp2wEDx_SPSE25MeE5inv6Rnhcg-P0MMKkSWYpsbmnU1kBW7tGFzr7NSS12_j1woccsUhY5MYbwfj2CYfDogQLZbnroQ3x3ITr1jOHj9KnmEhgZJ_KeDI41GkP4-tZDLJE8JYStyHKrGxp2DRHeTKF89u7YH0EGoDoOAsTTEUV63Z0YSg_hh5Jg7WI3qUtG3h6KaWHWOfDrw6omg' } },
     { name: 'Doro Bet', location: '4533 Baltimore Ave, West Philadelphia', cuisine: 'Ethiopian Fried Chicken', price: '$$', website: '', desc: "Arguably the best and most unique fried chicken in the city — go for the Alicha, all lemony and spicy, and get extra for later. Right by Clark Park.", tags: ['picnic', 'lunch', 'dinner', 'unique', 'cheap-eats'], geo: { lat: 39.949145, lon: -75.214386, ph: 'places/ChIJueKLD8PHxokRtRipOjRzqPk/photos/AWCwydjNuBbExA5mUmOYEfpEisd6oj9bIyW8-qt_s21nMQjvM3BWRxlE00HJVM93_z8GSyAYg-94vMqy5TKEsFz2Lz0Zkcqo7ayC8BELOPXnPwBYKeGWAh1X061HolPpnBezZTA7ls4YmO77Uu9BAoESdvs2Ymz-Mp2O2z1gxzh8JuZe3tzhQJ2XR3JELPyfakrPcLYpM46Q7IOrki8NtY3jxrkOh85WoJIeljvwf0i1kYac8i7-kpWKlVomy0fzL9gqVYWBEGpj-TOiDcVdslVMeUbFBuWdycKT6pXUC6tcmQGulKZSabLImBPeZ_GxNtVf7A2GlLbgJ_69Cf6K7Y1FOPYwWPwCWbrSurRcPiddoHHBBK0bcG5X-FGBnKn3enQBWYCjNS1r76eiNHELf0ED9nbEPwCpbFy1Zt-cfz1o05CEscSb' } },
     { name: 'Four Worlds Bakery', location: '4634 Woodland Ave, West Philly', cuisine: 'Bakery', price: '$', website: '', desc: 'A low-key West Philly gem with some of the best croissants in the city — pistachio cream swirl, savory spinach-ricotta, plus chocolate and almond for the purists. A short walk from Clark Park or The Woodlands.', tags: ['picnic', 'breakfast', 'lunch'], geo: { lat: 39.943428, lon: -75.210517, ph: 'places/ChIJH-xxBI3GxokRS77Jbr4NjrY/photos/AWCwydiSLTWENqpakL0X8jthWNydFBPfVwocxlN6DgDhFy3fv0qLmPivdrjaC48X4uhL7yAce10uJqbpBQfeZo5e4iUJHXrFowmBn2d0pM2IP9rUhw8fqY2950sU2bicCLgVp5JC_0ZPmj3iV03CgXn-5OfEWi5PY8g9TflDPenjtWNuN7lywQM6pm_Y5cClybyp-3pO13w7FSV317tgcGnYyawHyX72iWgOCwhCsEA6QbPRbCgkGfZi9F3LpZH12caFXuFLJEdbLGz-yMLkKyxgZneT0lZdFSk-Unszj39KrBDIoZ2ZEFbxRWjW5teq2SY4Qnihv5qxuhHVSY2V2yjgk4gq677_l8XzG5yiVN3kseeRz6uCSSUK0IjIQ2dmJSXG_YjgKYDaT47sa704rmOXn9BKREje2DVyH-lAJMbUzgZOdjs' } },
+
+    // ── Cafés & coffee ──────────────────────────────────────────────────────
+    // From Philly Explorer, Eater Philly and The Infatuation’s best-coffee lists.
+    { name: 'Elixr Coffee Roasters', location: '207 S Sydenham St, Rittenhouse', cuisine: 'Coffee Roaster', price: '$', website: 'https://elixrcoffee.com', desc: "Philly’s hipper roaster: hand-poured single origins from around the world and a caramel black-salt latte, with a big Callowhill roastery that’s good for getting work done.", tags: ['cafe'] },
+    { name: 'La Colombe', location: '130 S 19th St, Rittenhouse', cuisine: 'Coffee & Cafe', price: '$', website: 'https://www.lacolombe.com', desc: "The classic Rittenhouse coffee house — a people-watching perch and a quick break from Center City shopping, with draft lattes on tap.", tags: ['cafe'] },
+    { name: 'ReAnimator Coffee', location: '310 W Master St, Kensington', cuisine: 'Coffee Roaster', price: '$', website: 'https://www.reanimatorcoffee.com', desc: "Plant-filled, airy Kensington roastery café with wine, books and art on the shelves — and some of the best coffee in the city.", tags: ['cafe'] },
+    { name: 'Ultimo Coffee', location: '2149 Catharine St, Graduate Hospital', cuisine: 'Coffee & Cafe', price: '$', website: 'https://www.ultimocoffee.com', desc: "South Philly roaster with a Newbold roastery; the Catharine Street café pours espresso, hand-poured drip and seasonal single-origin coffee.", tags: ['cafe'] },
+    { name: 'Vibrant Coffee Roasters & Bakery', location: 'Rittenhouse', cuisine: 'Coffee & Bakery', price: '$', desc: "Rittenhouse roaster-bakery pairing carefully sourced coffee with pastries baked in house.", tags: ['cafe'] },
+    { name: 'Grindcore House', location: '1515 S 4th St, South Philadelphia', cuisine: 'Vegan Cafe', price: '$', website: 'https://www.grindcorehouse.com', desc: "Big industrial coffee house with a heavy-metal playlist, great specialty drinks and an all-vegan menu loaded with pastries and sandwiches.", tags: ['cafe'] },
+    { name: 'Ace Outpost', location: '758 S 4th St, Queen Village', cuisine: 'Coffee & Cafe', price: '$', desc: "Part café, part vintage store with an event space — it fits right in with the quirky shops along 4th Street.", tags: ['cafe'] },
+    { name: 'Forin Cafe', location: 'Kensington', cuisine: 'Coffee & Cafe', price: '$', desc: "Mint-green Kensington café with intriguing breakfast and lunch, and cocktails from a rotating list of chefs-in-residence if you stick around.", tags: ['cafe'] },
+    { name: 'Rally', location: 'Philadelphia', cuisine: 'Coffee & Cafe', price: '$', desc: "More than a coffee shop pouring Blind Tiger espresso — also an event space, design studio and pop-up shop for local vendors.", tags: ['cafe'] },
+    { name: 'Haraz Coffee House', location: 'Fishtown', cuisine: 'Yemeni Coffee', price: '$', desc: "Yemeni coffee tradition in Fishtown: Jubani coffee brewed from coffee husks with cinnamon and ginger, and the Adeni, a spiced black tea with cream.", tags: ['cafe'] },
+    { name: 'Madis Coffee Roasters', location: '3527 Lancaster Ave, Powelton Village', cuisine: 'Coffee Roaster', price: '$', desc: "Freshly roasted, freshly brewed coffee in a warm, inviting room with plenty of seating for reading or a long chat.", tags: ['cafe'] },
+    { name: 'The Ground Rittenhouse', location: '120 S 18th St, Rittenhouse', cuisine: 'Coffee & Cafe', price: '$', desc: "Bright, fun coffee shop that doubles as a small plant-and-gift store, with a community-minded streak.", tags: ['cafe'] },
   ];
 
   // Cuisine buckets used to auto-group a tab's restaurants (checked in order).
@@ -6231,6 +6291,7 @@
     { label: '🥩 Steakhouse',                 test: /steak/i },
     { label: '🍕 Pizza',                      test: /pizza/i },
     { label: '🥗 Healthy & Fast-Casual',      test: /salad|bowl|vegan|plant|fast casual|healthy/i },
+    { label: '☕ Coffee & Tea',               test: /coffee|roaster|espresso|tea house|teahouse|matcha/i },
     { label: '🥪 Sandwiches, Delis & Cafés',  test: /sandwich|hoagie|deli|pies|jewish|portuguese|caf[eé]/i },
     { label: '🍳 Diners & Brunch',            test: /diner|brunch|breakfast/i },
     { label: '🍦 Sweets',                     test: /ice cream|dessert|bakery/i },
@@ -6411,6 +6472,7 @@
     { id: 'lunch', emoji: '🥪', label: 'Lunch', subtitle: 'Midday bites', tag: 'lunch' },
     { id: 'dinner', emoji: '🍷', label: 'Dinner', subtitle: 'Where to end the day', tag: 'dinner' },
     { id: 'dessert', emoji: '🍦', label: 'Dessert', subtitle: 'Sweet endings & sugar runs', tag: 'dessert' },
+    { id: 'cafes', emoji: '☕', label: 'Cafés', subtitle: 'Coffee, tea & somewhere to linger', tag: 'cafe' },
     { id: 'bakeries', emoji: '🥐', label: 'Bakeries', subtitle: "Philly's best neighborhood bakeries", sections: BAKERY_SECTIONS },
     { id: 'outdoor-dining', emoji: '🌿', label: 'Outdoor Dining', subtitle: 'Rooftops, gardens, waterfronts &amp; patios', outdoor: true },
     { id: 'unique', emoji: '✨', label: 'Unique', subtitle: 'Only-in-Philly experiences', tag: 'unique' },
@@ -6824,7 +6886,7 @@
     const query = placeQuery(r);
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
-        <div class="resto-main">
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
           ${imgEl}${pickBtnHTML('resto', r.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(r.name)}</div>
@@ -6860,7 +6922,7 @@
     const query = placeQuery(r);
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
-        <div class="resto-main">
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
           ${imgEl}${pickBtnHTML('book', r.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(r.name)}</div>
@@ -6903,7 +6965,10 @@
     ].filter(Boolean).join(' · ');
     return `
       <div class="pa-card">
-        <div class="pa-card-name">${escapeHtml(v.name)}</div>
+        <div class="pa-card-head">
+          <div class="pa-card-name">${escapeHtml(v.name)}</div>
+          ${pickBtnHTML('arts', v.name)}
+        </div>
         ${v.kind ? `<div class="pa-card-kind">${escapeHtml(v.kind)}</div>` : ''}
         ${v.location ? `<div class="pa-card-loc">📍 ${escapeHtml(v.location)} · ${links}</div>` : ''}
         ${deals}
@@ -6960,8 +7025,17 @@
     const main = e.target.closest('.resto-main');
     if (!main || e.target.closest('a')) return;
     const tile = main.closest('.resto-tile');
-    tile.classList.toggle('expanded');
+    const open = tile.classList.toggle('expanded');
+    main.setAttribute('aria-expanded', String(open));
   }
+  // Tiles are focusable buttons for keyboard users: Enter or Space toggles them.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const main = e.target && e.target.classList && e.target.classList.contains('resto-main') ? e.target : null;
+    if (!main) return;
+    e.preventDefault();
+    onRestoMainClick({ target: main });
+  });
 
   // Categories shown when the hamburger expands. Add more here as new views are built.
   // Philadelphia's free public pools run only in the warm months, so the Pools
@@ -7770,8 +7844,8 @@
     const mapHref = mapUrl(query);
     return `
       <div class="resto-tile picnic-park-tile" data-place="${escapeAttr(p.name)}" data-query="${escapeAttr(query)}">
-        <div class="resto-main">
-          <div class="resto-img-placeholder">🌳</div>
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
+          <div class="resto-img-placeholder">🌳</div>${pickBtnHTML('park', p.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(p.name)}</div>
             <div class="resto-meta">
@@ -7864,8 +7938,8 @@
       : '';
     return `
       <div class="resto-tile pool-tile" data-place="${escapeAttr(p.name)}" data-query="${escapeAttr(query)}">
-        <div class="resto-main">
-          <div class="resto-img-placeholder">🏊</div>
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
+          <div class="resto-img-placeholder">🏊</div>${pickBtnHTML('pool', p.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(p.name)}</div>
             <div class="resto-meta">
@@ -9412,7 +9486,7 @@ Valid types: "meal", "activity", "dessert"`;
     const mapHref = loc ? mapUrl(loc) : '';
     return `
       <div class="resto-tile fm-tile fm-cal-tile">
-        <div class="resto-main">
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
           <div class="resto-img-placeholder">📅</div>
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(ev.summary || 'Farmers Market')}</div>
@@ -9440,7 +9514,7 @@ Valid types: "meal", "activity", "dessert"`;
     const mapHref = mapUrl(query);
     return `
       <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(query)}">
-        <div class="resto-main">
+        <div class="resto-main" tabindex="0" role="button" aria-expanded="false">
           <div class="resto-img-placeholder">🌽</div>${pickBtnHTML('market', m.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(m.name)}</div>
@@ -10101,7 +10175,7 @@ Valid types: "meal", "activity", "dessert"`;
       hl.textContent = 'Which day?';
       obRenderDate(body);
     } else if (OB.step === 'transit') {
-      hl.textContent = 'Outing Builder';
+      hl.textContent = 'Getting around';
       obRenderTransit(body);
     } else if (OB.step === 'neighborhood') {
       hl.textContent = 'Where in the city?';
@@ -10788,11 +10862,20 @@ Return ONLY valid JSON (no markdown fences):
   function pickKeyForPlace(name) { return 'place:' + String(name || '').trim().toLowerCase(); }
   function pickKeyForEvent(id) { return 'ev:' + id; }
 
+  // Parks, pools and performing-arts venues have no Outing Builder category of
+  // their own, so they ride along as "Your own" stops with their own emoji.
+  const PICK_KIND_META = {
+    park: { emoji: '🌳', label: 'Park',  mins: 60 },
+    pool: { emoji: '🏊', label: 'Pool',  mins: 90 },
+    arts: { emoji: '🎭', label: 'Venue', mins: 120 },
+  };
+
   // Tiles don't know their Outing Builder category; classify the same way
   // obRawPool() does so dessert lands after dinner and bars after food.
   function pickTypeForPlace(kind, item) {
     if (kind === 'book') return 'bookstore';
     if (kind === 'market') return 'market';
+    if (PICK_KIND_META[kind]) return 'custom';
     const hay = [item.cuisine, item.name, (item.tags || []).join(' ')].map(h => h || '');
     if (hay.some(h => PL_DESSERT_RE.test(h))) return 'dessert';
     if (hay.some(h => PL_DRINKS_RE.test(h))) return 'drinks';
@@ -10805,6 +10888,9 @@ Return ONLY valid JSON (no markdown fences):
     const want = String(name || '').trim().toLowerCase();
     const lists = kind === 'book' ? [BOOKSTORES.flatMap(c => c.sections.flatMap(s => s.places))]
       : kind === 'market' ? [FARMERS_MARKETS]
+      : kind === 'park' ? [PICNIC_PARKS]
+      : kind === 'pool' ? [POOLS]
+      : kind === 'arts' ? [PA_VENUES]
       : [allEatPlaces(), discoverMasterPlaces(), (TRENDY_SECTIONS || []).flatMap(s => s.places || [])];
     for (const list of lists) {
       const hit = list.find(r => String(r.name || '').trim().toLowerCase() === want);
@@ -10846,11 +10932,15 @@ Return ONLY valid JSON (no markdown fences):
     const tile = btn.closest('[data-query]');
     const q = tile ? tile.dataset.query : '';
     const item = live || { name: ref, location: q.startsWith(ref + ', ') ? q.slice(ref.length + 2) : '' };
+    // Parks and pools carry coordinates inline; keep them so the stop can be
+    // placed even if the place later leaves the list.
+    const geo = item.geo && item.geo.lat != null ? { lat: item.geo.lat, lon: item.geo.lon }
+      : item.lat != null ? { lat: item.lat, lon: item.lon } : undefined;
     return {
       key: pickKeyForPlace(ref), type: pickTypeForPlace(kind, item), kind,
       name: item.name, location: item.location || '', cuisine: item.cuisine || '', price: item.price || '',
       website: item.website || '', reservation: item.reservation || '', tags: item.tags || [],
-      desc: item.desc ? String(item.desc).slice(0, 240) : '', neighborhood: item.neighborhood || '', savedAt,
+      desc: item.desc ? String(item.desc).slice(0, 240) : '', neighborhood: item.neighborhood || '', geo, savedAt,
     };
   }
 
@@ -10883,7 +10973,8 @@ Return ONLY valid JSON (no markdown fences):
     const from = btn.getBoundingClientRect(), to = fab.getBoundingClientRect();
     const ghost = document.createElement('div');
     ghost.className = 'pick-fly';
-    ghost.textContent = pick.type === 'event' ? '📅' : ((OB_CATS.find(c => c.id === pick.type) || {}).emoji || '📍');
+    ghost.textContent = pick.type === 'event' ? '📅'
+      : (PICK_KIND_META[pick.kind] || OB_CATS.find(c => c.id === pick.type) || {}).emoji || '📍';
     ghost.style.left = (from.left + from.width / 2 - 14) + 'px';
     ghost.style.top  = (from.top + from.height / 2 - 14) + 'px';
     document.body.appendChild(ghost);
@@ -10938,13 +11029,17 @@ Return ONLY valid JSON (no markdown fences):
         stops.push({ type: 'event', emoji: '📅', label: ev.summary || 'Event', sublabel: ev.location || '',
                      item: ev, coords: undefined, fromPick: true });
       } else {
-        const item = findPickPlace(p.kind, p.name) || {
+        let item = findPickPlace(p.kind, p.name) || {
           name: p.name, location: p.location, cuisine: p.cuisine, price: p.price, website: p.website,
-          reservation: p.reservation, tags: p.tags, desc: p.desc, neighborhood: p.neighborhood,
+          reservation: p.reservation, tags: p.tags, desc: p.desc, neighborhood: p.neighborhood, geo: p.geo,
         };
+        // Parks and pools keep inline lat/lon rather than a baked `geo`; expose
+        // it the way obItemGeo() expects (on a copy — never touch the data list).
+        if (!(item.geo && item.geo.lat != null) && item.lat != null) item = { ...item, geo: { lat: item.lat, lon: item.lon } };
         const type = OB_CATS.some(c => c.id === p.type) ? p.type : pickTypeForPlace(p.kind, item);
+        const meta = PICK_KIND_META[p.kind];
         const geo = obItemGeo(item);
-        stops.push({ type, emoji: (OB_CATS.find(c => c.id === type) || {}).emoji || '📍', label: item.name,
+        stops.push({ type, kind: p.kind, emoji: (meta || OB_CATS.find(c => c.id === type) || {}).emoji || '📍', label: item.name,
                      sublabel: item.location || '', item, coords: geo.coords,
                      coordsExact: geo.precision === 'api' || geo.precision === 'grid', _precision: geo.precision, fromPick: true });
       }
@@ -10970,6 +11065,7 @@ Return ONLY valid JSON (no markdown fences):
       const m = Math.round((new Date(s.item.end.dateTime) - new Date(s.item.start.dateTime)) / 60000);
       if (m > 0) return Math.min(240, Math.max(30, m));
     }
+    if (s.kind && PICK_KIND_META[s.kind]) return PICK_KIND_META[s.kind].mins;
     return OB_STOP_MINS[s.type] || 60;
   }
   // Minutes for one leg in the chosen mode — the same models plLegLabel() uses.
@@ -11010,14 +11106,15 @@ Return ONLY valid JSON (no markdown fences):
   function obArrangeHeuristic(stops) {
     const timed = stops.filter(s => obStopStartMin(s) != null).sort((a, b) => obStopStartMin(a) - obStopStartMin(b));
     const flex  = stops.filter(s => obStopStartMin(s) == null);
-    const phase = s => s.type === 'restaurant' ? 1 : s.type === 'dessert' ? 2 : s.type === 'drinks' ? 3 : 0;
+    // 0 daytime/any · 1 meal · 2 dessert · 3 a show · 4 drinks
+    const phase = s => s.type === 'restaurant' ? 1 : s.type === 'dessert' ? 2 : s.kind === 'arts' ? 3 : s.type === 'drinks' ? 4 : 0;
     const mealRank = s => {
       const t = ((s.item && s.item.tags) || []).map(x => String(x).toLowerCase());
       return (t.includes('breakfast') || t.includes('brunch')) ? 0 : t.includes('lunch') ? 1 : 2;
     };
     let prev = (OB.neighborhood && OB_NBHD_COORDS[OB.neighborhood]) ? { coords: OB_NBHD_COORDS[OB.neighborhood] } : null;
     const ordered = [];
-    for (const ph of [0, 1, 2, 3]) {
+    for (const ph of [0, 1, 2, 3, 4]) {
       const pool = flex.filter(s => phase(s) === ph);
       if (ph === 1) pool.sort((a, b) => mealRank(a) - mealRank(b)); // breakfast before lunch before dinner
       while (pool.length) {
@@ -11111,7 +11208,8 @@ Return ONLY valid JSON (no markdown fences):
       const fixed = obStopStartMin(s);
       const where = s.coords ? `${s.coords.lat.toFixed(3)},${s.coords.lon.toFixed(3)}` : 'location unknown';
       const area = obItemNeighborhood(s.item) || (s.sublabel ? obShortSub(s.sublabel) : '');
-      return `${i}: [${s.type}] ${s.label}${area ? ' — ' + area : ''}${fixed != null ? ` — starts ${obMinLabel(fixed)}` : ''} — ${where}`;
+      const kind = s.kind && PICK_KIND_META[s.kind] ? PICK_KIND_META[s.kind].label.toLowerCase() : s.type;
+      return `${i}: [${kind}] ${s.label}${area ? ' — ' + area : ''}${fixed != null ? ` — starts ${obMinLabel(fixed)}` : ''} — ${where}`;
     }).join('\n');
     const cats = OB_CATS.map(c => c.id).filter(id => id !== 'custom');
     const prompt = `You are arranging a Philadelphia outing from stops the user has saved. Put them in the best order and point out real holes in the day.
