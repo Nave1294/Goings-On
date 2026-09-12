@@ -2139,6 +2139,19 @@
       background: var(--surface); border: 1.5px solid var(--divider); border-radius: 999px; padding: 0.35rem 0.75rem; cursor: pointer;
     }
     .ob-arr-tool:hover { color: var(--text); border-color: var(--text-tertiary); }
+    /* ⏱ − 1h 15m + : per-stop duration stepper */
+    .ob-dur { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0.45rem 0 0 2rem; font-size: 0.72rem; color: var(--text-secondary); }
+    .ob-dur-icon { margin-right: 0.1rem; }
+    .ob-dur-btn {
+      width: 30px; height: 30px; border-radius: 50%; padding: 0;
+      border: 1.5px solid var(--divider); background: var(--surface); color: var(--text);
+      font: inherit; font-size: 1rem; font-weight: 600; line-height: 1; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    }
+    .ob-dur-btn:hover { border-color: #1a7a6e; color: #1a7a6e; }
+    .ob-dur-btn:active { transform: scale(0.92); }
+    .ob-dur-val { min-width: 3.6em; text-align: center; font-size: 0.78rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
     /* Outing Builder: pick item list */
     .ob-pick-list { margin-top: 0.25rem; }
     .ob-pick-item {
@@ -10557,19 +10570,25 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   function obRenderEquation(body) {
-    const stopsHTML = OB.stops.map((s, i) => {
+    const stops = obEstimateTimes(OB.stops);
+    const stopsHTML = stops.map((s, i) => {
+      const e = s._est;
       return `${i > 0 ? '<div class="ob-connector">+</div>' : ''}
         <div class="ob-stop-card">
           <div class="ob-stop-card-head">
             <span class="ob-stop-num">${i + 1}</span>
             <span class="ob-stop-name">${s.emoji} ${escapeHtml(s.label)}</span>
+            <span class="ob-arr-time${e.late > 15 ? ' late' : ''}" title="Estimated arrival">${obMinLabel(e.start)}</span>
             <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Remove" title="Remove">✕</button>
           </div>
           ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(obShortSub(s.sublabel))}</div>` : ''}
+          ${obDurationCtlHTML(s, i)}
         </div>`;
     }).join('');
+    const lastEnd = stops.length ? stops[stops.length - 1]._est.end : null;
 
     body.innerHTML = `
+      ${stops.length ? `<div class="ob-arr-note"><span>Starting ${plHourLabel(OB.startHour)}</span><span>·</span><span>Wraps up around ${obMinLabel(lastEnd)}</span></div>` : ''}
       <div class="ob-equation">${stopsHTML}</div>
       <div class="ob-add-label">Add a stop</div>
       <div class="ob-cat-grid">
@@ -10597,6 +10616,7 @@ Valid types: "meal", "activity", "dessert"`;
     });
     const gen = document.getElementById('obGenerate');
     if (gen) gen.addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
+    obBindDurationCtls(body);
   }
 
   async function obBuildItinerary() {
@@ -10633,13 +10653,14 @@ Valid types: "meal", "activity", "dessert"`;
     }
   }
 
-  async function obCallGemini() {
+  // The itinerary prompt is built separately from the call so it can be checked.
+  function obItineraryPrompt() {
     const day      = obActiveDay();
     const dayName  = day ? DAYS_LONG[day.getDay()] : 'today';
     const modeLbl  = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
     const stopLines = OB.stops.map((s, i) => {
       const tag = s.type === 'custom' ? "the user's own plan" : s.type;
-      return `${i + 1}. ${s.emoji} [${tag}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''}`;
+      return `${i + 1}. ${s.emoji} [${tag}] ${s.label}${s.sublabel ? ' — ' + s.sublabel : ''} — plan on about ${obStopDuration(s)} minutes here`;
     }).join('\n');
     const hasCustom = OB.stops.some(s => s.type === 'custom');
 
@@ -10650,7 +10671,7 @@ Valid types: "meal", "activity", "dessert"`;
       ? 'Walk + transit (SEPTA) — walk short legs, take transit for longer ones'
       : modeLbl;
 
-    const prompt = `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
+    return `You are a friendly Philadelphia outing planner. The user has already chosen their stops — write a polished itinerary narrative with timing, descriptions, and tips.
 
 Day: ${dayName}
 Time window: ${startLabel}–${endLabel}
@@ -10661,7 +10682,7 @@ Stops (in order):
 ${stopLines}
 
 Rules:
-1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there, keeping everything within the ${startLabel}–${endLabel} window.
+1. Use ${startLabel} as the start time for the first stop and schedule subsequent stops realistically from there, keeping everything within the ${startLabel}–${endLabel} window. Each stop says how long the user wants to spend there — use exactly that as its durationMins and add realistic travel time between stops.
 2. Write 2–3 engaging sentences per stop: what makes it special and why it fits.
 3. One short practical tip per stop (hours, reservations, etc.), or null if nothing useful.
 4. "eyebrow" = short label: "Event", "Restaurant · Dinner", "Drinks", "Bookstore", "Market", "Dessert", etc.
@@ -10670,8 +10691,10 @@ Rules:
 
 Return ONLY valid JSON (no markdown fences):
 {"summary":"Tagline","stops":[{"name":"Stop name","eyebrow":"Label","time":"6:00 PM","durationMins":90,"desc":"Description.","tip":"Tip or null"}]}`;
+  }
 
-    return obGeminiJSON(prompt, { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } });
+  async function obCallGemini() {
+    return obGeminiJSON(obItineraryPrompt(), { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } });
   }
 
   // Send a prompt to Gemini and parse the JSON it returns (tolerating fences
@@ -10780,7 +10803,7 @@ Return ONLY valid JSON (no markdown fences):
         <div class="pl-stop-head">
           <span class="pl-stop-num">${i + 1}</span>
           <div>
-            <div class="dn-pair-eyebrow">${escapeHtml(s.emoji)} ${escapeHtml(ai.eyebrow || s.type)}${ai.time ? ` · ${escapeHtml(ai.time)}` : ''}</div>
+            <div class="dn-pair-eyebrow">${escapeHtml(s.emoji)} ${escapeHtml(ai.eyebrow || s.type)}${ai.time ? ` · ${escapeHtml(ai.time)}` : ''} · ${obFmtMins(obStopDuration(s))}</div>
             <div class="dn-pair-title">${escapeHtml(ai.name || s.label)}</div>
           </div>
         </div>
@@ -10815,7 +10838,7 @@ Return ONLY valid JSON (no markdown fences):
       OB.stops.forEach((s, i) => {
         const ai = aiStops[i] || {};
         const it = s.item || {};
-        lines.push(`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` · ${ai.time}` : ''}`);
+        lines.push(`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` · ${ai.time}` : ''} · ${obFmtMins(obStopDuration(s))}`);
         if (s.sublabel) lines.push(`   📍 ${obShortSub(s.sublabel)}`);
         if (ai.desc) lines.push(`   ${ai.desc}`);
         if (ai.tip) lines.push(`   💡 ${ai.tip}`);
@@ -11061,7 +11084,11 @@ Return ONLY valid JSON (no markdown fences):
     return d.getHours() * 60 + d.getMinutes();
   }
   const OB_STOP_MINS = { event: 90, restaurant: 75, drinks: 60, dessert: 30, bookstore: 40, market: 40, custom: 60 };
+  const OB_DUR_STEP = 15, OB_DUR_MIN = 15, OB_DUR_MAX = 300;
+  // How long to spend at a stop: the user's own setting if they've adjusted
+  // it, else the event's real length, else a sensible default for the type.
   function obStopDuration(s) {
+    if (s.mins) return s.mins;
     if (s.type === 'event' && s.item && s.item.start && s.item.start.dateTime && s.item.end && s.item.end.dateTime) {
       const m = Math.round((new Date(s.item.end.dateTime) - new Date(s.item.start.dateTime)) / 60000);
       if (m > 0) return Math.min(240, Math.max(30, m));
@@ -11081,6 +11108,31 @@ Return ONLY valid JSON (no markdown fences):
   function obMinLabel(min) {
     const d = new Date(); d.setHours(Math.floor(min / 60), min % 60, 0, 0);
     return fmtTime(d.toISOString());
+  }
+  function obFmtMins(m) {
+    const h = Math.floor(m / 60), r = m % 60;
+    return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${r}m`;
+  }
+  // ⏱ − 1h 15m + : adjust how long to spend at stop `i`. Both the regular
+  // builder's stop list and the picks arrange step render one per stop.
+  function obDurationCtlHTML(s, i) {
+    return `<div class="ob-dur" title="How long you'll spend here">
+      <span class="ob-dur-icon" aria-hidden="true">⏱️</span>
+      <button class="ob-dur-btn" data-ob-dur="${i}" data-delta="-${OB_DUR_STEP}" type="button" aria-label="Less time at ${escapeAttr(s.label)}">−</button>
+      <span class="ob-dur-val">${obFmtMins(obStopDuration(s))}</span>
+      <button class="ob-dur-btn" data-ob-dur="${i}" data-delta="${OB_DUR_STEP}" type="button" aria-label="More time at ${escapeAttr(s.label)}">+</button>
+    </div>`;
+  }
+  function obBindDurationCtls(body) {
+    body.querySelectorAll('[data-ob-dur]').forEach(btn => btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const s = OB.stops[parseInt(btn.dataset.obDur, 10)];
+      if (!s) return;
+      s.mins = Math.min(OB_DUR_MAX, Math.max(OB_DUR_MIN, obStopDuration(s) + parseInt(btn.dataset.delta, 10)));
+      const scroller = body.closest('.dn-body') || body, top = scroller.scrollTop;
+      obRender();                 // later stops' times move with this one
+      scroller.scrollTop = top;   // keep the list where the user was looking
+    }));
   }
   // Walk the list with a clock: travel to each stop, wait if a timed event
   // hasn't started yet, note when we'd arrive late, then stay for its duration.
@@ -11210,7 +11262,7 @@ Return ONLY valid JSON (no markdown fences):
       const where = s.coords ? `${s.coords.lat.toFixed(3)},${s.coords.lon.toFixed(3)}` : 'location unknown';
       const area = obItemNeighborhood(s.item) || (s.sublabel ? obShortSub(s.sublabel) : '');
       const kind = s.kind && PICK_KIND_META[s.kind] ? PICK_KIND_META[s.kind].label.toLowerCase() : s.type;
-      return `${i}: [${kind}] ${s.label}${area ? ' — ' + area : ''}${fixed != null ? ` — starts ${obMinLabel(fixed)}` : ''} — ${where}`;
+      return `${i}: [${kind}] ${s.label}${area ? ' — ' + area : ''}${fixed != null ? ` — starts ${obMinLabel(fixed)}` : ''} — about ${obStopDuration(s)} min there — ${where}`;
     }).join('\n');
     const cats = OB_CATS.map(c => c.id).filter(id => id !== 'custom');
     const prompt = `You are arranging a Philadelphia outing from stops the user has saved. Put them in the best order and point out real holes in the day.
@@ -11316,7 +11368,8 @@ Return ONLY valid JSON (no markdown fences):
               <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Leave out of this outing" title="Leave out of this outing">✕</button>
             </div>
             ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(obShortSub(s.sublabel))}</div>` : ''}
-            ${e.late > 15 ? `<div class="ob-arr-warn">⚠ Starts ${obMinLabel(fixed)} — you'd get there about ${e.late} min late. Try dragging it earlier.</div>` : ''}
+            ${obDurationCtlHTML(s, i)}
+            ${e.late > 15 ? `<div class="ob-arr-warn">⚠ Starts ${obMinLabel(fixed)} — you'd get there about ${e.late} min late. Try dragging it earlier or shortening an earlier stop.</div>` : ''}
           </div>
         </div>
         ${leg}${after}
@@ -11333,7 +11386,7 @@ Return ONLY valid JSON (no markdown fences):
         <span class="ob-arr-ai${OB.aiBusy ? ' busy' : ''}">${OB.aiBusy ? '✨ Arranging with AI' : '✨ ' + escapeHtml(OB.arrangeNote || 'Arranged by time & distance')}</span>
         ${lastEnd != null ? `<span>Wraps up around ${obMinLabel(lastEnd)}</span>` : ''}
       </div>
-      <div class="pl-q" style="margin-bottom:0.5rem">Drag ⠿ to reorder. ✕ leaves a stop out of this outing — it stays in your picks.</div>
+      <div class="pl-q" style="margin-bottom:0.5rem">Drag ⠿ to reorder, ⏱️ − / + to change how long you'll stay. ✕ leaves a stop out of this outing — it stays in your picks.</div>
       ${skippedHTML}
       <div class="ob-arr-list" id="obArrList">${firstGaps}${rows}</div>
       ${stops.length ? '' : `<div class="dn-empty"><div class="dn-empty-icon">📌</div>None of your picks fit this day. Add a stop below, or go back and choose another day.</div>`}
@@ -11388,6 +11441,7 @@ Return ONLY valid JSON (no markdown fences):
     });
     const gen = document.getElementById('obGenerate');
     if (gen) gen.addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
+    obBindDurationCtls(body);
     obArrangeEnableDrag(document.getElementById('obArrList'));
   }
 
