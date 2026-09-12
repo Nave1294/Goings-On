@@ -1350,10 +1350,17 @@
     .nbhd-select:hover { color: var(--accent); border-color: var(--accent); }
     .nbhd-select.active { color: var(--accent); border-color: var(--accent); background-color: var(--accent-soft); }
     /* Discover FAB (bottom-left, visible on every view) */
-    .eat-fab {
+    /* Bottom-left buttons: Discover, joined by "Build from picks" once anything is saved. */
+    .fab-row {
       position: fixed;
       bottom: 1.5rem;
       left: 1.5rem;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .eat-fab {
       display: inline-flex;
       align-items: center;
       gap: 5px;
@@ -1368,12 +1375,64 @@
       padding: 0.65rem 1.1rem;
       cursor: pointer;
       box-shadow: 0 6px 18px rgba(45, 106, 79, 0.32), 0 1px 3px rgba(0,0,0,0.08);
-      z-index: 50;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       white-space: nowrap;
     }
     .eat-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(45, 106, 79, 0.4), 0 2px 4px rgba(0,0,0,0.1); }
     .eat-fab:active { transform: scale(0.95); }
+    /* "Build from picks" takes the primary spot; Discover shrinks to a dice beside it. */
+    .picks-fab {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      background: linear-gradient(135deg, #1a7a6e, #2aa89a);
+      border: none;
+      border-radius: 999px;
+      padding: 0.65rem 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(26, 122, 110, 0.35), 0 1px 3px rgba(0,0,0,0.08);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      white-space: nowrap;
+    }
+    .picks-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(26, 122, 110, 0.42), 0 2px 4px rgba(0,0,0,0.1); }
+    .picks-fab:active { transform: scale(0.95); }
+    .picks-fab.bump { animation: fabBump 0.45s ease; }
+    @keyframes fabBump { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 70% { transform: scale(0.97); } 100% { transform: scale(1); } }
+    body.has-picks .eat-fab { width: 42px; height: 42px; padding: 0; justify-content: center; font-size: 1.1rem; }
+    body.has-picks .eat-fab .eat-fab-text { display: none; }
+
+    /* ── My Picks: the "+" save button on event cards and place tiles ── */
+    .pick-btn {
+      flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 50%; padding: 0;
+      border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent);
+      font: inherit; font-size: 1.05rem; font-weight: 700; line-height: 1; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    }
+    .pick-btn:hover { background: var(--accent-soft); }
+    .pick-btn .pick-btn-check { display: none; font-size: 0.8rem; }
+    .pick-btn.picked { background: var(--accent); color: #fff; }
+    .pick-btn.picked .pick-btn-plus { display: none; }
+    .pick-btn.picked .pick-btn-check { display: inline; }
+    .pick-btn.pop { animation: pickPop 0.35s ease; }
+    @keyframes pickPop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+    .event-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+    .resto-main .pick-btn { position: absolute; top: 0.55rem; right: 0.55rem; z-index: 2; }
+    .resto-main:has(.pick-btn) .resto-name { padding-right: 2rem; }
+    /* The chip that flies from the "+" to the Build button when something is saved. */
+    .pick-fly {
+      position: fixed; z-index: 200; pointer-events: none;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); color: #fff; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(45, 106, 79, 0.35);
+    }
     /* Discover bottom sheet */
     .eat-sheet-overlay {
       position: fixed;
@@ -1990,6 +2049,50 @@
     .ob-stop-rm:hover { opacity: 1; }
     .ob-stop-meta { font-size: 0.73rem; color: var(--text-secondary); margin: 0.15rem 0 0 2rem; }
     .ob-connector { text-align: center; padding: 0.15rem 0; font-size: 1rem; color: var(--text-secondary); font-weight: 700; }
+    /* Outing Builder: arrange-your-picks step (draggable list + gap suggestions) */
+    .ob-arr-list { margin: 0.25rem 0; }
+    .ob-arr-card { display: flex; align-items: flex-start; gap: 0.45rem; }
+    .ob-arr-handle {
+      cursor: grab; color: var(--text-tertiary); font-size: 1.15rem; line-height: 1;
+      padding: 0.1rem 0.2rem 0 0; user-select: none; -webkit-user-select: none; touch-action: none; flex-shrink: 0;
+    }
+    .ob-arr-row.dragging .ob-arr-card { opacity: 0.92; border-color: var(--accent); box-shadow: 0 10px 26px rgba(0,0,0,0.16); position: relative; z-index: 5; }
+    .ob-arr-row.dragging .ob-arr-handle { cursor: grabbing; }
+    .ob-arr-body { flex: 1; min-width: 0; }
+    .ob-arr-body .ob-stop-name { flex: 1 1 0; min-width: 0; }
+    .ob-arr-time { font-size: 0.72rem; font-weight: 700; color: #1a7a6e; white-space: nowrap; flex-shrink: 0; }
+    .ob-arr-time.late { color: #c0392b; }
+    .ob-arr-pin { font-size: 0.7rem; margin-left: 0.3rem; opacity: 0.8; }
+    .ob-arr-warn { font-size: 0.72rem; color: #c0392b; margin: 0.15rem 0 0 2rem; }
+    .ob-arr-leg { text-align: center; font-size: 0.72rem; color: var(--text-secondary); padding: 0.1rem 0; }
+    .ob-arr-gap {
+      border: 1.5px dashed rgba(26,122,110,0.5); border-radius: 12px; background: rgba(26,122,110,0.05);
+      padding: 0.55rem 0.8rem; margin: 0.3rem 0; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .ob-arr-gap-text { flex: 1; min-width: 0; font-size: 0.8rem; color: var(--text); }
+    .ob-arr-gap-text small { display: block; color: var(--text-secondary); font-size: 0.72rem; margin-top: 0.1rem; }
+    .ob-arr-gap-btn {
+      font: inherit; font-size: 0.78rem; font-weight: 700; color: #fff; background: #1a7a6e;
+      border: none; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    .ob-arr-gap-x { font: inherit; background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+    .ob-arr-note { font-size: 0.78rem; color: var(--text-secondary); margin: 0.2rem 0 0.6rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .ob-arr-note em { font-style: normal; color: var(--text-tertiary); }
+    .ob-arr-ai {
+      display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700;
+      color: #6d4b8f; background: #f0e6f6; border-radius: 999px; padding: 0.2rem 0.65rem;
+    }
+    .ob-arr-ai.busy::after {
+      content: ''; width: 8px; height: 8px; border-radius: 50%;
+      border: 2px solid #6d4b8f; border-top-color: transparent; animation: obSpin 0.8s linear infinite;
+    }
+    @keyframes obSpin { to { transform: rotate(360deg); } }
+    .ob-arr-tools { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .ob-arr-tool {
+      font: inherit; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+      background: var(--surface); border: 1.5px solid var(--divider); border-radius: 999px; padding: 0.35rem 0.75rem; cursor: pointer;
+    }
+    .ob-arr-tool:hover { color: var(--text); border-color: var(--text-tertiary); }
     /* Outing Builder: pick item list */
     .ob-pick-list { margin-top: 0.25rem; }
     .ob-pick-item {
@@ -2355,10 +2458,16 @@
   <div class="add-card" id="indecCard"></div>
 </div>
 
-<!-- Places to Eat: Discover FAB + bottom sheet -->
-<button class="eat-fab" id="eatFab" type="button" aria-label="Discover restaurants" aria-haspopup="dialog">
-  🎲 Discover
-</button>
+<!-- Bottom-left buttons: Discover (opens the sheet below), and — once you've saved
+     some picks with the "+" on cards and tiles — Build from picks (opens the Outing Builder). -->
+<div class="fab-row">
+  <button class="picks-fab" id="picksFab" type="button" hidden aria-label="Build an outing from your picks">
+    ✨ <span id="picksFabText">Build from picks</span>
+  </button>
+  <button class="eat-fab" id="eatFab" type="button" aria-label="Discover restaurants" aria-haspopup="dialog">
+    🎲 <span class="eat-fab-text">Discover</span>
+  </button>
+</div>
 <div class="eat-sheet-overlay" id="eatSheetOverlay" hidden role="dialog" aria-modal="true" aria-label="Discover restaurants">
   <div class="eat-sheet" id="eatSheet">
     <div class="eat-sheet-handle"></div>
@@ -2961,6 +3070,10 @@
 
     await Promise.all([phillyWeatherPromise, preloadWeather(events)]);
 
+    // Index by id so a saved pick can find its event again on a later visit.
+    eventById.clear();
+    events.forEach(ev => { if (ev.id) eventById.set(ev.id, ev); });
+
     const byDay = {};
     days.forEach(d => { byDay[dayKey(d)] = []; });
 
@@ -3329,7 +3442,7 @@
         <div class="event-body">
           <div class="event-header">
             <div class="event-title">${escapeHtml(ev.summary || '(No title)')}${autoBadge}</div>
-            ${weatherChipHTML(ev, idx, contextDay)}
+            <div class="event-actions">${weatherChipHTML(ev, idx, contextDay)}${ev.id ? pickBtnHTML('event', ev.id) : ''}</div>
           </div>
           ${loc}${eventDistanceHTML(ev)}${desc}${links}
           ${weatherDetailHTML(ev, idx, contextDay)}
@@ -6712,7 +6825,7 @@
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
-          ${imgEl}
+          ${imgEl}${pickBtnHTML('resto', r.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(r.name)}</div>
             <div class="resto-meta">
@@ -6748,7 +6861,7 @@
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
-          ${imgEl}
+          ${imgEl}${pickBtnHTML('book', r.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(r.name)}</div>
             <div class="resto-meta">
@@ -8313,17 +8426,18 @@
   function plWalkMins(mi) { return Math.round(mi * 24); }
   // Biking time: ~9 mph effective in the city including lights and a detour factor.
   function plBikeMins(mi) { return Math.round(mi * 7); }
-  function plLegLabel(mi) {
+  // `transit` defaults to the day planner's choice; the Outing Builder passes its own.
+  function plLegLabel(mi, transit = PL.transit) {
     const walkMins = plWalkMins(mi);
     const walkLabel = walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
-    if (PL.transit === 'walk') return walkLabel;
-    if (PL.transit === 'bike') {
+    if (transit === 'walk') return walkLabel;
+    if (transit === 'bike') {
       const bikeMins = plBikeMins(mi);
       // Very short hops are quicker to just walk.
       if (walkMins <= bikeMins + 2) return walkLabel;
       return bikeMins <= 1 ? '< 1 min bike' : `~${bikeMins} min bike`;
     }
-    if (PL.transit === 'drive') {
+    if (transit === 'drive') {
       const mins = Math.round(mi / 22 * 60); // ~22 mph city driving incl. lights
       return mins <= 1 ? '< 1 min drive' : `~${mins} min drive`;
     }
@@ -9327,7 +9441,7 @@ Valid types: "meal", "activity", "dessert"`;
     return `
       <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
-          <div class="resto-img-placeholder">🌽</div>
+          <div class="resto-img-placeholder">🌽</div>${pickBtnHTML('market', m.name)}
           <div class="resto-info">
             <div class="resto-name">${escapeHtml(m.name)}</div>
             <div class="resto-meta">
@@ -9580,11 +9694,24 @@ Valid types: "meal", "activity", "dessert"`;
     startHour: 18,
     endHour: 22,
     transitMode: 'walk',
-    stops: [],        // [{ type, emoji, label, sublabel, item, coords }]
-    step: 'date',     // date | transit | first-category | pick-item | equation | generating | result
+    stops: [],        // [{ type, emoji, label, sublabel, item, coords, fromPick? }]
+    step: 'date',     // date | transit | neighborhood | time | first-category | pick-item | equation | arrange | generating | result
     pendingCat: null,
     result: null,
     shareText: '',
+    // Picks mode (opened from the "Build from picks" button): the saved folder
+    // becomes the stop list, shown on the `arrange` step instead of `equation`.
+    fromPicks: false,
+    arranged: false,    // stops have been laid out at least once this session
+    gaps: [],           // suggested additions: [{ afterStop, category, reason }]
+    skippedPicks: [],   // picks that couldn't be used for this day, with why
+    arrangeNote: null,  // one-line credit shown above the list
+    aiBusy: false,
+    // Where a stop chosen on pick-item goes, and which step to return to
+    // (the arrange step fills a specific slot; everything else appends).
+    insertAt: null,
+    returnStep: null,
+    activeGap: null,
   };
 
   // Proximity cutoff: straight-line, so deliberately conservative vs. actual travel time.
@@ -9929,15 +10056,41 @@ Valid types: "meal", "activity", "dessert"`;
     return { coords: null, precision: null };
   }
 
-  function openOutingBuilder() {
+  function openOutingBuilder(opts = {}) {
     const overlay = document.getElementById('obOverlay');
     if (!overlay) return;
     OB.stops = []; OB.step = 'date'; OB.transitMode = 'walk';
     OB.dayIdx = lastRender ? lastRender.activeIdx : 0;
     OB.startHour = 18; OB.endHour = 22; OB.neighborhood = null;
     OB.pendingCat = null; OB.result = null; OB.shareText = '';
+    OB.fromPicks = !!opts.fromPicks; OB.arranged = false; OB.gaps = []; OB.skippedPicks = [];
+    OB.arrangeNote = null; OB.aiBusy = false; obCancelInsert();
+    if (OB.fromPicks) {
+      // Start on the day holding the most saved events, when there are any.
+      let best = -1, bestN = 0;
+      obDays().forEach((d, i) => { const n = pickedEventCountForDay(i); if (n > bestN) { bestN = n; best = i; } });
+      if (best >= 0) OB.dayIdx = best;
+    }
     overlay.removeAttribute('hidden');
     obRender();
+  }
+
+  // The step to return to when editing an outing: picks mode arranges, the
+  // regular builder uses its stop equation.
+  function obEditStep() { return OB.fromPicks ? 'arrange' : 'equation'; }
+  function obCancelInsert() { OB.insertAt = null; OB.returnStep = null; OB.activeGap = null; }
+
+  // Add a chosen stop to the outing — at OB.insertAt when the arrange step is
+  // filling a specific slot, otherwise at the end — then go back to the step
+  // that sent us to the pick list.
+  function obInsertStop(stop) {
+    const at = OB.insertAt != null ? Math.min(OB.insertAt, OB.stops.length) : OB.stops.length;
+    OB.stops.splice(at, 0, stop);
+    if (OB.activeGap) OB.gaps = (OB.gaps || []).filter(g => g !== OB.activeGap);
+    const next = OB.returnStep || 'equation';
+    obCancelInsert();
+    if (next === 'arrange') OB.stops = obReslotTimed(OB.stops);
+    OB.step = next; obRender();
   }
 
   function obRender() {
@@ -9967,6 +10120,9 @@ Valid types: "meal", "activity", "dessert"`;
     } else if (OB.step === 'equation') {
       hl.textContent = OB.stops.length >= 2 ? `${OB.stops.length} stops` : 'Build your outing';
       obRenderEquation(body);
+    } else if (OB.step === 'arrange') {
+      hl.textContent = OB.stops.length >= 2 ? `${OB.stops.length} stops, arranged` : 'Arrange your picks';
+      obRenderArrange(body);
     } else if (OB.step === 'generating') {
       hl.textContent = 'Building…';
       body.innerHTML = `<div class="dn-loading">✨ Building your itinerary…</div>`;
@@ -9984,14 +10140,15 @@ Valid types: "meal", "activity", "dessert"`;
     }
     body.innerHTML = `
       <div class="pl-wx-strip" id="obWxStrip"></div>
-      <div class="pl-q">Pick a day in the week ahead.</div>
+      <div class="pl-q">${OB.fromPicks ? 'Pick a day — 📌 marks days your saved events fall on.' : 'Pick a day in the week ahead.'}</div>
       <div class="dn-days">
         ${days.map((d, i) => {
           const cnt = plEventsForDay(i).length;
+          const picked = OB.fromPicks ? pickedEventCountForDay(i) : 0;
           const lbl = i === 0 ? 'Today' : DAYS_SHORT[d.getDay()];
           return `<button class="dn-day-chip${i === OB.dayIdx ? ' active' : ''}" data-ob-day="${i}" type="button">
             <div>${lbl}</div><div class="dn-day-num">${d.getDate()}</div>
-            <div class="dn-day-cnt">${cnt ? cnt + (cnt === 1 ? ' evt' : ' evts') : '—'}</div></button>`;
+            <div class="dn-day-cnt">${picked ? '📌 ' + picked : cnt ? cnt + (cnt === 1 ? ' evt' : ' evts') : '—'}</div></button>`;
         }).join('')}
       </div>
       <button class="pl-next" id="obDateNext" type="button">Next →</button>`;
@@ -10075,7 +10232,7 @@ Valid types: "meal", "activity", "dessert"`;
     }));
     document.getElementById('obTimeNext').addEventListener('click', () => {
       if (OB.endHour <= OB.startHour) { document.getElementById('obTimeWarn').hidden = false; return; }
-      OB.step = OB.stops.length > 0 ? 'equation' : 'first-category';
+      OB.step = OB.fromPicks ? 'arrange' : OB.stops.length > 0 ? 'equation' : 'first-category';
       obRender();
     });
     mountDayWeatherStrip('obWxStrip', day, [OB.startHour, OB.endHour]);
@@ -10105,7 +10262,10 @@ Valid types: "meal", "activity", "dessert"`;
   let obRetryTimer = null;
 
   async function obRenderPickAsync(body, catId) {
-    const lastStop   = OB.stops.length > 0 ? OB.stops[OB.stops.length - 1] : null;
+    // Anchor on the stop the new one will follow: normally the last stop, but
+    // when the arrange step is filling a gap it's the stop just before that slot.
+    const anchorIdx  = OB.insertAt != null ? OB.insertAt - 1 : OB.stops.length - 1;
+    const lastStop   = anchorIdx >= 0 ? OB.stops[anchorIdx] : null;
     // Use the last stop as the anchor — exact coords if we have them, neighbourhood
     // centroid as a fallback. Never use the user's current location; the itinerary
     // flows from stop to stop, not from wherever the user happens to be standing.
@@ -10263,12 +10423,11 @@ Valid types: "meal", "activity", "dessert"`;
         if (!p) return;
         // Events resolve their anchor via API; place items already carry grid coords.
         if (p.type === 'event' && p.coords === undefined) { btn.style.opacity = '0.5'; await obLoadItemCoords(p); }
-        OB.stops.push({
+        obInsertStop({
           type: p.type, emoji: p.emoji, label: p.label, sublabel: p.sublabel, item: p.item,
           coords: p.coords || obItemGeo(p.item).coords,
           coordsExact: p.type === 'event' ? !!p.coords : (p._precision === 'api' || p._precision === 'grid'),
         });
-        OB.step = 'equation'; obRender();
       });
     });
     body.querySelectorAll('[data-ob-more]').forEach(btn => {
@@ -10284,7 +10443,7 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   function obRenderCustom(body) {
-    const backStep = OB.stops.length > 0 ? 'equation' : 'first-category';
+    const backStep = OB.returnStep || (OB.stops.length > 0 ? 'equation' : 'first-category');
     let custNbhd = null; // neighborhood fallback when no street address is typed
     const nbhdChips = OB_NEIGHBORHOODS.filter(n => n.id).map(n =>
       `<button class="pl-chip" data-ob-cust-nbhd="${escapeAttr(n.id)}" type="button"><span class="pl-chip-emoji">${n.emoji}</span>${escapeHtml(n.label)}</button>`).join('');
@@ -10313,14 +10472,13 @@ Valid types: "meal", "activity", "dessert"`;
       const item = { name, location, neighborhood: custNbhd || undefined, custom: true };
       const geo = obItemGeo(item);
       const sublabel = location || custNbhd || '';
-      OB.stops.push({
+      obInsertStop({
         type: 'custom', emoji: '📍', label: name, sublabel, item,
         coords: geo.coords || null,
         coordsExact: geo.precision === 'api' || geo.precision === 'grid',
       });
-      OB.step = 'equation'; obRender();
     });
-    document.getElementById('obCustBack').addEventListener('click', () => { OB.step = backStep; obRender(); });
+    document.getElementById('obCustBack').addEventListener('click', () => { obCancelInsert(); OB.step = backStep; obRender(); });
   }
 
   function obRenderEquation(body) {
@@ -10396,7 +10554,7 @@ Valid types: "meal", "activity", "dessert"`;
         document.getElementById('obRetry').addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
       }
       const eb = document.getElementById('obRetryEdit');
-      if (eb) eb.addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+      if (eb) eb.addEventListener('click', () => { OB.step = obEditStep(); obRender(); });
     }
   }
 
@@ -10438,13 +10596,16 @@ Rules:
 Return ONLY valid JSON (no markdown fences):
 {"summary":"Tagline","stops":[{"name":"Stop name","eyebrow":"Label","time":"6:00 PM","durationMins":90,"desc":"Description.","tip":"Tip or null"}]}`;
 
+    return obGeminiJSON(prompt, { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } });
+  }
+
+  // Send a prompt to Gemini and parse the JSON it returns (tolerating fences
+  // and stray prose). Shared by the itinerary writer and the picks arranger.
+  async function obGeminiJSON(prompt, generationConfig) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getGeminiKey()}`;
     const res = await fetch(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } },
-      }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
     });
     if (!res.ok) throw await geminiHttpError(res);
     const data = await res.json();
@@ -10563,6 +10724,7 @@ Return ONLY valid JSON (no markdown fences):
       <div class="pl-timeline">${timelineHTML}</div>
       <button class="dn-export-btn" id="obShare" type="button">📤 Share itinerary</button>
       <button class="pl-next" style="background:var(--surface);color:var(--text);border:1.5px solid var(--divider);margin-top:0.75rem" id="obEditOuting" type="button">← Edit outing</button>
+      ${OB.fromPicks && PICKS.length ? `<button class="pl-next" style="background:var(--surface);color:var(--text-secondary);border:1.5px solid var(--divider);margin-top:0.5rem" id="obClearPicks" type="button">🧺 All set — clear my ${PICKS.length} saved pick${PICKS.length === 1 ? '' : 's'}</button>` : ''}
     `;
 
     const day = obActiveDay();
@@ -10596,10 +10758,602 @@ Return ONLY valid JSON (no markdown fences):
 
     const shareBtn = document.getElementById('obShare');
     shareBtn.addEventListener('click', () => shareItineraryText(shareBtn, obVibeLabel(), OB.shareText));
-    document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = 'equation'; obRender(); });
+    document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = obEditStep(); obRender(); });
+    const clearBtn = document.getElementById('obClearPicks');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      if (!confirm('Clear all your saved picks? This itinerary stays as it is.')) return;
+      clearPicks(); clearBtn.remove();
+    });
   }
 
-  // ── Picnic Planner ──────────────────────────────────────────────
+  // ── My Picks ──────────────────────────────────────────────────────────────
+  // A "+" on every event card and restaurant / bookstore / market tile saves it
+  // to a folder (localStorage, so it's per device and survives reloads). Once
+  // anything is saved, a "Build from picks" button joins the Discover button;
+  // it opens the Outing Builder in picks mode, which asks the usual questions
+  // and then lays the saved items out on the `arrange` step: a quick time-and-
+  // distance heuristic first (instant, no network), then an AI pass that
+  // refines the order and points out holes in the day. Rows can be dragged
+  // into any order before the itinerary is generated.
+  const PICKS_LS_KEY = 'goingsOn.picks';
+  let PICKS = [];
+  const eventById = new Map(); // calendar events by id, filled in init()
+
+  function loadPicks() {
+    try { const v = JSON.parse(localStorage.getItem(PICKS_LS_KEY) || '[]'); PICKS = Array.isArray(v) ? v : []; }
+    catch { PICKS = []; }
+  }
+  function savePicks() { try { localStorage.setItem(PICKS_LS_KEY, JSON.stringify(PICKS)); } catch {} }
+  function isPicked(key) { return PICKS.some(p => p.key === key); }
+  function pickKeyForPlace(name) { return 'place:' + String(name || '').trim().toLowerCase(); }
+  function pickKeyForEvent(id) { return 'ev:' + id; }
+
+  // Tiles don't know their Outing Builder category; classify the same way
+  // obRawPool() does so dessert lands after dinner and bars after food.
+  function pickTypeForPlace(kind, item) {
+    if (kind === 'book') return 'bookstore';
+    if (kind === 'market') return 'market';
+    const hay = [item.cuisine, item.name, (item.tags || []).join(' ')].map(h => h || '');
+    if (hay.some(h => PL_DESSERT_RE.test(h))) return 'dessert';
+    if (hay.some(h => PL_DRINKS_RE.test(h))) return 'drinks';
+    return 'restaurant';
+  }
+
+  // The live data object behind a tile, by name, so a saved place carries its
+  // baked coords, tags and links. Null if it isn't in any list any more.
+  function findPickPlace(kind, name) {
+    const want = String(name || '').trim().toLowerCase();
+    const lists = kind === 'book' ? [BOOKSTORES.flatMap(c => c.sections.flatMap(s => s.places))]
+      : kind === 'market' ? [FARMERS_MARKETS]
+      : [allEatPlaces(), discoverMasterPlaces(), (TRENDY_SECTIONS || []).flatMap(s => s.places || [])];
+    for (const list of lists) {
+      const hit = list.find(r => String(r.name || '').trim().toLowerCase() === want);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function pickBtnHTML(kind, ref) {
+    const key = kind === 'event' ? pickKeyForEvent(ref) : pickKeyForPlace(ref);
+    const on = isPicked(key);
+    return `<button class="pick-btn${on ? ' picked' : ''}" type="button" data-pick-kind="${escapeAttr(kind)}" data-pick-ref="${escapeAttr(ref)}" data-pick-key="${escapeAttr(key)}" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Save to'} my picks" title="${on ? 'Saved to my picks' : 'Save to my picks'}"><span class="pick-btn-plus">+</span><span class="pick-btn-check">✓</span></button>`;
+  }
+
+  function setPickBtnState(b, on) {
+    b.classList.toggle('picked', on);
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-label', (on ? 'Remove from' : 'Save to') + ' my picks');
+    b.title = on ? 'Saved to my picks' : 'Save to my picks';
+  }
+  // The same place can be on screen more than once (e.g. Eat tab + Picnic tab).
+  function syncPickButtons(key, on) {
+    document.querySelectorAll('.pick-btn').forEach(b => { if (b.dataset.pickKey === key) setPickBtnState(b, on); });
+  }
+  function syncAllPickButtons() {
+    document.querySelectorAll('.pick-btn').forEach(b => setPickBtnState(b, isPicked(b.dataset.pickKey)));
+  }
+
+  function buildPick(kind, ref, btn) {
+    const savedAt = Date.now();
+    if (kind === 'event') {
+      const ev = eventById.get(ref);
+      if (!ev) return null;
+      return { key: pickKeyForEvent(ref), type: 'event', id: ref, name: ev.summary || 'Event',
+               location: ev.location || '', start: (ev.start && (ev.start.dateTime || ev.start.date)) || '', savedAt };
+    }
+    const live = findPickPlace(kind, ref);
+    // Fall back to what the tile itself knows: its name and "name, location" query.
+    const tile = btn.closest('[data-query]');
+    const q = tile ? tile.dataset.query : '';
+    const item = live || { name: ref, location: q.startsWith(ref + ', ') ? q.slice(ref.length + 2) : '' };
+    return {
+      key: pickKeyForPlace(ref), type: pickTypeForPlace(kind, item), kind,
+      name: item.name, location: item.location || '', cuisine: item.cuisine || '', price: item.price || '',
+      website: item.website || '', reservation: item.reservation || '', tags: item.tags || [],
+      desc: item.desc ? String(item.desc).slice(0, 240) : '', neighborhood: item.neighborhood || '', savedAt,
+    };
+  }
+
+  function removePick(key) { PICKS = PICKS.filter(p => p.key !== key); savePicks(); refreshPicksFab(); }
+  function clearPicks() { PICKS = []; savePicks(); syncAllPickButtons(); refreshPicksFab(); }
+
+  // Registered in the capture phase so the tile or card underneath never sees
+  // the click (tiles toggle open on any click inside them).
+  function onPickButtonClick(e) {
+    const btn = e.target.closest && e.target.closest('.pick-btn');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const key = btn.dataset.pickKey;
+    if (isPicked(key)) { removePick(key); syncPickButtons(key, false); return; }
+    const pick = buildPick(btn.dataset.pickKind, btn.dataset.pickRef, btn);
+    if (!pick) return;
+    PICKS.push(pick); savePicks();
+    syncPickButtons(key, true);
+    refreshPicksFab();          // the Build button must exist before the chip can fly to it
+    animatePickSave(btn, pick);
+  }
+
+  // The "+" pops into a check, and a small chip flies from it to the Build
+  // button, which bumps as it lands.
+  function animatePickSave(btn, pick) {
+    btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+    const fab = document.getElementById('picksFab');
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!fab || fab.hidden || reduce || !fab.animate) return;
+    const from = btn.getBoundingClientRect(), to = fab.getBoundingClientRect();
+    const ghost = document.createElement('div');
+    ghost.className = 'pick-fly';
+    ghost.textContent = pick.type === 'event' ? '📅' : ((OB_CATS.find(c => c.id === pick.type) || {}).emoji || '📍');
+    ghost.style.left = (from.left + from.width / 2 - 14) + 'px';
+    ghost.style.top  = (from.top + from.height / 2 - 14) + 'px';
+    document.body.appendChild(ghost);
+    const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+    const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+    const anim = ghost.animate([
+      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 40}px) scale(1.1)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.35)`, opacity: 0.15 },
+    ], { duration: 600, easing: 'cubic-bezier(.25,.7,.3,1)' });
+    anim.onfinish = () => { ghost.remove(); fab.classList.remove('bump'); void fab.offsetWidth; fab.classList.add('bump'); };
+  }
+
+  function refreshPicksFab() {
+    const n = PICKS.length;
+    document.body.classList.toggle('has-picks', n > 0);
+    const fab = document.getElementById('picksFab');
+    if (!fab) return;
+    fab.hidden = n === 0;
+    const txt = document.getElementById('picksFabText');
+    if (txt) txt.textContent = `Build from ${n} pick${n === 1 ? '' : 's'}`;
+    fab.setAttribute('aria-label', `Build an outing from your ${n} saved pick${n === 1 ? '' : 's'}`);
+  }
+
+  function pickedEventCountForDay(i) {
+    const day = obDays()[i];
+    if (!day || !lastRender) return 0;
+    const evs = lastRender.byDay[dayKey(day)] || [];
+    return PICKS.filter(p => p.type === 'event' && evs.some(e => e.id === p.id)).length;
+  }
+
+  function setupPicks() {
+    loadPicks();
+    refreshPicksFab();
+    document.addEventListener('click', onPickButtonClick, true);
+    const fab = document.getElementById('picksFab');
+    if (fab) fab.addEventListener('click', () => openOutingBuilder({ fromPicks: true }));
+  }
+
+  // ── Picks → Outing Builder stops ──
+  // Turn the saved folder into stop objects for the chosen day. Events that
+  // aren't on that day (or have left the calendar) are reported, not used.
+  async function obStopsFromPicks() {
+    const day = obActiveDay();
+    const dayEvents = (day && lastRender && lastRender.byDay[dayKey(day)]) || [];
+    const stops = [], skipped = [];
+    for (const p of PICKS) {
+      if (p.type === 'event') {
+        const ev = eventById.get(p.id);
+        if (!ev) { skipped.push({ pick: p, why: 'no longer on the calendar' }); continue; }
+        if (!dayEvents.some(e => e.id === ev.id)) { skipped.push({ pick: p, why: 'on a different day' }); continue; }
+        stops.push({ type: 'event', emoji: '📅', label: ev.summary || 'Event', sublabel: ev.location || '',
+                     item: ev, coords: undefined, fromPick: true });
+      } else {
+        const item = findPickPlace(p.kind, p.name) || {
+          name: p.name, location: p.location, cuisine: p.cuisine, price: p.price, website: p.website,
+          reservation: p.reservation, tags: p.tags, desc: p.desc, neighborhood: p.neighborhood,
+        };
+        const type = OB_CATS.some(c => c.id === p.type) ? p.type : pickTypeForPlace(p.kind, item);
+        const geo = obItemGeo(item);
+        stops.push({ type, emoji: (OB_CATS.find(c => c.id === type) || {}).emoji || '📍', label: item.name,
+                     sublabel: item.location || '', item, coords: geo.coords,
+                     coordsExact: geo.precision === 'api' || geo.precision === 'grid', _precision: geo.precision, fromPick: true });
+      }
+    }
+    // Few items, so resolve every location properly: events through the same
+    // path the pick list uses, off-grid places through Places (cached).
+    await Promise.allSettled(stops.map(async s => {
+      if (s.type === 'event') { await obLoadItemCoords(s); s.coordsExact = !!s.coords; }
+      else if (s._precision !== 'api') { const c = await plEnsureRestoCoords(s.item); if (c) { s.coords = c; s.coordsExact = true; } }
+    }));
+    return { stops, skipped };
+  }
+
+  // ── Arranging ──
+  function obStopStartMin(s) {
+    if (s.type !== 'event' || !s.item || !s.item.start || !s.item.start.dateTime) return null;
+    const d = new Date(s.item.start.dateTime);
+    return d.getHours() * 60 + d.getMinutes();
+  }
+  const OB_STOP_MINS = { event: 90, restaurant: 75, drinks: 60, dessert: 30, bookstore: 40, market: 40, custom: 60 };
+  function obStopDuration(s) {
+    if (s.type === 'event' && s.item && s.item.start && s.item.start.dateTime && s.item.end && s.item.end.dateTime) {
+      const m = Math.round((new Date(s.item.end.dateTime) - new Date(s.item.start.dateTime)) / 60000);
+      if (m > 0) return Math.min(240, Math.max(30, m));
+    }
+    return OB_STOP_MINS[s.type] || 60;
+  }
+  // Minutes for one leg in the chosen mode — the same models plLegLabel() uses.
+  function obLegMins(mi) {
+    const walk = plWalkMins(mi);
+    const m = OB.transitMode;
+    if (m === 'walk') return walk;
+    if (m === 'bike') { const b = plBikeMins(mi); return walk <= b + 2 ? walk : b; }
+    if (m === 'drive') return Math.max(1, Math.round(mi / 22 * 60));
+    return Math.min(walk, Math.round(10 + mi * 5)); // transit / mix
+  }
+  function obMinLabel(min) {
+    const d = new Date(); d.setHours(Math.floor(min / 60), min % 60, 0, 0);
+    return fmtTime(d.toISOString());
+  }
+  // Walk the list with a clock: travel to each stop, wait if a timed event
+  // hasn't started yet, note when we'd arrive late, then stay for its duration.
+  function obEstimateTimes(stops) {
+    let clock = OB.startHour * 60, prev = null;
+    for (const s of stops) {
+      const mi = (prev && prev.coords && s.coords)
+        ? haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon) : null;
+      const leg = mi == null ? 0 : obLegMins(mi);
+      clock += leg;
+      const fixed = obStopStartMin(s);
+      let late = 0;
+      if (fixed != null) { if (clock < fixed) clock = fixed; else late = clock - fixed; }
+      const dur = obStopDuration(s);
+      s._est = { start: clock, end: clock + dur, legMi: mi, legMins: leg, late };
+      clock += dur; prev = s;
+    }
+    return stops;
+  }
+
+  // Instant, no-network ordering: timed events are anchors; everything else is
+  // grouped daytime → meal → dessert → drinks, chained nearest-first within a
+  // group, and the anchors slotted in where the running clock reaches them.
+  function obArrangeHeuristic(stops) {
+    const timed = stops.filter(s => obStopStartMin(s) != null).sort((a, b) => obStopStartMin(a) - obStopStartMin(b));
+    const flex  = stops.filter(s => obStopStartMin(s) == null);
+    const phase = s => s.type === 'restaurant' ? 1 : s.type === 'dessert' ? 2 : s.type === 'drinks' ? 3 : 0;
+    const mealRank = s => {
+      const t = ((s.item && s.item.tags) || []).map(x => String(x).toLowerCase());
+      return (t.includes('breakfast') || t.includes('brunch')) ? 0 : t.includes('lunch') ? 1 : 2;
+    };
+    let prev = (OB.neighborhood && OB_NBHD_COORDS[OB.neighborhood]) ? { coords: OB_NBHD_COORDS[OB.neighborhood] } : null;
+    const ordered = [];
+    for (const ph of [0, 1, 2, 3]) {
+      const pool = flex.filter(s => phase(s) === ph);
+      if (ph === 1) pool.sort((a, b) => mealRank(a) - mealRank(b)); // breakfast before lunch before dinner
+      while (pool.length) {
+        let best = 0;
+        if (ph !== 1 && prev && prev.coords) {
+          let bd = Infinity;
+          pool.forEach((s, i) => {
+            const d = s.coords ? haversineMiles(prev.coords.lat, prev.coords.lon, s.coords.lat, s.coords.lon) : Infinity;
+            if (d < bd) { bd = d; best = i; }
+          });
+        }
+        const s = pool.splice(best, 1)[0];
+        ordered.push(s); prev = s;
+      }
+    }
+    return obSlotTimedEvents(ordered, timed);
+  }
+
+  // Slot each timed event where it's reachable: try every position, prefer
+  // ones that arrive no more than 15 minutes late, and among those the one
+  // with the least waiting around beforehand.
+  function obSlotTimedEvents(ordered, timed) {
+    for (const ev of timed.slice().sort((a, b) => obStopStartMin(a) - obStopStartMin(b))) {
+      let bestAt = ordered.length, bestKey = Infinity;
+      for (let at = 0; at <= ordered.length; at++) {
+        const trial = [...ordered.slice(0, at), ev, ...ordered.slice(at)];
+        obEstimateTimes(trial);
+        const e = ev._est;
+        const wait = Math.max(0, e.start - (at === 0 ? OB.startHour * 60 : trial[at - 1]._est.end + e.legMins));
+        const key = (e.late > 15 ? 100000 + e.late : 0) + wait;
+        if (key < bestKey) { bestKey = key; bestAt = at; }
+      }
+      ordered.splice(bestAt, 0, ev);
+    }
+    return ordered;
+  }
+  // Keep the flexible stops in their current order but re-place the timed
+  // events. Used after a stop is added mid-plan, so an event isn't left
+  // stranded behind something that now runs into its start time.
+  function obReslotTimed(stops) {
+    return obSlotTimedEvents(stops.filter(s => obStopStartMin(s) == null), stops.filter(s => obStopStartMin(s) != null));
+  }
+
+  // Holes the heuristic can see without AI: a meal window with nothing to eat,
+  // no dessert after the meal, a long wait before a timed event, time left over.
+  function obHeuristicGaps(stops) {
+    const gaps = [];
+    const has = t => stops.some(s => s.type === t);
+    const add = g => { if (!gaps.some(x => x.category === g.category)) gaps.push(g); };
+    obEstimateTimes(stops);
+    const endMin = OB.endHour * 60;
+    const winMeals = obWindowMeals();
+    if (winMeals.size && !has('restaurant')) {
+      const mealHour = winMeals.has('dinner') ? 18 : winMeals.has('lunch') ? 12 : 8;
+      let after = -1;
+      stops.forEach((s, i) => { if (s._est.start < mealHour * 60) after = i; });
+      add({ afterStop: after >= 0 ? stops[after] : null, category: 'restaurant',
+            reason: `Your window covers ${[...winMeals].join(' and ')}, but there's nothing to eat yet.` });
+    }
+    const lastResto = [...stops].reverse().find(s => s.type === 'restaurant');
+    if (lastResto && !has('dessert') && endMin - lastResto._est.end >= 45) {
+      add({ afterStop: lastResto, category: 'dessert', reason: `Something sweet after ${lastResto.label}, close by.` });
+    }
+    // What to suggest for free time at hour `h`: never a type that's already in the plan.
+    const catFor = h => (plMealTypeAt(h) && !has('restaurant')) ? 'restaurant'
+      : h >= 17 ? (!has('drinks') ? 'drinks' : !has('dessert') ? 'dessert' : 'event')
+      : (!has('bookstore') ? 'bookstore' : !has('market') ? 'market' : 'event');
+    for (let i = 1; i < stops.length; i++) {
+      const wait = stops[i]._est.start - stops[i - 1]._est.end - stops[i]._est.legMins;
+      if (wait < 75) continue;
+      const h = Math.floor(stops[i - 1]._est.end / 60);
+      add({ afterStop: stops[i - 1], category: catFor(h), reason: `About ${Math.round(wait / 15) * 15} minutes free before ${stops[i].label}.` });
+    }
+    if (stops.length) {
+      const lastEnd = stops[stops.length - 1]._est.end;
+      if (endMin - lastEnd >= 75) {
+        add({ afterStop: stops[stops.length - 1], category: catFor(Math.floor(lastEnd / 60)),
+              reason: `You'd wrap up around ${obMinLabel(lastEnd)} — room for one more.` });
+      }
+    }
+    return gaps.slice(0, 3);
+  }
+
+  // Ask Gemini for a better order and any real holes. Returns null (keep the
+  // heuristic) on any failure or on an answer that isn't a valid permutation.
+  async function obArrangeAI(stops) {
+    if (stops.length < 2) return null;
+    const day = obActiveDay();
+    const modeLbl = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
+    const lines = stops.map((s, i) => {
+      const fixed = obStopStartMin(s);
+      const where = s.coords ? `${s.coords.lat.toFixed(3)},${s.coords.lon.toFixed(3)}` : 'location unknown';
+      const area = obItemNeighborhood(s.item) || (s.sublabel ? obShortSub(s.sublabel) : '');
+      return `${i}: [${s.type}] ${s.label}${area ? ' — ' + area : ''}${fixed != null ? ` — starts ${obMinLabel(fixed)}` : ''} — ${where}`;
+    }).join('\n');
+    const cats = OB_CATS.map(c => c.id).filter(id => id !== 'custom');
+    const prompt = `You are arranging a Philadelphia outing from stops the user has saved. Put them in the best order and point out real holes in the day.
+
+Day: ${day ? DAYS_LONG[day.getDay()] : 'today'}
+Time window: ${plHourLabel(OB.startHour)}–${plHourLabel(OB.endHour)}
+Area: ${OB.neighborhood || 'anywhere in Philadelphia'}
+Getting around: ${modeLbl}
+
+Stops (index: [type] name — area — fixed start time if any — lat,lon):
+${lines}
+
+Rules:
+1. "order" must contain every index exactly once.
+2. A stop with a fixed start time happens at that time; place the others around it so nothing overlaps.
+3. Meals at meal times. Dessert right after the meal it follows. Drinks after food, not before.
+4. Markets and bookstores in the daytime.
+5. Minimise backtracking — use the coordinates.
+6. "gaps": only genuine holes (a meal window with nothing to eat, a long wait between stops, time left at the end). At most 3. "category" must be one of: ${cats.join(', ')}. "after" is the ORIGINAL index of the stop the addition should follow, or -1 to put it first. "reason" is one short sentence.
+7. "note": one short sentence on how you ordered things.
+
+Return ONLY valid JSON (no markdown fences):
+{"order":[0,1,2],"gaps":[{"after":0,"category":"dessert","reason":"..."}],"note":"..."}`;
+    let res;
+    try { res = await obGeminiJSON(prompt, { temperature: 0.4, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 256 } }); }
+    catch { return null; }
+    const n = stops.length;
+    const order = Array.isArray(res && res.order) ? res.order.map(Number) : null;
+    if (!order || order.length !== n || new Set(order).size !== n || order.some(i => !(i >= 0 && i < n))) return null;
+    const catSet = new Set(cats);
+    const gaps = (Array.isArray(res.gaps) ? res.gaps : []).map(g => ({
+      afterStop: (g && Number.isInteger(+g.after) && +g.after >= 0 && +g.after < n) ? stops[+g.after] : null,
+      category: g && catSet.has(g.category) ? g.category : null,
+      reason: g && typeof g.reason === 'string' ? g.reason.trim().slice(0, 140) : '',
+    })).filter(g => g.category).slice(0, 3);
+    return { order: order.map(i => stops[i]), gaps, note: typeof res.note === 'string' ? res.note.trim().slice(0, 120) : '' };
+  }
+
+  // Lay out `stops`: heuristic now, AI refinement when it arrives — unless the
+  // user has moved on or changed the list in the meantime.
+  function obRunArrange(stops) {
+    OB.stops = obArrangeHeuristic(stops);
+    OB.gaps = obHeuristicGaps(OB.stops);
+    OB.arranged = true; OB.arrangeNote = null; OB.aiBusy = true;
+    const body = document.getElementById('obBody');
+    if (OB.step === 'arrange' && body) obRenderArrangeList(body);
+    const sig = OB.stops.map(s => s.label).join('|');
+    obArrangeAI(OB.stops).then(res => {
+      OB.aiBusy = false;
+      if (OB.step !== 'arrange' || OB.stops.map(s => s.label).join('|') !== sig) return;
+      if (res) {
+        OB.stops = res.order;
+        // AI gaps first, then any heuristic ones it didn't cover.
+        const merged = [...res.gaps];
+        for (const g of OB.gaps) if (!merged.some(x => x.category === g.category)) merged.push(g);
+        OB.gaps = merged.slice(0, 3);
+        OB.arrangeNote = res.note || 'Arranged by AI';
+      } else {
+        OB.arrangeNote = 'Arranged by time & distance';
+      }
+      const b = document.getElementById('obBody');
+      if (b) obRenderArrangeList(b);
+    });
+  }
+
+  async function obRenderArrange(body) {
+    if (OB.arranged) { obRenderArrangeList(body); return; }
+    body.innerHTML = `<div class="dn-loading">📌 Gathering your picks…</div>`;
+    const { stops, skipped } = await obStopsFromPicks();
+    if (OB.step !== 'arrange') return; // user navigated away while we resolved locations
+    OB.skippedPicks = skipped;
+    obRunArrange(stops);
+  }
+
+  function obRenderArrangeList(body) {
+    const stops = obEstimateTimes(OB.stops);
+    // The headline was set before the picks finished resolving; keep it current.
+    const hl = document.getElementById('obHeadline');
+    if (hl) hl.textContent = stops.length >= 2 ? `${stops.length} stops, arranged` : 'Arrange your picks';
+    const gaps = (OB.gaps || []).filter(g => !g.afterStop || stops.includes(g.afterStop));
+    OB.gaps = gaps;
+    const catOf = id => OB_CATS.find(c => c.id === id) || { label: id, emoji: '' };
+    const gapHTML = g => `<div class="ob-arr-gap">
+        <div class="ob-arr-gap-text">✨ Add ${escapeHtml(catOf(g.category).label.toLowerCase())} here?${g.reason ? `<small>${escapeHtml(g.reason)}</small>` : ''}</div>
+        <button class="ob-arr-gap-btn" data-ob-gap="${gaps.indexOf(g)}" type="button">${catOf(g.category).emoji} Find one</button>
+        <button class="ob-arr-gap-x" data-ob-gap-x="${gaps.indexOf(g)}" type="button" aria-label="Dismiss suggestion">✕</button>
+      </div>`;
+    const rows = stops.map((s, i) => {
+      const e = s._est, next = stops[i + 1];
+      const leg = !next ? ''
+        : next._est.legMi != null ? `<div class="ob-arr-leg">↓ ${escapeHtml(plLegLabel(next._est.legMi, OB.transitMode))}</div>`
+        : `<div class="ob-arr-leg">↓</div>`;
+      const after = gaps.filter(g => g.afterStop === s).map(gapHTML).join('');
+      const fixed = obStopStartMin(s);
+      return `<div class="ob-arr-row" data-ob-idx="${i}">
+        <div class="ob-stop-card ob-arr-card">
+          <span class="ob-arr-handle" title="Drag to reorder" aria-hidden="true">⠿</span>
+          <div class="ob-arr-body">
+            <div class="ob-stop-card-head">
+              <span class="ob-stop-num">${i + 1}</span>
+              <span class="ob-stop-name">${s.emoji} ${escapeHtml(s.label)}${s.fromPick ? '<span class="ob-arr-pin" title="From your picks">📌</span>' : ''}</span>
+              <span class="ob-arr-time${e.late > 15 ? ' late' : ''}">${obMinLabel(e.start)}</span>
+              <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Leave out of this outing" title="Leave out of this outing">✕</button>
+            </div>
+            ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(obShortSub(s.sublabel))}</div>` : ''}
+            ${e.late > 15 ? `<div class="ob-arr-warn">⚠ Starts ${obMinLabel(fixed)} — you'd get there about ${e.late} min late. Try dragging it earlier.</div>` : ''}
+          </div>
+        </div>
+        ${leg}${after}
+      </div>`;
+    }).join('');
+    const firstGaps = gaps.filter(g => !g.afterStop).map(gapHTML).join('');
+    const skipped = OB.skippedPicks || [];
+    const skippedHTML = skipped.length ? `<div class="ob-arr-note">Not included:${skipped.map(k =>
+      ` <span>${escapeHtml(k.pick.name)} <em>(${escapeHtml(k.why)})</em><button class="ob-arr-gap-x" data-ob-unpick="${escapeAttr(k.pick.key)}" type="button" title="Remove from picks" aria-label="Remove ${escapeAttr(k.pick.name)} from picks">✕</button></span>`).join('')}</div>` : '';
+    const lastEnd = stops.length ? stops[stops.length - 1]._est.end : null;
+
+    body.innerHTML = `
+      <div class="ob-arr-note">
+        <span class="ob-arr-ai${OB.aiBusy ? ' busy' : ''}">${OB.aiBusy ? '✨ Arranging with AI' : '✨ ' + escapeHtml(OB.arrangeNote || 'Arranged by time & distance')}</span>
+        ${lastEnd != null ? `<span>Wraps up around ${obMinLabel(lastEnd)}</span>` : ''}
+      </div>
+      <div class="pl-q" style="margin-bottom:0.5rem">Drag ⠿ to reorder. ✕ leaves a stop out of this outing — it stays in your picks.</div>
+      ${skippedHTML}
+      <div class="ob-arr-list" id="obArrList">${firstGaps}${rows}</div>
+      ${stops.length ? '' : `<div class="dn-empty"><div class="dn-empty-icon">📌</div>None of your picks fit this day. Add a stop below, or go back and choose another day.</div>`}
+      <div class="ob-arr-tools">
+        <button class="ob-arr-tool" id="obRearrange" type="button">↻ Re-arrange</button>
+        <button class="ob-arr-tool" id="obClearPicksArr" type="button">🗑 Clear all picks</button>
+      </div>
+      <div class="ob-add-label">Add a stop</div>
+      <div class="ob-cat-grid">
+        ${OB_CATS.map(c => `<button class="ob-cat-btn" data-ob-add="${escapeAttr(c.id)}" type="button">
+          <span class="ob-cat-emoji">${c.emoji}</span>
+          <span class="ob-cat-label" style="font-size:0.78rem">${escapeHtml(c.label)}</span>
+        </button>`).join('')}
+      </div>
+      ${stops.length >= 2
+        ? `<button class="pl-next" id="obGenerate" type="button">✓ Done — build itinerary ✨</button>`
+        : `<div style="text-align:center;font-size:0.81rem;color:var(--text-secondary);margin-top:0.6rem">Add at least 2 stops to build your itinerary</div>`}
+    `;
+
+    body.querySelectorAll('[data-ob-rm]').forEach(btn => btn.addEventListener('click', e => {
+      e.stopPropagation();
+      OB.stops.splice(parseInt(btn.dataset.obRm, 10), 1);
+      obRender();
+    }));
+    body.querySelectorAll('[data-ob-gap]').forEach(btn => btn.addEventListener('click', () => {
+      const g = gaps[parseInt(btn.dataset.obGap, 10)];
+      if (!g) return;
+      OB.pendingCat = g.category;
+      OB.insertAt = g.afterStop ? OB.stops.indexOf(g.afterStop) + 1 : 0;
+      OB.returnStep = 'arrange'; OB.activeGap = g;
+      OB.step = 'pick-item'; obRender();
+    }));
+    body.querySelectorAll('[data-ob-gap-x]').forEach(btn => btn.addEventListener('click', () => {
+      OB.gaps.splice(parseInt(btn.dataset.obGapX, 10), 1);
+      obRender();
+    }));
+    body.querySelectorAll('[data-ob-unpick]').forEach(btn => btn.addEventListener('click', () => {
+      const key = btn.dataset.obUnpick;
+      removePick(key);
+      OB.skippedPicks = (OB.skippedPicks || []).filter(k => k.pick.key !== key);
+      obRender();
+    }));
+    body.querySelectorAll('[data-ob-add]').forEach(btn => btn.addEventListener('click', () => {
+      OB.pendingCat = btn.dataset.obAdd;
+      OB.insertAt = null; OB.returnStep = 'arrange'; OB.activeGap = null;
+      OB.step = 'pick-item'; obRender();
+    }));
+    document.getElementById('obRearrange').addEventListener('click', () => obRunArrange(OB.stops));
+    document.getElementById('obClearPicksArr').addEventListener('click', () => {
+      if (!confirm('Clear all your saved picks? The stops already in this outing stay.')) return;
+      clearPicks(); OB.skippedPicks = []; obRender();
+    });
+    const gen = document.getElementById('obGenerate');
+    if (gen) gen.addEventListener('click', () => { OB.step = 'generating'; obRender(); obBuildItinerary(); });
+    obArrangeEnableDrag(document.getElementById('obArrList'));
+  }
+
+  // Drag-to-reorder with Pointer Events (one code path for mouse and touch).
+  // Rows swap live as the pointer crosses their midpoints; on release the DOM
+  // order becomes the stop order and the list re-renders with fresh times.
+  function obArrangeEnableDrag(list) {
+    if (!list) return;
+    const scroller = list.closest('.dn-body') || document.documentElement;
+    let drag = null;
+    const onMove = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag.y = e.clientY;
+      for (const other of list.querySelectorAll('.ob-arr-row')) {
+        if (other === drag.row) continue;
+        const r = other.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        const otherIsAfter = !!(drag.row.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING);
+        // Move the OTHER row around the dragged one. Re-inserting the dragged
+        // row itself would take it out of the DOM for an instant, and that
+        // drops its pointer capture mid-drag.
+        if (otherIsAfter && e.clientY > mid) drag.row.before(other);
+        else if (!otherIsAfter && e.clientY < mid) drag.row.after(other);
+      }
+    };
+    const onEnd = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      cancelAnimationFrame(drag.raf);
+      drag.row.classList.remove('dragging');
+      document.removeEventListener('pointermove', onMove, true);
+      document.removeEventListener('pointerup', onEnd, true);
+      document.removeEventListener('pointercancel', onEnd, true);
+      const order = [...list.querySelectorAll('.ob-arr-row')].map(r => parseInt(r.dataset.obIdx, 10));
+      drag = null;
+      if (order.some((v, i) => v !== i)) OB.stops = order.map(i => OB.stops[i]);
+      obRender();
+    };
+    // Nudge the scrollable body along while the pointer sits near its top or
+    // bottom edge, so long lists can be reordered end to end on a phone.
+    const autoScroll = () => {
+      if (!drag) return;
+      const r = scroller.getBoundingClientRect(), zone = 48;
+      if (drag.y < r.top + zone) scroller.scrollTop -= Math.ceil((r.top + zone - drag.y) / 4);
+      else if (drag.y > r.bottom - zone) scroller.scrollTop += Math.ceil((drag.y - (r.bottom - zone)) / 4);
+      drag.raf = requestAnimationFrame(autoScroll);
+    };
+    list.querySelectorAll('.ob-arr-handle').forEach(h => {
+      h.addEventListener('pointerdown', e => {
+        const row = h.closest('.ob-arr-row');
+        if (!row || drag) return;
+        e.preventDefault();
+        try { h.setPointerCapture(e.pointerId); } catch {}
+        drag = { row, id: e.pointerId, y: e.clientY, raf: 0 };
+        row.classList.add('dragging');
+        // Tracked on the document so the drag survives anything that would
+        // steal capture from the handle.
+        document.addEventListener('pointermove', onMove, true);
+        document.addEventListener('pointerup', onEnd, true);
+        document.addEventListener('pointercancel', onEnd, true);
+        drag.raf = requestAnimationFrame(autoScroll);
+      });
+    });
+  }
+
+  // ── Picnic Planner──────────────────────────────────────────────
   // Pairs a scenic park with a nearby picnic-takeout spot, with weather for the
   // chosen time, a map of the two, what to bring, and any events near the park.
   const PICNIC = { step: 'when', dayIdx: 0, hour: 12, transit: 'walk', area: null, parkIdx: 0, foodIdx: 0, order: [], seed: null };
@@ -10985,15 +11739,20 @@ Return ONLY valid JSON (no markdown fences):
       if (OB.step === 'neighborhood')     { OB.step = 'transit';         obRender(); return; }
       if (OB.step === 'time')             { OB.step = 'neighborhood';    obRender(); return; }
       if (OB.step === 'first-category')   { OB.step = 'time';            obRender(); return; }
-      if (OB.step === 'pick-item')        { OB.step = OB.stops.length === 0 ? 'first-category' : 'equation'; obRender(); return; }
+      if (OB.step === 'arrange')          { OB.step = 'time';            obRender(); return; }
+      if (OB.step === 'pick-item') {
+        const back = OB.returnStep || (OB.stops.length === 0 ? 'first-category' : 'equation');
+        obCancelInsert(); OB.step = back; obRender(); return;
+      }
       if (OB.step === 'equation')         { overlay.setAttribute('hidden', ''); return; }
-      OB.step = 'equation'; obRender(); // generating / result → equation
+      OB.step = obEditStep(); obRender(); // generating / result → back to editing
     });
   }
 
   setRandomPhillyBackground();
   setupAddModal();
   setupNav();
+  setupPicks();
   setupToTop();
   enableHorizontalWheelScroll();
   enableDragScroll();
