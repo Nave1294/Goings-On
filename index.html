@@ -295,12 +295,13 @@
       display: flex;
       gap: 0.4rem;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       padding: 0.25rem 0 1rem;
       margin: 0 -0.25rem 2rem;
       scrollbar-width: none;
     }
-    .tabs::-webkit-scrollbar { display: none; }
+    /* Horizontal strips that hide their scrollbar (each also sets scrollbar-width: none). */
+    .tabs::-webkit-scrollbar, .weather-detail::-webkit-scrollbar, .pl-wx-strip-hours::-webkit-scrollbar,
+    .cat-nav::-webkit-scrollbar, .sub-tabs::-webkit-scrollbar, .map-layer-bar::-webkit-scrollbar { display: none; }
 
     .tab {
       flex: 1 0 auto;
@@ -443,11 +444,11 @@
       box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.35), var(--shadow);
     }
 
-    .event-map {
+    /* The two event action pills (Website, View on map) share one shape. */
+    .event-map, .event-site {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      margin-top: 0.55rem;
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent);
@@ -457,28 +458,13 @@
       background: var(--accent-soft);
       transition: background 0.15s ease;
     }
-
-    .event-map:hover { background: #c4ddbf; }
-    .event-map svg { stroke: var(--accent); }
+    .event-map { margin-top: 0.55rem; }
+    .event-map:hover, .event-site:hover { background: #c4ddbf; }
+    .event-map svg, .event-site svg { stroke: var(--accent); }
 
     /* Row holding the event's action buttons (Website, View on map) */
     .event-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
     .event-links .event-map, .event-links .event-site { margin-top: 0; }
-    .event-site {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--accent);
-      text-decoration: none;
-      padding: 5px 10px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      transition: background 0.15s ease;
-    }
-    .event-site:hover { background: #c4ddbf; }
-    .event-site svg { stroke: var(--accent); }
 
     .event-time-block {
       flex-shrink: 0;
@@ -578,7 +564,6 @@
       animation: detailIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .weather-detail::-webkit-scrollbar { display: none; }
     .weather-detail.open { display: flex; gap: 0.85rem; }
 
     @keyframes detailIn {
@@ -628,10 +613,9 @@
     .pl-wx-strip-hours {
       display: flex; gap: 0.85rem; overflow-x: auto; scrollbar-width: none;
       position: relative; scroll-behavior: smooth;
+      align-items: stretch; padding-top: 2px;
     }
-    .pl-wx-strip-hours::-webkit-scrollbar { display: none; }
     .pl-wx-strip-na { font-size: 0.82rem; color: var(--text-secondary); }
-    .pl-wx-strip-hours { align-items: stretch; padding-top: 2px; }
     .pl-wx-hr--sel {
       background: #79b84a;
       border-radius: 12px;
@@ -662,10 +646,12 @@
       max-height: 8.4em;                 /* ~6 lines, then scroll for the rest */
       overflow-y: auto;
       overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
     }
-    .event-desc::-webkit-scrollbar { width: 5px; }
-    .event-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
+    /* Scrollable description boxes share one slim scrollbar. */
+    .event-desc::-webkit-scrollbar, .resto-expand::-webkit-scrollbar,
+    .dn-pair-desc::-webkit-scrollbar, .ob-pick-detail-desc::-webkit-scrollbar { width: 5px; }
+    .event-desc::-webkit-scrollbar-thumb, .resto-expand::-webkit-scrollbar-thumb,
+    .dn-pair-desc::-webkit-scrollbar-thumb, .ob-pick-detail-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
 
     .empty {
       text-align: center;
@@ -815,7 +801,6 @@
       pointer-events: none;
       transition: max-height 0.3s ease, opacity 0.25s ease, margin-bottom 0.3s ease;
     }
-    .cat-nav::-webkit-scrollbar { display: none; }
     .cat-nav.open {
       max-height: 60px;
       opacity: 1;
@@ -872,7 +857,6 @@
       display: flex;
       gap: 0.4rem;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       cursor: grab;
       padding: 0.1rem 0.25rem 1rem;
@@ -881,7 +865,6 @@
       -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
       mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 24px), transparent 100%);
     }
-    .sub-tabs::-webkit-scrollbar { display: none; }
     .tabs.dragging, .sub-tabs.dragging, .cat-nav.dragging { cursor: grabbing; scroll-behavior: auto; }
     .tabs.dragging .tab,
     .sub-tabs.dragging .sub-tab,
@@ -1084,10 +1067,7 @@
       max-height: 360px;
       overflow-y: auto;
       overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
     }
-    .resto-expand::-webkit-scrollbar { width: 5px; }
-    .resto-expand::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
     .resto-expand-inner {
       padding: 0.25rem 0.95rem 0.95rem;
       border-top: 1px solid var(--divider);
@@ -1262,10 +1242,8 @@
       gap: 0.4rem;
       overflow-x: auto;
       padding: 0.2rem 0 0.7rem;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
-    .map-layer-bar::-webkit-scrollbar { display: none; }
     .map-layer-chip {
       display: inline-flex;
       align-items: center;
@@ -1396,19 +1374,6 @@
     }
     .eat-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(45, 106, 79, 0.4), 0 2px 4px rgba(0,0,0,0.1); }
     .eat-fab:active { transform: scale(0.95); }
-    .eat-fab-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 1.05rem;
-      height: 1.05rem;
-      padding: 0 0.2rem;
-      font-size: 0.62rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: #fff;
-      border-radius: 999px;
-    }
     /* Discover bottom sheet */
     .eat-sheet-overlay {
       position: fixed;
@@ -1420,7 +1385,6 @@
       backdrop-filter: blur(3px);
       -webkit-backdrop-filter: blur(3px);
     }
-    .eat-sheet-overlay[hidden] { display: none; }
     .eat-sheet {
       background: var(--surface);
       border-radius: 22px 22px 0 0;
@@ -1461,7 +1425,10 @@
       transition: background 0.15s ease;
     }
     .eat-sheet-close:hover { filter: brightness(0.92); }
-    .eat-sheet-spin-btn {
+    /* The five Discover-sheet CTA buttons share one shape; each sets only its
+       own colour (and Spin its larger bottom margin). */
+    .eat-sheet-spin-btn, .eat-sheet-datenight-btn, .eat-sheet-indec-btn,
+    .eat-sheet-ob-btn, .eat-sheet-picnic-btn {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1472,16 +1439,17 @@
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #fff;
-      background: var(--accent);
       border: none;
       border-radius: 14px;
       padding: 0.9rem 1rem;
       cursor: pointer;
-      margin-bottom: 1.6rem;
+      margin-bottom: 1rem;
       transition: filter 0.15s ease, transform 0.12s ease;
     }
-    .eat-sheet-spin-btn:hover { filter: brightness(1.06); }
-    .eat-sheet-spin-btn:active { transform: scale(0.98); }
+    .eat-sheet-spin-btn { background: var(--accent); margin-bottom: 1.6rem; }
+    .eat-sheet-spin-btn:hover, .eat-sheet-indec-btn:hover, .eat-sheet-ob-btn:hover, .eat-sheet-picnic-btn:hover { filter: brightness(1.06); }
+    .eat-sheet-spin-btn:active, .eat-sheet-datenight-btn:active, .eat-sheet-indec-btn:active,
+    .eat-sheet-ob-btn:active, .eat-sheet-picnic-btn:active { transform: scale(0.98); }
     /* "Not in the mood" secondary button inside sheet */
     .eat-sheet-mood-btn {
       display: flex;
@@ -1589,7 +1557,6 @@
       overflow: hidden;
       animation: sheetUp 0.3s ease;
     }
-    .eat-rec-overlay[hidden] { display: none; }
     .eat-rec-header {
       padding: 1rem 1.25rem 1.1rem;
       background: var(--surface);
@@ -1655,27 +1622,8 @@
     }
     .eat-rec-list { flex: 1; overflow-y: auto; padding: 0.5rem 0 3rem; }
     /* Date Night */
-    .eat-sheet-datenight-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      width: 100%;
-      font: inherit;
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: #fff;
-      background: linear-gradient(135deg, #6d4b8f, #9b5fa0);
-      border: none;
-      border-radius: 14px;
-      padding: 0.9rem 1rem;
-      cursor: pointer;
-      margin-bottom: 1rem;
-      transition: filter 0.15s ease, transform 0.12s ease;
-    }
-    .eat-sheet-datenight-btn:hover { filter: brightness(1.07); }
-    .eat-sheet-datenight-btn:active { transform: scale(0.98); }
+    .eat-sheet-datenight-btn { background: linear-gradient(135deg, #6d4b8f, #9b5fa0); }
+    .eat-sheet-datenight-btn:hover { filter: brightness(1.07); } /* a touch brighter than its siblings, on purpose */
     .dn-days { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
     .dn-day-chip {
       flex: 1 1 calc(14.28% - 0.4rem);
@@ -1698,21 +1646,6 @@
     .dn-day-chip .dn-day-num { font-size: 0.95rem; font-weight: 700; }
     .dn-day-chip .dn-day-cnt { font-size: 0.6rem; opacity: 0.8; }
     .dn-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem 3rem; }
-    .dn-vibe {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #9b5fa0;
-      margin-bottom: 0.3rem;
-    }
-    .dn-headline {
-      font-size: 1.3rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      line-height: 1.2;
-      margin-bottom: 1.1rem;
-    }
     .dn-pair-card {
       background: var(--surface);
       border: 1px solid var(--divider);
@@ -1730,9 +1663,7 @@
     }
     .dn-pair-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.4rem; }
     .dn-pair-meta { display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
-    .dn-pair-desc { font-size: 0.88rem; line-height: 1.5; margin-top: 0.55rem; color: var(--text); max-height: 9em; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-    .dn-pair-desc::-webkit-scrollbar { width: 5px; }
-    .dn-pair-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
+    .dn-pair-desc { font-size: 0.88rem; line-height: 1.5; margin-top: 0.55rem; color: var(--text); max-height: 9em; overflow-y: auto; overscroll-behavior: contain; }
     .dn-pair-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
     .dn-pair-action {
       font: inherit;
@@ -1748,19 +1679,6 @@
       transition: filter 0.15s ease;
     }
     .dn-pair-action:hover { filter: brightness(0.96); }
-    .dn-connector { text-align: center; font-size: 0.78rem; font-weight: 700; color: #9b5fa0; margin: 0.1rem 0 0.9rem; letter-spacing: 0.03em; }
-    .dn-timing {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      background: var(--accent-soft);
-      border-radius: 14px;
-      padding: 0.8rem 0.95rem;
-      font-size: 0.85rem;
-      line-height: 1.45;
-      color: var(--text);
-      margin-bottom: 1.2rem;
-    }
     .dn-feedback { display: flex; gap: 0.5rem; }
     .dn-feedback-btn {
       flex: 1;
@@ -1782,16 +1700,6 @@
     .dn-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); }
     .dn-empty-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
     .dn-loading { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); font-size: 0.9rem; }
-    .dn-time-prompt { text-align: center; font-size: 0.92rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 1rem; }
-    .dn-time-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
-    .dn-time-chip {
-      font: inherit; font-size: 0.9rem; font-weight: 700;
-      color: #6d4b8f; background: #f0e6f6;
-      border: none; border-radius: 999px; padding: 0.7rem 1.3rem;
-      cursor: pointer; transition: filter 0.15s ease, transform 0.12s ease;
-    }
-    .dn-time-chip:hover { filter: brightness(0.96); }
-    .dn-time-chip:active { transform: scale(0.96); }
     .dn-export-btn {
       display: flex; align-items: center; justify-content: center;
       width: 100%; font: inherit; font-size: 0.85rem; font-weight: 700;
@@ -1819,7 +1727,7 @@
     .pl-input {
       width: 100%; font: inherit; font-size: 0.92rem; color: var(--text);
       background: var(--surface); border: 1.5px solid var(--divider);
-      border-radius: 12px; padding: 0.7rem 0.85rem; box-sizing: border-box;
+      border-radius: 12px; padding: 0.7rem 0.85rem;
       -webkit-appearance: none; appearance: none;
     }
     .pl-input::placeholder { color: var(--text-secondary); }
@@ -1834,8 +1742,7 @@
     .pl-next:hover { filter: brightness(1.05); }
     .pl-next:active { transform: scale(0.98); }
     .pl-warn { font-size: 0.8rem; font-weight: 600; color: #b4452f; margin-top: 0.8rem; }
-    .pl-warn[hidden] { display: none; }
-    .pl-key-input { width: 100%; box-sizing: border-box; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--divider); border-radius: 10px; background: var(--surface); color: var(--text); outline: none; }
+    .pl-key-input { width: 100%; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--divider); border-radius: 10px; background: var(--surface); color: var(--text); outline: none; }
     .pl-key-input:focus { border-color: var(--accent); }
     .pl-key-reset { font-size: 0.75rem; color: var(--text-tertiary); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-top: 1rem; display: block; }
     .pl-key-reset:hover { color: var(--accent); }
@@ -1892,11 +1799,6 @@
       border-left: 2px dashed #c4a8d8;
     }
     .pl-then { font-size: 0.78rem; font-weight: 700; color: #9b5fa0; letter-spacing: 0.03em; }
-    .dn-walk-pill {
-      display: flex; align-items: center; justify-content: center;
-      gap: 0.4rem; margin: -0.3rem 0 0.5rem;
-      font-size: 0.78rem; font-weight: 700; color: #6d4b8f;
-    }
     .dn-walk-badge {
       background: #f0e6f6; color: #6d4b8f;
       border-radius: 999px; padding: 0.3rem 0.75rem;
@@ -1908,11 +1810,6 @@
       border: 1px solid var(--divider);
     }
     .dn-map-img { width: 100%; display: block; }
-    .dn-map-footer {
-      display: flex; gap: 0.4rem; padding: 0.6rem 0.75rem;
-      background: var(--surface); border-top: 1px solid var(--divider);
-      align-items: center; flex-wrap: wrap;
-    }
     .dn-map-link {
       font: inherit; font-size: 0.76rem; font-weight: 600;
       color: var(--accent); background: var(--accent-soft);
@@ -1951,38 +1848,11 @@
     .spin-rolling { color: var(--text-secondary); animation: spinFlicker 0.26s linear infinite; }
 
     /* ── Indecision: pick-a-card game ── */
-    .eat-sheet-indec-btn {
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
-      letter-spacing: -0.01em; color: #fff;
-      background: linear-gradient(135deg, #b5742a, #d49a3c);
-      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
-      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
-    }
-    .eat-sheet-indec-btn:hover { filter: brightness(1.06); }
-    .eat-sheet-indec-btn:active { transform: scale(0.98); }
+    .eat-sheet-indec-btn { background: linear-gradient(135deg, #b5742a, #d49a3c); }
     /* Outing Builder button in Discover sheet */
-    .eat-sheet-ob-btn {
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
-      letter-spacing: -0.01em; color: #fff;
-      background: linear-gradient(135deg, #1a7a6e, #2aa89a);
-      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
-      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
-    }
-    .eat-sheet-ob-btn:hover { filter: brightness(1.06); }
-    .eat-sheet-ob-btn:active { transform: scale(0.98); }
+    .eat-sheet-ob-btn { background: linear-gradient(135deg, #1a7a6e, #2aa89a); }
     /* Picnic Planner button in Discover sheet */
-    .eat-sheet-picnic-btn {
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      width: 100%; font: inherit; font-size: 0.95rem; font-weight: 700;
-      letter-spacing: -0.01em; color: #fff;
-      background: linear-gradient(135deg, #4a8c3f, #79b84a);
-      border: none; border-radius: 14px; padding: 0.9rem 1rem; cursor: pointer;
-      margin-bottom: 1rem; transition: filter 0.15s ease, transform 0.12s ease;
-    }
-    .eat-sheet-picnic-btn:hover { filter: brightness(1.06); }
-    .eat-sheet-picnic-btn:active { transform: scale(0.98); }
+    .eat-sheet-picnic-btn { background: linear-gradient(135deg, #4a8c3f, #79b84a); }
 
     /* Picnic tab: planner CTA + sub-tabs */
     .picnic-planner-cta {
@@ -2021,14 +1891,11 @@
       padding: 0.7rem 0.85rem; margin-bottom: 0.9rem;
     }
     .pool-note a { color: #0097a7; font-weight: 600; }
-    .pool-note-date { display: block; margin-top: 0.25rem; color: var(--text-tertiary); font-size: 0.76rem; }
     .pool-hours {
       font-size: 0.85rem; color: var(--text); line-height: 1.45; margin-top: 0.5rem;
       padding: 0.55rem 0.7rem; background: rgba(0,151,167,0.1); border-radius: 10px;
     }
     .pool-hours strong { color: var(--text); }
-    .pool-hours--tbd { color: var(--text-secondary); background: rgba(0,151,167,0.06); }
-    .pool-hours--tbd a { color: #0097a7; font-weight: 600; }
 
     /* Picnic Planner result */
     .picnic-seed-note { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
@@ -2115,7 +1982,6 @@
       display: flex; align-items: center; justify-content: center;
     }
     .ob-stop-name { font-size: 0.88rem; font-weight: 700; color: var(--text); flex: 1 1 0; min-width: 0; }
-    .ob-stop-dist { font-size: 0.68rem; font-weight: 600; background: #d8f4f1; color: #1a7a6e; border-radius: 8px; padding: 0.12rem 0.45rem; white-space: nowrap; flex-shrink: 0; }
     .ob-stop-rm {
       font: inherit; font-size: 0.75rem; color: var(--text-secondary); background: none;
       border: none; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 6px; flex-shrink: 0;
@@ -2154,15 +2020,12 @@
       border-top: 1px solid var(--divider);
       font-size: 0.8rem;
     }
-    .ob-pick-detail-desc { color: var(--text-secondary); line-height: 1.45; margin-bottom: 0.4rem; max-height: 9em; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-    .ob-pick-detail-desc::-webkit-scrollbar { width: 5px; }
-    .ob-pick-detail-desc::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
+    .ob-pick-detail-desc { color: var(--text-secondary); line-height: 1.45; margin-bottom: 0.4rem; max-height: 9em; overflow-y: auto; overscroll-behavior: contain; }
     .ob-pick-detail-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .ob-pick-emoji { font-size: 1.35rem; flex-shrink: 0; margin-top: 1px; }
     .ob-pick-info { flex: 1 1 0; min-width: 0; }
     .ob-pick-name { font-size: 0.87rem; font-weight: 700; color: var(--text); }
     .ob-pick-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.12rem; }
-    .ob-pick-dist { font-size: 0.68rem; font-weight: 600; background: #d8f4f1; color: #1a7a6e; border-radius: 8px; padding: 0.12rem 0.45rem; margin-left: auto; flex-shrink: 0; white-space: nowrap; align-self: flex-start; }
     .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
     .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
     .ob-far-details summary { outline: none; }
@@ -2181,8 +2044,9 @@
       transition: transform 0.25s cubic-bezier(.4,.2,.2,1), opacity 0.25s ease;
       min-height: 160px;
     }
-    .indec-swipe-card.fly-right { transform: translateX(115%) rotate(20deg) !important; opacity: 0 !important; transition: transform 0.32s ease-in, opacity 0.28s ease-in !important; pointer-events: none; }
-    .indec-swipe-card.fly-left  { transform: translateX(-115%) rotate(-20deg) !important; opacity: 0 !important; transition: transform 0.32s ease-in, opacity 0.28s ease-in !important; pointer-events: none; }
+    .indec-swipe-card.fly-right, .indec-swipe-card.fly-left { opacity: 0 !important; transition: transform 0.32s ease-in, opacity 0.28s ease-in !important; pointer-events: none; }
+    .indec-swipe-card.fly-right { transform: translateX(115%) rotate(20deg) !important; }
+    .indec-swipe-card.fly-left  { transform: translateX(-115%) rotate(-20deg) !important; }
     .indec-stamp {
       position: absolute; top: 18px; border: 3px solid; border-radius: 8px;
       padding: 3px 12px; font-weight: 800; font-size: 0.95rem; opacity: 0;
@@ -2194,11 +2058,10 @@
     .indec-swipe-name { font-size: 1.32rem; font-weight: 800; line-height: 1.2; color: var(--text); margin-bottom: 0.55rem; letter-spacing: -0.02em; }
     .indec-swipe-desc { font-size: 0.87rem; line-height: 1.46; color: var(--text-secondary); margin-bottom: 0.5rem; }
     .indec-swipe-meta { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
-    .indec-swipe-meta .indec-swipe-dist { color: #1a7a6e; }
     .indec-yesno-row { display: flex; justify-content: center; gap: 2.8rem; margin-bottom: 0.2rem; }
     .indec-btn-no, .indec-btn-yes {
       width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
-      font-size: 1.35rem; display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font: inherit; transition: transform 0.12s ease, box-shadow 0.12s ease;
       box-shadow: 0 4px 14px rgba(0,0,0,0.13);
     }
@@ -2208,10 +2071,6 @@
     .indec-btn-yes:hover { transform: scale(1.09); box-shadow: 0 6px 18px rgba(26,122,110,0.28); }
     .indec-btn-no:active, .indec-btn-yes:active { transform: scale(0.95); }
     .indec-hint { text-align: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; margin-top: 0.5rem; }
-    .indec-result-wrap { text-align: center; padding: 0.5rem 0 0.75rem; animation: spinPop 0.3s ease; }
-    .indec-result-name { font-size: 1.3rem; font-weight: 800; color: var(--text); margin: 0.4rem 0 0.3rem; letter-spacing: -0.02em; }
-    .indec-result-desc { font-size: 0.87rem; line-height: 1.45; color: var(--text-secondary); margin-bottom: 1rem; }
-    .indec-prompt { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; }
     .indec-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
     .indec-action {
       font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text);
@@ -2738,8 +2597,11 @@
   }
 
   async function preloadWeather(events) {
-    // Always have Philly weather ready as the default
-    const fetches = [fetchWeatherForCoord(PHILLY_LAT, PHILLY_LON)];
+    // The default Philly forecast is already in flight — init() starts it
+    // before the calendar fetch — so only per-venue lookups are added here.
+    // (Starting it again would issue a second identical request, because the
+    // cache is only written once the first response has been parsed.)
+    const fetches = [];
 
     const locations = new Set();
     events.forEach(ev => {
@@ -2762,12 +2624,15 @@
     await Promise.all(fetches);
   }
 
+  // Built once: constructing an Intl.DateTimeFormat is the most expensive
+  // thing in the per-event weather path, and this one is called in a loop.
+  const NY_HOUR_FMT = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+    hour12: false,
+  });
   function nyHourKey(date) {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/New_York',
-      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
-      hour12: false,
-    }).formatToParts(date);
+    const parts = NY_HOUR_FMT.formatToParts(date);
     const get = t => parts.find(p => p.type === t).value;
     let hour = get('hour');
     if (hour === '24') hour = '00';
@@ -2792,9 +2657,9 @@
   function getEventWeather(ev, contextDay) {
     const wx = weatherForEvent(ev);
     if (!wx) return null;
-    const allDay = !ev.start.dateTime;
+    const dateOnly = eventIsDateOnly(ev);
 
-    if (allDay) {
+    if (dateOnly) {
       const dateKey = contextDay ? ymd(contextDay) : ev.start.date;
       const idx = wx.daily?.time?.indexOf(dateKey);
       if (idx === undefined || idx < 0) return null;
@@ -2821,10 +2686,10 @@
     if (!w) return '';
     const icon = WEATHER_ICONS[w.code] || '';
     const target = `wx-${idx}`;
-    if (w.type === 'daily') {
-      return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${w.hi}°<span class="ew-sep">/</span><span class="ew-lo">${w.lo}°</span></div>`;
-    }
-    return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${w.temp}°</div>`;
+    const reading = w.type === 'daily'
+      ? `${w.hi}°<span class="ew-sep">/</span><span class="ew-lo">${w.lo}°</span>`
+      : `${w.temp}°`;
+    return `<div class="event-weather" data-target="${target}" role="button" tabindex="0" aria-label="Show hourly forecast"><span class="ew-icon">${icon}</span>${reading}</div>`;
   }
 
   function getEventHourly(ev, contextDay) {
@@ -2832,7 +2697,7 @@
     if (!wx || !wx.hourly) return [];
 
     let start, end, step;
-    if (ev.start.dateTime) {
+    if (!eventIsDateOnly(ev)) {
       start = new Date(ev.start.dateTime);
       end   = ev.end?.dateTime ? new Date(ev.end.dateTime) : new Date(start.getTime() + 3600000);
       step  = 60;
@@ -2925,8 +2790,8 @@
       }
       return `<div class="pl-wx-strip-na">Forecast not available yet — try again in a moment.</div>`;
     }
-    const hi = Math.round(Math.max(...hours.map(h => h.temp)));
-    const lo = Math.round(Math.min(...hours.map(h => h.temp)));
+    const temps = hours.map(h => h.temp); // already rounded by planDayHourly
+    const hi = Math.max(...temps), lo = Math.min(...temps);
     const sel = snapToStripHours(selHours, hours.map(h => h.hour));
     return `<div class="pl-wx-strip-head"><span>${escapeHtml(dayLbl)}</span><span class="pl-wx-strip-hilo">${hi}°/${lo}°</span></div>
       <div class="pl-wx-strip-hours">
@@ -3102,12 +2967,12 @@
     calendarMarketEvents = [];
     events.forEach(ev => {
       if (isFarmersMarketEvent(ev)) { calendarMarketEvents.push(ev); return; }
-      const isAllDay = !ev.start.dateTime;
+      const dateOnly = eventIsDateOnly(ev);
       const start = parseEventDate(ev.start);
       const end   = parseEventDate(ev.end);
 
-      if (isAllDay) {
-        // All-day end is exclusive (next day after last day). Add to every day it covers.
+      if (dateOnly) {
+        // A date-only end is exclusive (the day after the last day). Add to every day it covers.
         const cursor = new Date(start);
         cursor.setHours(0, 0, 0, 0);
         while (cursor < end) {
@@ -3126,12 +2991,12 @@
     // missed) so it never shows twice. Keeps the richest copy of each.
     Object.keys(byDay).forEach(k => { byDay[k] = dedupeDayEvents(byDay[k]); });
 
-    // Sort within each day: all-day first, then by start time
+    // Sort within each day: date-only events first, then by start time
     Object.values(byDay).forEach(arr => {
       arr.sort((a, b) => {
-        const aAll = !a.start.dateTime, bAll = !b.start.dateTime;
-        if (aAll !== bAll) return aAll ? -1 : 1;
-        if (aAll) return 0;
+        const aDate = eventIsDateOnly(a), bDate = eventIsDateOnly(b);
+        if (aDate !== bDate) return aDate ? -1 : 1;
+        if (aDate) return 0;
         return new Date(a.start.dateTime) - new Date(b.start.dateTime);
       });
     });
@@ -3185,7 +3050,8 @@
     panel.className = 'day-panel';
 
     const activeDay = days[activeIdx];
-    let evs = byDay[dayKey(activeDay)];
+    const dayEvs = byDay[dayKey(activeDay)];
+    let evs = dayEvs;
     if (proximityActive && userLoc) {
       evs = [...evs].sort((a, b) => {
         const da = eventDistance(a), db = eventDistance(b);
@@ -3222,7 +3088,7 @@
     // Once location is known, resolve this day's event coordinates (looking up
     // missing ones online), then re-render once to show distances / apply sort.
     if (userLoc) {
-      const need = byDay[dayKey(activeDay)].filter(ev => ev._coords === undefined);
+      const need = dayEvs.filter(ev => ev._coords === undefined);
       if (need.length) {
         Promise.all(need.map(ensureEventCoords)).then(() => {
           if (lastRender && lastRender.activeIdx === activeIdx) render(days, byDay, activeIdx);
@@ -3302,10 +3168,8 @@
   }
 
   function eventDistanceHTML(ev) {
-    if (!userLoc) return '';
-    const c = eventCoords(ev);
-    if (!c) return '';
-    const mi = haversineMiles(userLoc.lat, userLoc.lon, c.lat, c.lon);
+    const mi = eventDistance(ev); // Infinity when there's no user or venue location
+    if (mi === Infinity) return '';
     return `<div class="event-distance"><span class="distance-bubble">📍 ${fmtMiles(mi)} away</span></div>`;
   }
 
@@ -3402,7 +3266,7 @@
     if (!autoEventSource(ev)) s += 1000;
     if (ev.location) s += 100;
     if (ev.start && ev.start.dateTime) s += 10;
-    s += Math.min((cleanEventDescription(ev.description) || '').length, 600) / 10;
+    s += Math.min(cleanEventDescription(ev.description).length, 600) / 10;
     return s;
   }
   // Collapse near-identical events within one day, keeping the richest copy.
@@ -6321,7 +6185,7 @@
   // outdoor dining), deduped by name and clustered by cuisine. Trending is
   // intentionally left out — it's a curated, time-sensitive feed of its own.
   function sectionsForAll() {
-    const all = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)];
+    const all = allEatPlaces();
     const seen = new Set();
     const buckets = new Map();
     for (const r of all) {
@@ -6756,6 +6620,8 @@
     // run hasn't photo-baked). Keep the curated coords (free), but still resolve a
     // photo from cache/live so the tile isn't stuck on the emoji placeholder.
     const bakedCoords = baked ? { lat: baked.lat ?? null, lon: baked.lon ?? null } : null;
+    // What we can still offer when the live lookup fails: curated coords, no photo.
+    const bakedOnly = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null;
     // Persistent cache: rebuild the photo URL from the stored reference name.
     const stored = lsPlaceInfoGet(query);
     if (stored !== undefined) {
@@ -6774,12 +6640,12 @@
         },
         body: JSON.stringify({ textQuery: query + ' Philadelphia', languageCode: 'en' }),
       });
-      if (!res.ok) { placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null; return placeInfoCache[query]; }
+      if (!res.ok) { placeInfoCache[query] = bakedOnly; return placeInfoCache[query]; }
       const data = await res.json();
       const place = data.places?.[0];
       if (!place) {
         lsPlaceInfoSet(query, null);
-        placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null;
+        placeInfoCache[query] = bakedOnly;
         return placeInfoCache[query];
       }
       const photoName = place.photos?.[0]?.name || null;
@@ -6792,7 +6658,7 @@
       placeInfoCache[query] = info;
       return info;
     } catch {
-      placeInfoCache[query] = bakedCoords ? { photoUrl: null, ...bakedCoords, address: null } : null;
+      placeInfoCache[query] = bakedOnly;
       return placeInfoCache[query];
     }
   }
@@ -6842,7 +6708,7 @@
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">🍽️</div>`;
-    const query = r.location ? `${r.name}, ${r.location}` : r.name;
+    const query = placeQuery(r);
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
@@ -6878,7 +6744,7 @@
     const imgEl = r.image
       ? `<img class="resto-img" src="${escapeAttr(r.image)}" alt="${escapeAttr(r.name)}" loading="lazy">`
       : `<div class="resto-img-placeholder">📚</div>`;
-    const query = r.location ? `${r.name}, ${r.location}` : r.name;
+    const query = placeQuery(r);
     return `
       <div class="resto-tile" data-place="${escapeAttr(r.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
@@ -6932,10 +6798,8 @@
       </div>`;
   }
 
-  let currentPACat = null;
   function renderPACategory(catId) {
     const cat = PA_GROUPS.find(c => c.id === catId) || PA_GROUPS[0];
-    currentPACat = cat.id;
     document.querySelectorAll('#paSubTabs .sub-tab').forEach(t =>
       t.classList.toggle('active', t.dataset.cat === cat.id));
     document.getElementById('paEyebrow').textContent = 'Discount Tickets';
@@ -7090,7 +6954,7 @@
   function initMasterMap() {
     loadMapLayerPrefs();
     _masterMap = L.map('masterMap', { zoomControl: true, scrollWheelZoom: true })
-      .setView([39.9526, -75.1652], 12);
+      .setView([PHILLY_LAT, PHILLY_LON], 12);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
       subdomains: 'abcd', maxZoom: 19,
@@ -7127,7 +6991,7 @@
     return [
       website     ? `<a href="${escapeAttr(website)}" target="_blank" rel="noopener">🌐 Website</a>` : '',
       reservation ? `<a href="${escapeAttr(reservation)}" target="_blank" rel="noopener">📅 Reserve</a>` : '',
-      mapQuery    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}" target="_blank" rel="noopener">🗺️ Directions</a>` : '',
+      mapQuery    ? `<a href="${mapUrl(mapQuery)}" target="_blank" rel="noopener">🗺️ Directions</a>` : '',
     ].filter(Boolean).join('');
   }
 
@@ -7167,7 +7031,7 @@
   async function populateMasterMap() {
     // ── Precise baked / inline coords (free, instant) ──
     // Places to Eat — baked geo
-    for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
+    for (const r of allEatPlaces()) {
       if (!(r.geo && r.geo.lat != null)) continue;
       addMapMarker('eat', r.geo.lat, r.geo.lon, {
         eyebrow: r.cuisine || 'Restaurant', name: r.name,
@@ -7220,14 +7084,14 @@
         addMapMarker('events', c.lat, c.lon, {
           eyebrow: 'Event', name: ev.summary || 'Event',
           meta: ev.location ? ev.location.split(',')[0] : '',
-          actions: mapActionLinks({ website: (typeof eventSiteUrl === 'function' ? eventSiteUrl(ev) : ''), mapQuery: ev.location || ev.summary }),
+          actions: mapActionLinks({ website: eventSiteUrl(ev), mapQuery: ev.location || ev.summary }),
         });
       });
       updateMapCount();
     }
     // Farmers Markets — precise venue lookup
     await mapBatch(FARMERS_MARKETS, async m => {
-      const c = await mapPreciseGeocode(m.name + (m.location ? ', ' + m.location : ''));
+      const c = await mapPreciseGeocode(placeQuery(m));
       if (!c) return;
       addMapMarker('markets', c.lat, c.lon, {
         eyebrow: 'Farmers market', name: m.name,
@@ -7238,7 +7102,7 @@
     updateMapCount();
     // Performing Arts — precise venue lookup
     await mapBatch(PA_VENUES, async v => {
-      const c = await mapPreciseGeocode(v.name + (v.location ? ', ' + v.location : ''));
+      const c = await mapPreciseGeocode(placeQuery(v));
       if (!c) return;
       addMapMarker('arts', c.lat, c.lon, {
         eyebrow: v.kind || 'Performing arts', name: v.name,
@@ -7264,6 +7128,10 @@
 
   function placeQuery(r) { return r.location ? `${r.name}, ${r.location}` : r.name; }
 
+  // Every Eat-tab place: the main list plus the outdoor-dining sections. Both
+  // arrays are fixed after load, so a fresh copy per call is cheap and safe.
+  function allEatPlaces() { return [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]; }
+
   async function ensurePlaceCoords(r) {
     if (r._coords !== undefined) return;
     const q = placeQuery(r);
@@ -7288,6 +7156,24 @@
 
   function placeDist(r) {
     return (userLoc && r._coords) ? haversineMiles(userLoc.lat, userLoc.lon, r._coords.lat, r._coords.lon) : Infinity;
+  }
+
+  // "Nearest first" listing shared by the Eat and Books tabs when proximity
+  // sort is on. Only geocodes the first 30 unresolved places — geocoding a
+  // full list at once is expensive (Places API Text Search @ $32/1000) — then
+  // sorts by distance and drops repeats by normalized name (sorted first, so
+  // the nearest copy is the one kept).
+  async function nearestFirstHTML(places, tileHTML) {
+    const needCoords = places.filter(r => r._coords === undefined).slice(0, 30);
+    await Promise.all(needCoords.map(ensurePlaceCoords));
+    const sorted = [...places].sort((a, b) => {
+      const da = placeDist(a), db = placeDist(b);
+      return da === db ? 0 : da - db;
+    });
+    return `<div class="eat-content">
+      <div class="eat-section-header">📍 Nearest first</div>
+      ${dedupeByName(sorted).map(tileHTML).join('')}
+    </div>`;
   }
 
   // Remove repeated spots by normalized name, keeping the first occurrence.
@@ -7353,11 +7239,8 @@
     return _discoverMaster || (_discoverMaster = sectionsForAll().flatMap(s => s.places));
   }
   // The pool Discover actions draw from: the master list, scoped to a hood if chosen.
-  function discoverPool() {
-    const all = discoverMasterPlaces();
-    return discoverScope ? all.filter(r => placeNeighborhoods(r.location).includes(discoverScope)) : all;
-  }
   function inDiscoverScope(r) { return !discoverScope || placeNeighborhoods(r.location).includes(discoverScope); }
+  function discoverPool() { return discoverMasterPlaces().filter(inDiscoverScope); }
 
   // ── Random chooser ("Spin") ──
   // Draws from the Discover pool (citywide or the chosen neighborhood).
@@ -7434,7 +7317,7 @@
   // collected; saying no to something narrows the remaining pool by removing
   // similar (same-group) options. Ends when you're done or run out, then shows
   // a list of everything you liked.
-  const indec = { remaining: [], liked: [], noGroups: new Set(), ctx: null, total: 0 };
+  const indec = { remaining: [], liked: [], noGroups: new Set(), ctx: null };
 
   // A unified accessor so one card UI works across events/eats/books/markets.
   function indecItemName(it) { return it.name || it.summary || 'Untitled'; }
@@ -7714,6 +7597,10 @@
     const wrap   = document.getElementById('indecSwipeWrap');
     const cardEl = document.getElementById('indecSwipeCardEl');
     if (!wrap || !cardEl) return;
+    // The stamps are rendered in the same innerHTML as the card, so they can be
+    // looked up once here rather than on every pointer move.
+    const yesEl = document.getElementById('indecStampYes');
+    const noEl  = document.getElementById('indecStampNo');
     const THRESHOLD = 72;
     let startX = 0, dragging = false;
 
@@ -7723,8 +7610,6 @@
       const d = x - startX;
       const rot = d * 0.07;
       cardEl.style.transform = `translateX(${d}px) rotate(${rot}deg)`;
-      const yesEl = document.getElementById('indecStampYes');
-      const noEl  = document.getElementById('indecStampNo');
       if (yesEl) yesEl.style.opacity = Math.min(1, Math.max(0, d / THRESHOLD)).toFixed(2);
       if (noEl)  noEl.style.opacity  = Math.min(1, Math.max(0, -d / THRESHOLD)).toFixed(2);
     }
@@ -7737,8 +7622,6 @@
       if (d < -THRESHOLD) { indecDoNo();  return; }
       // Snap back
       cardEl.style.transform = '';
-      const yesEl = document.getElementById('indecStampYes');
-      const noEl  = document.getElementById('indecStampNo');
       if (yesEl) yesEl.style.opacity = '0';
       if (noEl)  noEl.style.opacity  = '0';
     }
@@ -7765,7 +7648,6 @@
     indec.ctx      = discoverContext();
     indec.liked    = [];
     indec.noGroups = new Set();
-    indec.total    = indec.ctx.pool.length;
     indecBuildRemaining();
     indecShowCard();
   }
@@ -7822,9 +7704,6 @@
     const body = document.getElementById('picnicSubBody');
     if (sub === 'spots') {
       body.innerHTML = `<div class="eat-section-header">🌳 Scenic spots to spread a blanket</div>${PICNIC_PARKS.map(parkTileHTML).join('')}`;
-      // Same lazy photo + distance treatment as restaurants: each tile resolves
-      // a Places photo and coordinates from its data-query (cached after first).
-      loadRestoImages(list);
     } else {
       const groups = sectionsForPredicate(isPicnicFriendly)
         .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
@@ -7834,8 +7713,10 @@
             ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
             ${section.places.map(restoTileHTML).join('')}`).join('')
         : `<div class="eat-empty"><div class="eat-empty-text">No takeout spots match your current filters.</div></div>`;
-      loadRestoImages(list);
     }
+    // Same lazy photo + distance treatment as restaurants: each tile resolves
+    // a Places photo and coordinates from its data-query (cached after first).
+    loadRestoImages(list);
     document.getElementById('picnicTabPlannerBtn').addEventListener('click', () => openPicnicPlanner());
     list.querySelectorAll('[data-picnic-sub]').forEach(b =>
       b.addEventListener('click', () => { picnicSub = b.dataset.picnicSub; renderPicnicView(); }));
@@ -7954,7 +7835,8 @@
     }
 
     // Nothing survives the active filters → friendly nudge instead of a blank list.
-    if ((neighborhoodFilter || excludedCuisines.size) && !allPlaces.some(passesEatFilters)) {
+    const filtered = allPlaces.filter(passesEatFilters);
+    if ((neighborhoodFilter || excludedCuisines.size) && !filtered.length) {
       list.innerHTML = `<div class="eat-content eat-empty">
         <div class="eat-empty-icon">🔍</div>
         <div class="eat-empty-text">Nothing in ${escapeHtml(cat.label)} matches your current filters. Try clearing one or another tab.</div>
@@ -7963,21 +7845,7 @@
     }
 
     if (proximityActive && userLoc) {
-      const filtered = allPlaces.filter(passesEatFilters);
-      // Only geocode the first 30 unresolved places — geocoding the full list
-      // at once is expensive (Places API Text Search @ $32/1000).
-      const needCoords = filtered.filter(r => r._coords === undefined).slice(0, 30);
-      await Promise.all(needCoords.map(ensurePlaceCoords));
-      const sorted = [...filtered].sort((a, b) => {
-        const da = placeDist(a), db = placeDist(b);
-        return da === db ? 0 : da - db;
-      });
-      // Drop repeats by normalized name; sorted first means we keep the nearest.
-      const unique = dedupeByName(sorted);
-      list.innerHTML = `<div class="eat-content">
-        <div class="eat-section-header">📍 Nearest first</div>
-        ${unique.map(restoTileHTML).join('')}
-      </div>`;
+      list.innerHTML = await nearestFirstHTML(filtered, restoTileHTML);
     } else {
       const groups = cat.sections
         .map(s => ({ label: s.label, places: s.places.filter(passesEatFilters) }))
@@ -8103,7 +7971,7 @@
       // Collect cuisine groups present in the data (for the mood wizard)
       const present = [];
       const seenG = new Set();
-      for (const r of [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]) {
+      for (const r of allEatPlaces()) {
         const gi = cuisineGroupIndex(r.cuisine);
         if (!seenG.has(gi)) { seenG.add(gi); present.push(gi); }
       }
@@ -8411,43 +8279,48 @@
     { id: 'transit', emoji: '🚇',   label: 'Public transit', desc: 'Up to ~20 min, direct service' },
     { id: 'drive',   emoji: '🚗',   label: 'Driving',        desc: 'Up to ~10 min by car' },
   ];
-  function plTransitDirHref(from, to, forceWalk) {
-    const mode = forceWalk ? 'walking'
-      : PL.transit === 'drive' ? 'driving'
-      : (PL.transit === 'transit' || PL.transit === 'mix') ? 'transit'
-      : PL.transit === 'bike' ? 'bicycling'
+  // Shared by all three planners (day plan, Outing Builder, Picnic Planner),
+  // which use the same transit ids. "mix" (walk + transit) maps to transit —
+  // that's the leg that actually needs directions.
+  function mapsTravelMode(transit) {
+    return transit === 'drive' ? 'driving'
+      : (transit === 'transit' || transit === 'mix') ? 'transit'
+      : transit === 'bike' ? 'bicycling'
       : 'walking';
+  }
+  function transitModeEmoji(transit) {
+    return transit === 'bike' ? '🚲' : transit === 'drive' ? '🚗'
+      : (transit === 'transit' || transit === 'mix') ? '🚇' : '🚶';
+  }
+  function plTransitDirHref(from, to, forceWalk) {
+    const mode = forceWalk ? 'walking' : mapsTravelMode(PL.transit);
     return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=${mode}`;
   }
   // A single Google Maps directions link covering every located stop in order
   // (first = origin, last = destination, middle = waypoints), in the chosen mode.
-  function plAllStopsDirHref() {
-    const pts = PL.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
+  function allStopsDirHref(stops, transit) {
+    const pts = stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
     if (pts.length < 2) return null;
-    const mode = PL.transit === 'drive' ? 'driving'
-      : (PL.transit === 'transit' || PL.transit === 'mix') ? 'transit'
-      : PL.transit === 'bike' ? 'bicycling'
-      : 'walking';
     const origin = encodeURIComponent(pts[0]);
     const destination = encodeURIComponent(pts[pts.length - 1]);
     const waypoints = pts.slice(1, -1).map(encodeURIComponent).join('|');
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${mode}`;
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${mapsTravelMode(transit)}`;
     if (waypoints) url += `&waypoints=${waypoints}`;
     return url;
   }
+  function plAllStopsDirHref() { return allStopsDirHref(PL.stops, PL.transit); }
   // Walking time from straight-line miles: ~3 mph plus a grid-detour factor.
   function plWalkMins(mi) { return Math.round(mi * 24); }
   // Biking time: ~9 mph effective in the city including lights and a detour factor.
   function plBikeMins(mi) { return Math.round(mi * 7); }
   function plLegLabel(mi) {
     const walkMins = plWalkMins(mi);
-    if (PL.transit === 'walk') {
-      return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
-    }
+    const walkLabel = walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
+    if (PL.transit === 'walk') return walkLabel;
     if (PL.transit === 'bike') {
       const bikeMins = plBikeMins(mi);
       // Very short hops are quicker to just walk.
-      if (walkMins <= bikeMins + 2) return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
+      if (walkMins <= bikeMins + 2) return walkLabel;
       return bikeMins <= 1 ? '< 1 min bike' : `~${bikeMins} min bike`;
     }
     if (PL.transit === 'drive') {
@@ -8457,9 +8330,7 @@
     // Transit: ~10 min fixed overhead (walk to stop + wait + walk from stop) plus
     // in-vehicle time (~12 mph straight-line). For short hops, walking wins — say so.
     const transitMins = Math.round(10 + mi * 5);
-    if (walkMins <= transitMins) {
-      return walkMins <= 1 ? '< 1 min walk' : `~${walkMins} min walk`;
-    }
+    if (walkMins <= transitMins) return walkLabel;
     return `~${transitMins} min transit`;
   }
   // For "walk + transit" mix mode: recommend walking a short leg and taking
@@ -8467,7 +8338,7 @@
   // the transit math above (~3 mph walk vs ~10 min transit overhead + ride).
   // Returns the emoji, badge label, and Google Maps travel mode for one leg.
   function mixLegRec(mi) {
-    const walkMins = Math.round(mi * 24);
+    const walkMins = plWalkMins(mi);
     const transitMins = Math.round(10 + mi * 5);
     if (walkMins <= transitMins) {
       return { emoji: '🚶', label: walkMins <= 1 ? 'Walk · < 1 min' : `Walk · ~${walkMins} min`, mode: 'walking' };
@@ -8532,9 +8403,7 @@
     // Planner pins are drawn on a map, so they must be exact — use Places
     // (accurate venue geocoding). Volume is tiny (a few stops per plan) and the
     // result is cached, so this stays far inside the free tier.
-    const info = await fetchPlaceInfo(q);
-    idea._coords = (info && info.lat != null && nearPhilly(info.lat, info.lon))
-      ? { lat: info.lat, lon: info.lon } : null;
+    idea._coords = await mapPreciseGeocode(q);
     lsCoordSet(q, idea._coords);
   }
 
@@ -8549,9 +8418,7 @@
     const key = 'acc:' + q;
     const cached = lsCoordGet(key);
     if (cached !== undefined) { r._coordsAccurate = cached; return cached; }
-    const info = await fetchPlaceInfo(q);
-    const coords = (info && info.lat != null && nearPhilly(info.lat, info.lon))
-      ? { lat: info.lat, lon: info.lon } : null;
+    const coords = await mapPreciseGeocode(q);
     r._coordsAccurate = coords;
     lsCoordSet(key, coords);
     return coords;
@@ -8653,23 +8520,54 @@
     return lines.join('\n').replace(/\n{3,}/g, '\n\n');
   }
 
-  async function plShare() {
-    if (!PL.shareText) return;
-    const btn = document.getElementById('plExport');
+  // Share an itinerary: the native share sheet where there is one, otherwise
+  // copy to the clipboard (with a textarea fallback for older browsers) and
+  // flash a confirmation on the button. Used by the day planner and the
+  // Outing Builder.
+  async function shareItineraryText(btn, title, text) {
     if (navigator.share) {
-      try { await navigator.share({ title: 'My Goings-On plan', text: PL.shareText }); return; }
+      try { await navigator.share({ title, text }); return; }
       catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try {
-      await navigator.clipboard.writeText(PL.shareText);
+      await navigator.clipboard.writeText(text);
       if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied to clipboard'; setTimeout(() => { btn.textContent = o; }, 1800); }
     } catch {
       const ta = document.createElement('textarea');
-      ta.value = PL.shareText; document.body.appendChild(ta); ta.select();
+      ta.value = text; document.body.appendChild(ta); ta.select();
       try { document.execCommand('copy'); } catch {}
       document.body.removeChild(ta);
       if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = o; }, 1800); }
     }
+  }
+
+  async function plShare() {
+    if (!PL.shareText) return;
+    return shareItineraryText(document.getElementById('plExport'), 'My Goings-On plan', PL.shareText);
+  }
+
+  // Turn a failed Gemini response into an Error carrying what the retry UI
+  // reads (see plRateLimitInfo): the HTTP status, and on a 429 the server's
+  // suggested delay and whether the exhausted quota is per-minute or per-day.
+  async function geminiHttpError(res) {
+    let detail = null;
+    try { detail = await res.json(); } catch {}
+    const err = new Error('Gemini ' + res.status);
+    err.status = res.status;
+    if (res.status === 429 && detail && detail.error) {
+      const details = detail.error.details || [];
+      const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
+      if (retryInfo && retryInfo.retryDelay) {
+        const m = String(retryInfo.retryDelay).match(/([\d.]+)s/);
+        if (m) err.retryDelaySec = Math.ceil(parseFloat(m[1]));
+      }
+      const quota = details.find(d => (d['@type'] || '').includes('QuotaFailure'));
+      const ids = ((quota && quota.violations) || [])
+        .map(v => (v.quotaId || '') + ' ' + (v.quotaMetric || '')).join(' ');
+      if (/per_?day/i.test(ids)) err.quotaScope = 'day';
+      else if (/per_?minute/i.test(ids)) err.quotaScope = 'minute';
+    }
+    return err;
   }
 
   async function plCallGemini(prompt) {
@@ -8685,26 +8583,7 @@
         generationConfig: { temperature: 1.0, maxOutputTokens: 16384, thinkingConfig: { thinkingBudget: 1024 } },
       }),
     });
-    if (!res.ok) {
-      let detail = null;
-      try { detail = await res.json(); } catch {}
-      const err = new Error('Gemini ' + res.status);
-      err.status = res.status;
-      if (res.status === 429 && detail && detail.error) {
-        const details = detail.error.details || [];
-        const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
-        if (retryInfo && retryInfo.retryDelay) {
-          const m = String(retryInfo.retryDelay).match(/([\d.]+)s/);
-          if (m) err.retryDelaySec = Math.ceil(parseFloat(m[1]));
-        }
-        const quota = details.find(d => (d['@type'] || '').includes('QuotaFailure'));
-        const ids = ((quota && quota.violations) || [])
-          .map(v => (v.quotaId || '') + ' ' + (v.quotaMetric || '')).join(' ');
-        if (/per_?day/i.test(ids)) err.quotaScope = 'day';
-        else if (/per_?minute/i.test(ids)) err.quotaScope = 'minute';
-      }
-      throw err;
-    }
+    if (!res.ok) throw await geminiHttpError(res);
     const data = await res.json();
     // Thinking parts carry thought:true — extract only the real output parts first.
     const parts = data.candidates?.[0]?.content?.parts || [];
@@ -8773,7 +8652,7 @@
     const occasionLabel = (PL_OCCASIONS.find(o => o.id === PL.occasion) || {}).label || 'casual hangout';
     const foodLabel = (PL_FOODS.find(f => f.id === PL.food) || {}).label || 'any';
 
-    const allR = [...RESTAURANTS, ...OUTDOOR_DINING_SECTIONS.flatMap(s => s.places)]
+    const allR = allEatPlaces()
       // Drop day-restricted spots (e.g. Sunday-only dim sum) when planning another day.
       .filter(r => !Array.isArray(r.days) || r.days.includes(dayName))
       // PL neighborhood takes precedence; fall back to the global Discover scope.
@@ -8898,6 +8777,7 @@ Valid types: "meal", "activity", "dessert"`;
           const c = eventCoords(ev); // accurate venue coords, or null (→ no estimate)
           const eh = plEventHour(ev);
           const when = eventTimeLabel(ev);
+          const site = eventSiteUrl(ev);
           // Compute actual event duration from calendar data when possible
           let evDuration = pick.duration || 90;
           if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
@@ -8912,7 +8792,7 @@ Valid types: "meal", "activity", "dessert"`;
             desc: ev.description ? stripTags(ev.description) : '',
             actions: [
               ev.htmlLink && { label: '📅 Details', href: ev.htmlLink },
-              eventSiteUrl(ev) && { label: '🌐 Website', href: eventSiteUrl(ev) },
+              site && { label: '🌐 Website', href: site },
               ev.location && { label: '🗺️ Map', href: mapUrl(ev.location) },
             ].filter(Boolean),
             coords: c || null,
@@ -9379,7 +9259,6 @@ Valid types: "meal", "activity", "dessert"`;
     document.querySelectorAll('#bookSubTabs .sub-tab').forEach(t =>
       t.classList.toggle('active', t.dataset.cat === cat.id));
 
-    document.getElementById('bookEyebrow').textContent = 'Bookstores';
     document.getElementById('bookTitle').textContent = cat.label;
     document.getElementById('bookSubtitle').innerHTML = cat.subtitle || '';
 
@@ -9394,18 +9273,7 @@ Valid types: "meal", "activity", "dessert"`;
     }
 
     if (proximityActive && userLoc) {
-      const needCoords = allPlaces.filter(r => r._coords === undefined).slice(0, 30);
-      await Promise.all(needCoords.map(ensurePlaceCoords));
-      const sorted = [...allPlaces].sort((a, b) => {
-        const da = placeDist(a), db = placeDist(b);
-        return da === db ? 0 : da - db;
-      });
-      // Drop repeats by normalized name; sorted first means we keep the nearest.
-      const unique = dedupeByName(sorted);
-      list.innerHTML = `<div class="eat-content">
-        <div class="eat-section-header">📍 Nearest first</div>
-        ${unique.map(bookTileHTML).join('')}
-      </div>`;
+      list.innerHTML = await nearestFirstHTML(allPlaces, bookTileHTML);
     } else {
       list.innerHTML = `<div class="eat-content">${cat.sections.map(section => `
         ${section.label ? `<div class="eat-section-header">${escapeHtml(section.label)}</div>` : ''}
@@ -9421,14 +9289,11 @@ Valid types: "meal", "activity", "dessert"`;
   const FM_DAY_TABS = ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   let currentFmDay = 'All';
 
-  const FM_CAL_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const FM_CAL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
   function fmCalEventHTML(ev) {
     const date = parseEventDate(ev.start);
     const timeStr = eventTimeLabel(ev);
-    const dateStr = `${FM_CAL_DAYS[date.getDay()]}, ${FM_CAL_MONTHS[date.getMonth()]} ${date.getDate()}`;
-    const loc = ev.location || ev._foundLocation || '';
+    const dateStr = `${DAYS_LONG[date.getDay()]}, ${MONTHS[date.getMonth()].slice(0, 3)} ${date.getDate()}`;
+    const loc = eventLocationStr(ev);
     const siteUrl = eventSiteUrl(ev);
     const mapHref = loc ? mapUrl(loc) : '';
     return `
@@ -9457,9 +9322,10 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   function fmTileHTML(m) {
-    const mapHref = mapUrl(m.name + ', ' + m.location);
+    const query = m.name + ', ' + m.location;
+    const mapHref = mapUrl(query);
     return `
-      <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(m.name + ', ' + m.location)}">
+      <div class="resto-tile fm-tile" data-place="${escapeAttr(m.name)}" data-query="${escapeAttr(query)}">
         <div class="resto-main">
           <div class="resto-img-placeholder">🌽</div>
           <div class="resto-info">
@@ -9492,7 +9358,7 @@ Valid types: "meal", "activity", "dessert"`;
     const filtered = day === 'All' ? FARMERS_MARKETS : FARMERS_MARKETS.filter(m => m.days.includes(day));
     const calFiltered = day === 'All'
       ? calendarMarketEvents
-      : calendarMarketEvents.filter(ev => FM_CAL_DAYS[parseEventDate(ev.start).getDay()] === day);
+      : calendarMarketEvents.filter(ev => DAYS_LONG[parseEventDate(ev.start).getDay()] === day);
     const totalCount = filtered.length + calFiltered.length;
 
     document.getElementById('fmTitle').textContent = day === 'All' ? 'All Markets' : `${day}s`;
@@ -9515,11 +9381,7 @@ Valid types: "meal", "activity", "dessert"`;
     if (filtered.length) {
       if (proximityActive && userLoc) {
         await Promise.all(filtered.map(ensurePlaceCoords));
-        const sorted = [...filtered].sort((a, b) => {
-          const da = (a._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, a._coords.lat, a._coords.lon) : Infinity;
-          const db = (b._coords && userLoc) ? haversineMiles(userLoc.lat, userLoc.lon, b._coords.lat, b._coords.lon) : Infinity;
-          return da - db;
-        });
+        const sorted = [...filtered].sort((a, b) => placeDist(a) - placeDist(b));
         html += `<div class="eat-section-header">📍 Nearest first</div>${sorted.map(fmTileHTML).join('')}`;
       } else {
         const yr = filtered.filter(m => !m.seasonal);
@@ -9612,11 +9474,9 @@ Valid types: "meal", "activity", "dessert"`;
 
     // Mark the current view's button active
     const current = document.querySelector('.view.active')?.id.replace('view-', '') || 'home';
-    document.querySelectorAll('.cat-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.view === current));
-
-    // Wire up category buttons
+    // ... and wire up every category button.
     document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === current);
       btn.addEventListener('click', () => { showView(btn.dataset.view); closeNav(); });
     });
 
@@ -9836,7 +9696,7 @@ Valid types: "meal", "activity", "dessert"`;
         }
 
         // 3. No location field — try the event title (same approach as ensureEventCoords).
-        if (!coords && ev.summary) {
+        if (ev.summary) {
           const key = 'acc:ev:title:' + ev.summary;
           const cached = lsCoordGet(key);
           if (cached !== undefined) { p.coords = cached; return cached; }
@@ -9850,7 +9710,7 @@ Valid types: "meal", "activity", "dessert"`;
         }
 
         // 4. Extract a Philly address from the description text and geocode that.
-        if (!coords && ev.description) {
+        if (ev.description) {
           const desc = stripTags(ev.description);
           const addrMatch = desc.match(/\d+\s+[A-Z][a-zA-Z\s]+(St|Street|Ave|Avenue|Blvd|Road|Rd|Dr|Lane|Ln|Way|Pkwy|Parkway)\b[^,\n]*/);
           if (addrMatch) {
@@ -10362,7 +10222,7 @@ Valid types: "meal", "activity", "dessert"`;
             <span class="ob-pick-emoji">${p.emoji}</span>
             <span class="ob-pick-info">
               <span class="ob-pick-name">${escapeHtml(p.label)}</span>
-              ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(p.sublabel.split(',').slice(0, 2).join(',').trim())}</span>` : ''}
+              ${p.sublabel ? `<span class="ob-pick-sub">${escapeHtml(obShortSub(p.sublabel))}</span>` : ''}
             </span>
           </button>
           ${hasMore ? `<button class="ob-pick-more" data-ob-more="${idx}" type="button" aria-label="More info">ⓘ</button>` : ''}
@@ -10472,7 +10332,7 @@ Valid types: "meal", "activity", "dessert"`;
             <span class="ob-stop-name">${s.emoji} ${escapeHtml(s.label)}</span>
             <button class="ob-stop-rm" data-ob-rm="${i}" type="button" aria-label="Remove" title="Remove">✕</button>
           </div>
-          ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(s.sublabel.split(',').slice(0, 2).join(',').trim())}</div>` : ''}
+          ${s.sublabel ? `<div class="ob-stop-meta">${escapeHtml(obShortSub(s.sublabel))}</div>` : ''}
         </div>`;
     }).join('');
 
@@ -10507,6 +10367,9 @@ Valid types: "meal", "activity", "dessert"`;
   }
 
   async function obBuildItinerary() {
+    // A countdown from an earlier rate-limit may still be ticking against a
+    // button that's no longer on screen; stop it before starting over.
+    if (obRetryTimer) { clearInterval(obRetryTimer); obRetryTimer = null; }
     try {
       OB.result = await obCallGemini();
       OB.step = 'result'; obRender();
@@ -10583,19 +10446,7 @@ Return ONLY valid JSON (no markdown fences):
         generationConfig: { temperature: 1.0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 512 } },
       }),
     });
-    if (!res.ok) {
-      let detail = null; try { detail = await res.json(); } catch {}
-      const err = new Error('Gemini ' + res.status); err.status = res.status;
-      if (res.status === 429 && detail && detail.error) {
-        const dets = detail.error.details || [];
-        const ri = dets.find(d => (d['@type'] || '').includes('RetryInfo'));
-        if (ri && ri.retryDelay) { const mx = String(ri.retryDelay).match(/([\d.]+)s/); if (mx) err.retryDelaySec = Math.ceil(parseFloat(mx[1])); }
-        const qf = dets.find(d => (d['@type'] || '').includes('QuotaFailure'));
-        const ids = ((qf && qf.violations) || []).map(v => (v.quotaId || '') + ' ' + (v.quotaMetric || '')).join(' ');
-        if (/per_?day/i.test(ids)) err.quotaScope = 'day'; else if (/per_?minute/i.test(ids)) err.quotaScope = 'minute';
-      }
-      throw err;
-    }
+    if (!res.ok) throw await geminiHttpError(res);
     const data = await res.json();
     const parts = data.candidates?.[0]?.content?.parts || [];
     const out = parts.filter(p => p && p.text && !p.thought);
@@ -10612,16 +10463,9 @@ Return ONLY valid JSON (no markdown fences):
     return (OB.result && OB.result.summary) ? OB.result.summary : 'Your outing';
   }
 
-  function obAllStopsDirHref() {
-    const pts = OB.stops.filter(s => s.coords).map(s => `${s.coords.lat},${s.coords.lon}`);
-    if (pts.length < 2) return null;
-    const mode = OB.transitMode === 'drive' ? 'driving' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? 'transit' : OB.transitMode === 'bike' ? 'bicycling' : 'walking';
-    const origin = encodeURIComponent(pts[0]), dest = encodeURIComponent(pts[pts.length - 1]);
-    const wps = pts.slice(1, -1).map(encodeURIComponent).join('|');
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
-    if (wps) url += `&waypoints=${wps}`;
-    return url;
-  }
+  function obAllStopsDirHref() { return allStopsDirHref(OB.stops, OB.transitMode); }
+  // Sublabels are "venue, street, neighborhood…"; show just the first two parts.
+  function obShortSub(sub) { return sub.split(',').slice(0, 2).join(',').trim(); }
 
   // Build action links for an OB stop from its raw item data.
   function obStopActions(s) {
@@ -10631,7 +10475,7 @@ Return ONLY valid JSON (no markdown fences):
       if (it.htmlLink) actions.push({ label: '📅 Details', href: it.htmlLink });
       const site = eventSiteUrl(it);
       if (site) actions.push({ label: '🌐 Website', href: site });
-      const loc = it.location || it._foundLocation;
+      const loc = eventLocationStr(it);
       if (loc) actions.push({ label: '🗺️ Map', href: mapUrl(loc) });
       else if (s.coords) actions.push({ label: '🗺️ Map', href: mapUrl(s.label) });
     } else {
@@ -10662,6 +10506,9 @@ Return ONLY valid JSON (no markdown fences):
     const routeBtnHTML = routeHref
       ? `<a class="pl-route-btn" href="${escapeAttr(routeHref)}" target="_blank" rel="noopener">🗺️ Open route in Google Maps</a>` : '';
 
+    // Each stop's action links are needed by both the timeline and the share
+    // text below, so build them once.
+    const stopActions = OB.stops.map(obStopActions);
     const timelineHTML = OB.stops.map((s, i) => {
       const ai   = aiStops[i] || {};
       const next = OB.stops[i + 1];
@@ -10675,10 +10522,9 @@ Return ONLY valid JSON (no markdown fences):
             badge = `${rec.emoji} ${rec.label}`;
             dm = rec.mode;
           } else {
-            const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : OB.transitMode === 'transit' ? '🚇' : '🚶';
-            const modeWord  = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : 'Walk';
-            badge = `${modeEmoji} ${modeWord} to next`;
-            dm = OB.transitMode === 'bike' ? 'bicycling' : OB.transitMode === 'drive' ? 'driving' : OB.transitMode === 'transit' ? 'transit' : 'walking';
+            const modeWord = OB.transitMode === 'bike' ? 'Bike' : OB.transitMode === 'drive' ? 'Drive' : OB.transitMode === 'transit' ? 'Transit' : 'Walk';
+            badge = `${transitModeEmoji(OB.transitMode)} ${modeWord} to next`;
+            dm = mapsTravelMode(OB.transitMode);
           }
           const dir = `https://www.google.com/maps/dir/?api=1&origin=${s.coords.lat},${s.coords.lon}&destination=${next.coords.lat},${next.coords.lon}&travelmode=${dm}`;
           connector = `<div class="pl-connector"><span class="dn-walk-badge">${badge}</span><a class="dn-map-link" href="${escapeAttr(dir)}" target="_blank" rel="noopener">directions →</a></div>`;
@@ -10686,7 +10532,7 @@ Return ONLY valid JSON (no markdown fences):
           connector = `<div class="pl-connector"><span class="pl-then">then…</span></div>`;
         }
       }
-      const actions = obStopActions(s);
+      const actions = stopActions[i];
       const metaParts = [];
       if (s.item) {
         if (s.item.cuisine)  metaParts.push('🍴 ' + s.item.cuisine);
@@ -10723,7 +10569,7 @@ Return ONLY valid JSON (no markdown fences):
     const dayLabel = day ? `${DAYS_LONG[day.getDay()]}, ${MONTHS[day.getMonth()].slice(0, 3)} ${day.getDate()}` : '';
     OB.shareText = (() => {
       const modeLbl = (PL_TRANSIT_MODES.find(m => m.id === OB.transitMode) || {}).label || 'Walking';
-      const modeEmoji = OB.transitMode === 'bike' ? '🚲' : OB.transitMode === 'drive' ? '🚗' : (OB.transitMode === 'transit' || OB.transitMode === 'mix') ? '🚇' : '🚶';
+      const modeEmoji = transitModeEmoji(OB.transitMode);
       const lines = [`🗺️ ${obVibeLabel()}`];
       if (dayLabel) lines.push(dayLabel);
       lines.push(`${modeEmoji} ${modeLbl} · Starting ${plHourLabel(OB.startHour)}`);
@@ -10733,10 +10579,10 @@ Return ONLY valid JSON (no markdown fences):
         const ai = aiStops[i] || {};
         const it = s.item || {};
         lines.push(`${i + 1}. ${s.emoji} ${ai.name || s.label}${ai.time ? ` · ${ai.time}` : ''}`);
-        if (s.sublabel) lines.push(`   📍 ${s.sublabel.split(',').slice(0, 2).join(',').trim()}`);
+        if (s.sublabel) lines.push(`   📍 ${obShortSub(s.sublabel)}`);
         if (ai.desc) lines.push(`   ${ai.desc}`);
         if (ai.tip) lines.push(`   💡 ${ai.tip}`);
-        const acts = obStopActions(s);
+        const acts = stopActions[i];
         const res = acts.find(a => /Reserve/.test(a.label));
         const web = acts.find(a => /Website|Search|Details/.test(a.label));
         if (res) lines.push(`   📅 Reserve: ${res.href}`);
@@ -10748,23 +10594,8 @@ Return ONLY valid JSON (no markdown fences):
       return lines.join('\n');
     })();
 
-    document.getElementById('obShare').addEventListener('click', async () => {
-      const btn = document.getElementById('obShare');
-      if (navigator.share) {
-        try { await navigator.share({ title: obVibeLabel(), text: OB.shareText }); return; }
-        catch (e) { if (e && e.name === 'AbortError') return; }
-      }
-      try {
-        await navigator.clipboard.writeText(OB.shareText);
-        if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied to clipboard'; setTimeout(() => { btn.textContent = o; }, 1800); }
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = OB.shareText; document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); } catch {}
-        document.body.removeChild(ta);
-        if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = o; }, 1800); }
-      }
-    });
+    const shareBtn = document.getElementById('obShare');
+    shareBtn.addEventListener('click', () => shareItineraryText(shareBtn, obVibeLabel(), OB.shareText));
     document.getElementById('obEditOuting').addEventListener('click', () => { OB.step = 'equation'; obRender(); });
   }
 
@@ -10798,10 +10629,7 @@ Return ONLY valid JSON (no markdown fences):
 
   // Travel radius + leg labels reuse the same model as the Outing Builder so the
   // Picnic Planner never pairs a spot that's unreasonably far for the chosen mode.
-  function picnicTransitEmoji() {
-    return PICNIC.transit === 'bike' ? '🚲' : PICNIC.transit === 'drive' ? '🚗'
-      : (PICNIC.transit === 'transit' || PICNIC.transit === 'mix') ? '🚇' : '🚶';
-  }
+  function picnicTransitEmoji() { return transitModeEmoji(PICNIC.transit); }
   function picnicLegLabel(mi) {
     const walk = plWalkMins(mi), m = PICNIC.transit;
     const walkLbl = walk <= 1 ? '< 1 min walk' : `~${walk} min walk`;
@@ -10913,9 +10741,7 @@ Return ONLY valid JSON (no markdown fences):
 
   function picnicDirUrl(park, food) {
     const fc = picnicGeo(food);
-    const mode = PICNIC.transit === 'drive' ? 'driving'
-      : PICNIC.transit === 'bike' ? 'bicycling'
-      : (PICNIC.transit === 'transit' || PICNIC.transit === 'mix') ? 'transit' : 'walking';
+    const mode = mapsTravelMode(PICNIC.transit);
     const origin = `${park.lat},${park.lon}`;
     const dest = fc ? `${fc.lat},${fc.lon}` : encodeURIComponent(`${food.name}, ${food.location || 'Philadelphia'}`);
     return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
