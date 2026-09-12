@@ -244,7 +244,7 @@
       gap: 0.75rem;
       padding: 0.85rem 0.95rem;
       background: var(--bg);
-      border-radius: 14px;
+      border-radius: 12px;
       text-decoration: none;
       color: var(--text);
       margin-bottom: 0.6rem;
@@ -268,11 +268,11 @@
     .add-row-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; }
 
     .add-row-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-weight: 700;
     }
 
     .add-row-value {
@@ -601,7 +601,7 @@
     .hour-icon { font-size: 1.05rem; line-height: 1; }
 
     .hour-temp {
-      font-size: 0.86rem;
+      font-size: 0.88rem;
       font-weight: 700;
       color: var(--text);
       letter-spacing: -0.01em;
@@ -728,7 +728,7 @@
 
     .error-box {
       background: var(--surface);
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 1.5rem;
       text-align: center;
       box-shadow: var(--shadow);
@@ -1036,12 +1036,11 @@
       font-weight: 700;
       letter-spacing: -0.015em;
       color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.25;
     }
     .resto-meta {
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       color: var(--text-secondary);
       display: flex;
       flex-wrap: wrap;
@@ -1063,7 +1062,7 @@
     }
     .resto-action {
       font: inherit;
-      font-size: 0.7rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent);
       background: var(--accent-soft);
@@ -1099,7 +1098,7 @@
       border-top: 1px solid var(--divider);
     }
     .resto-desc {
-      font-size: 0.86rem;
+      font-size: 0.88rem;
       line-height: 1.5;
       color: var(--text);
       margin: 0.85rem 0 0.9rem;
@@ -1131,16 +1130,16 @@
     }
     .pa-card-name {
       font-size: 1.02rem;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text);
     }
     .pa-card-kind {
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.06em;
       margin-top: 2px;
     }
     .pa-card-loc {
@@ -1148,6 +1147,7 @@
       color: var(--text-secondary);
       margin-top: 3px;
     }
+    .pa-card-actions { margin-top: 0.5rem; margin-bottom: 0.15rem; }
     .pa-deal {
       border-top: 1px solid var(--divider);
       padding-top: 0.7rem;
@@ -1159,7 +1159,7 @@
       justify-content: space-between;
       gap: 0.5rem;
     }
-    .pa-deal-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+    .pa-deal-name { font-size: 0.9rem; font-weight: 700; color: var(--text); }
     .pa-deal-price {
       font-size: 0.82rem;
       font-weight: 800;
@@ -1176,7 +1176,7 @@
       margin-top: 4px;
     }
     .pa-deal-how {
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       line-height: 1.5;
       color: var(--text);
       margin-top: 4px;
@@ -1340,11 +1340,11 @@
     }
     .leaflet-popup-tip { background: var(--surface); }
     .map-popup-name { font-weight: 700; font-size: 0.88rem; margin-bottom: 2px; }
-    .map-popup-eyebrow { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
-    .map-popup-meta { color: var(--text-secondary); font-size: 0.76rem; margin-bottom: 6px; }
+    .map-popup-eyebrow { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .map-popup-meta { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 6px; }
     .map-popup-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .map-popup-actions a {
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent);
       text-decoration: none;
@@ -1484,7 +1484,7 @@
       width: 100%;
       max-height: 82vh;
       overflow-y: auto;
-      animation: sheetUp 0.26s ease;
+      animation: sheetUp 0.26s ease; max-width: 720px; margin: 0 auto;
     }
     @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .eat-sheet-handle {
@@ -1650,7 +1650,7 @@
       animation: sheetUp 0.3s ease;
     }
     .eat-rec-header {
-      padding: 1rem 1.25rem 1.1rem;
+      padding: 1rem max(1.25rem, calc(50% - 360px + 1.25rem)) 1.1rem;
       background: var(--surface);
       border-bottom: 1px solid var(--divider);
       flex-shrink: 0;
@@ -1671,10 +1671,10 @@
     }
     .eat-rec-back:hover { color: var(--accent); }
     .eat-rec-eyebrow {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
       color: var(--accent);
       margin-bottom: 0.35rem;
     }
@@ -1712,7 +1712,7 @@
       font-weight: 500;
       margin-top: 0.35rem;
     }
-    .eat-rec-list { flex: 1; overflow-y: auto; padding: 0.5rem 0 3rem; }
+    .eat-rec-list { flex: 1; overflow-y: auto; padding: 0.5rem max(0px, calc(50% - 360px)) 3rem; }
     /* Date Night */
     .eat-sheet-datenight-btn { background: linear-gradient(135deg, #6d4b8f, #9b5fa0); }
     .eat-sheet-datenight-btn:hover { filter: brightness(1.07); } /* a touch brighter than its siblings, on purpose */
@@ -1737,16 +1737,16 @@
     .dn-day-chip.active { color: #fff; background: #6d4b8f; border-color: #6d4b8f; }
     .dn-day-chip .dn-day-num { font-size: 0.95rem; font-weight: 700; }
     .dn-day-chip .dn-day-cnt { font-size: 0.6rem; opacity: 0.8; }
-    .dn-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem 3rem; }
+    .dn-body { flex: 1; overflow-y: auto; padding: 1rem max(1.25rem, calc(50% - 360px + 1.25rem)) 3rem; }
     .dn-pair-card {
       background: var(--surface);
       border: 1px solid var(--divider);
-      border-radius: 18px;
+      border-radius: 16px;
       padding: 1.1rem 1.15rem;
       margin-bottom: 0.9rem;
     }
     .dn-pair-eyebrow {
-      font-size: 0.66rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -1759,7 +1759,7 @@
     .dn-pair-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
     .dn-pair-action {
       font: inherit;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent);
       background: var(--accent-soft);
@@ -1835,7 +1835,7 @@
     .pl-next:hover { filter: brightness(1.05); }
     .pl-next:active { transform: scale(0.98); }
     .pl-warn { font-size: 0.8rem; font-weight: 600; color: #b4452f; margin-top: 0.8rem; }
-    .pl-key-input { width: 100%; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--divider); border-radius: 10px; background: var(--surface); color: var(--text); outline: none; }
+    .pl-key-input { width: 100%; margin-top: 1rem; padding: 0.75rem 1rem; font: inherit; font-size: 0.95rem; border: 1.5px solid var(--divider); border-radius: 12px; background: var(--surface); color: var(--text); outline: none; }
     .pl-key-input:focus { border-color: var(--accent); }
     .pl-key-reset { font-size: 0.75rem; color: var(--text-tertiary); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-top: 1rem; display: block; }
     .pl-key-reset:hover { color: var(--accent); }
@@ -1904,7 +1904,7 @@
     }
     .dn-map-img { width: 100%; display: block; }
     .dn-map-link {
-      font: inherit; font-size: 0.76rem; font-weight: 600;
+      font: inherit; font-size: 0.78rem; font-weight: 600;
       color: var(--accent); background: var(--accent-soft);
       border: none; border-radius: 999px; padding: 0.35rem 0.7rem;
       cursor: pointer; text-decoration: none;
@@ -1923,7 +1923,7 @@
       align-items: center;
       gap: 5px;
       font: inherit;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent);
       background: var(--accent-soft);
@@ -1952,14 +1952,14 @@
       display: flex; align-items: center; gap: 0.7rem; width: 100%;
       text-align: left; font: inherit; cursor: pointer; color: #fff;
       background: linear-gradient(135deg, #4a8c3f, #79b84a);
-      border: none; border-radius: 16px; padding: 0.9rem 1rem; margin: 0.25rem 0 0.9rem;
+      border: none; border-radius: 14px; padding: 0.9rem 1rem; margin: 0.25rem 0 0.9rem;
       transition: filter 0.15s ease, transform 0.12s ease;
     }
     .picnic-planner-cta:hover { filter: brightness(1.05); }
     .picnic-planner-cta:active { transform: scale(0.99); }
     .picnic-cta-emoji { font-size: 1.7rem; }
     .picnic-cta-text { display: flex; flex-direction: column; flex: 1; }
-    .picnic-cta-text strong { font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
+    .picnic-cta-text strong { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
     .picnic-cta-text span { font-size: 0.78rem; opacity: 0.92; }
     .picnic-cta-arrow { font-size: 1.3rem; font-weight: 700; }
     .picnic-subtabs { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
@@ -2010,7 +2010,7 @@
       background: linear-gradient(135deg, rgba(121,184,74,0.16), rgba(74,140,63,0.1));
       border: 1.5px solid rgba(121,184,74,0.35);
     }
-    .picnic-wx-main { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .picnic-wx-main { font-size: 1.05rem; font-weight: 700; color: var(--text); }
     .picnic-wx-advice { font-size: 0.82rem; color: var(--text-secondary); }
     .picnic-wx--na { font-size: 0.85rem; color: var(--text-secondary); }
     .picnic-card {
@@ -2019,13 +2019,13 @@
     }
     .picnic-card--quiet { background: transparent; }
     .picnic-why { background: rgba(121,184,74,0.07); border-color: rgba(121,184,74,0.3); }
-    .picnic-card-title { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; letter-spacing: -0.01em; }
+    .picnic-card-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; letter-spacing: -0.01em; }
     .picnic-card-meta { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
-    .picnic-card-desc { font-size: 0.86rem; color: var(--text); line-height: 1.5; margin-top: 0.25rem; }
+    .picnic-card-desc { font-size: 0.88rem; color: var(--text); line-height: 1.5; margin-top: 0.25rem; }
     .picnic-card-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem; }
     .picnic-event {
       display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0;
-      border-top: 1px solid var(--divider); font-size: 0.84rem;
+      border-top: 1px solid var(--divider); font-size: 0.82rem;
     }
     .picnic-event:first-of-type { border-top: none; }
     .picnic-event-time { font-weight: 700; color: var(--text); white-space: nowrap; }
@@ -2037,7 +2037,7 @@
     .picnic-shuffle-btn {
       flex: 1; font: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer;
       color: #fff; background: linear-gradient(135deg, #4a8c3f, #79b84a);
-      border: none; border-radius: 12px; padding: 0.75rem 0.5rem;
+      border: none; border-radius: 14px; padding: 0.75rem 0.5rem;
       transition: filter 0.15s ease, transform 0.12s ease;
     }
     .picnic-shuffle-btn:hover { filter: brightness(1.06); }
@@ -2045,7 +2045,7 @@
     .picnic-restart-btn {
       width: 100%; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
       color: var(--text); background: var(--surface);
-      border: 1.5px solid var(--divider); border-radius: 12px; padding: 0.7rem; margin-top: 0.1rem;
+      border: 1.5px solid var(--divider); border-radius: 14px; padding: 0.7rem; margin-top: 0.1rem;
     }
     /* Outing Builder: category grid */
     .ob-cat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
@@ -2066,11 +2066,11 @@
     .ob-cat-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
     .ob-cat-desc { font-size: 0.68rem; color: var(--text-secondary); text-align: center; }
     /* Outing Builder: equation / stop cards */
-    .ob-add-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 1rem 0 0.4rem; }
+    .ob-add-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 1rem 0 0.4rem; }
     .ob-equation { margin: 0.25rem 0 0.25rem; }
     .ob-stop-card {
       background: var(--surface); border: 1.5px solid var(--divider);
-      border-radius: 14px; padding: 0.7rem 1rem; margin-bottom: 0.3rem;
+      border-radius: 16px; padding: 0.7rem 1rem; margin-bottom: 0.3rem;
     }
     .ob-stop-card-head { display: flex; align-items: center; gap: 0.5rem; }
     .ob-stop-num {
@@ -2087,7 +2087,7 @@
       opacity: 0.6; transition: opacity 0.15s ease;
     }
     .ob-stop-rm:hover { opacity: 1; }
-    .ob-stop-meta { font-size: 0.73rem; color: var(--text-secondary); margin: 0.15rem 0 0 2rem; }
+    .ob-stop-meta { font-size: 0.72rem; color: var(--text-secondary); margin: 0.15rem 0 0 2rem; }
     .ob-connector { text-align: center; padding: 0.15rem 0; font-size: 1rem; color: var(--text-secondary); font-weight: 700; }
     /* Outing Builder: arrange-your-picks step (draggable list + gap suggestions) */
     .ob-arr-list { margin: 0.25rem 0; }
@@ -2142,7 +2142,7 @@
     /* Outing Builder: pick item list */
     .ob-pick-list { margin-top: 0.25rem; }
     .ob-pick-item {
-      border-radius: 12px;
+      border-radius: 16px;
       background: var(--surface); border: 1.5px solid var(--divider);
       border-left-width: 5px;
       margin-bottom: 0.4rem; overflow: hidden;
@@ -2173,9 +2173,9 @@
     .ob-pick-detail-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .ob-pick-emoji { font-size: 1.35rem; flex-shrink: 0; margin-top: 1px; }
     .ob-pick-info { flex: 1 1 0; min-width: 0; }
-    .ob-pick-name { font-size: 0.87rem; font-weight: 700; color: var(--text); }
+    .ob-pick-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
     .ob-pick-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.12rem; }
-    .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
+    .ob-section-header { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 0.9rem 0 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--divider); }
     .ob-section-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
     .ob-far-details summary::-webkit-details-marker { color: var(--text-secondary); }
     .indec-swipe-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
@@ -2183,7 +2183,7 @@
     .indec-swipe-wrap { position: relative; user-select: none; margin-bottom: 1.2rem; cursor: grab; touch-action: pan-y; }
     .indec-swipe-wrap:active { cursor: grabbing; }
     .indec-swipe-card {
-      background: var(--surface); border-radius: 20px;
+      background: var(--surface); border-radius: 16px;
       padding: 1.4rem 1.2rem 1.4rem;
       box-shadow: 0 6px 28px rgba(0,0,0,0.13);
       border: 1.5px solid var(--divider);
@@ -2202,9 +2202,9 @@
     }
     .indec-stamp-yes { right: 16px; color: #1a7a6e; border-color: #1a7a6e; transform: rotate(12deg); }
     .indec-stamp-no  { left: 16px;  color: #c0392b; border-color: #c0392b; transform: rotate(-12deg); }
-    .indec-swipe-eyebrow { font-size: 0.72rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.5rem; }
-    .indec-swipe-name { font-size: 1.32rem; font-weight: 800; line-height: 1.2; color: var(--text); margin-bottom: 0.55rem; letter-spacing: -0.02em; }
-    .indec-swipe-desc { font-size: 0.87rem; line-height: 1.46; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .indec-swipe-eyebrow { font-size: 0.7rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+    .indec-swipe-name { font-size: 1.32rem; font-weight: 700; line-height: 1.2; color: var(--text); margin-bottom: 0.55rem; letter-spacing: -0.02em; }
+    .indec-swipe-desc { font-size: 0.88rem; line-height: 1.46; color: var(--text-secondary); margin-bottom: 0.5rem; }
     .indec-swipe-meta { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
     .indec-yesno-row { display: flex; justify-content: center; gap: 2.8rem; margin-bottom: 0.2rem; }
     .indec-btn-no, .indec-btn-yes {
@@ -2221,7 +2221,7 @@
     .indec-hint { text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; }
     .indec-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
     .indec-action {
-      font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text);
+      font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--text);
       background: var(--accent-soft); border: none; border-radius: 999px;
       padding: 0.55rem 1rem; cursor: pointer; text-decoration: none;
       transition: filter 0.15s ease, transform 0.12s ease;
@@ -2235,19 +2235,19 @@
     .indec-done-btn:hover { filter: brightness(0.96); }
     .indec-done-btn:disabled { opacity: 0.45; cursor: default; }
     .indec-results-head { text-align: center; margin-bottom: 1rem; }
-    .indec-results-title { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .indec-results-title { font-size: 1.25rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
     .indec-results-sub { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; }
     .indec-top-pick { background: linear-gradient(150deg, rgba(26,122,110,0.13), rgba(42,168,154,0.05)); border: 2px solid var(--accent); border-radius: 16px; padding: 0.9rem 1rem; margin-bottom: 0.9rem; animation: spinPop 0.3s ease; }
-    .indec-top-label { font-size: 0.66rem; font-weight: 800; color: #1a7a6e; letter-spacing: 0.09em; }
-    .indec-top-name { font-size: 1.18rem; font-weight: 800; color: var(--text); margin: 0.25rem 0 0.18rem; letter-spacing: -0.02em; line-height: 1.18; }
-    .indec-top-reason { font-size: 0.79rem; color: var(--text-secondary); margin-bottom: 0.6rem; line-height: 1.35; }
-    .indec-list-head { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.2rem 0 0.5rem; }
+    .indec-top-label { font-size: 0.7rem; font-weight: 700; color: #1a7a6e; letter-spacing: 0.06em; }
+    .indec-top-name { font-size: 1.18rem; font-weight: 700; color: var(--text); margin: 0.25rem 0 0.18rem; letter-spacing: -0.02em; line-height: 1.18; }
+    .indec-top-reason { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; line-height: 1.35; }
+    .indec-list-head { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 0.2rem 0 0.5rem; }
     .indec-liked-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; max-height: 42vh; overflow-y: auto; }
-    .indec-liked-item { background: var(--surface); border: 1.5px solid var(--divider); border-radius: 14px; padding: 0.7rem 0.9rem; }
-    .indec-liked-eyebrow { font-size: 0.66rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.12rem; }
-    .indec-liked-name { font-weight: 700; font-size: 0.96rem; color: var(--text); line-height: 1.2; }
+    .indec-liked-item { background: var(--surface); border: 1.5px solid var(--divider); border-radius: 16px; padding: 0.7rem 0.9rem; }
+    .indec-liked-eyebrow { font-size: 0.7rem; font-weight: 700; color: #1a7a6e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.12rem; }
+    .indec-liked-name { font-weight: 700; font-size: 0.95rem; color: var(--text); line-height: 1.2; }
     .indec-liked-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
-    .indec-liked-link { font-size: 0.74rem; font-weight: 600; color: #1a7a6e; text-decoration: none; background: var(--accent-soft); border-radius: 999px; padding: 0.28rem 0.65rem; }
+    .indec-liked-link { font-size: 0.78rem; font-weight: 600; color: #1a7a6e; text-decoration: none; background: var(--accent-soft); border-radius: 999px; padding: 0.28rem 0.65rem; }
     .indec-liked-link:active { transform: scale(0.96); }
 
     /* ── Discover scope step (citywide vs neighborhood) ── */
@@ -6959,10 +6959,10 @@
         ${d.how ? `<div class="pa-deal-how">${escapeHtml(d.how)}</div>` : ''}
         ${d.url ? `<a class="pa-deal-link" href="${escapeAttr(d.url)}" target="_blank" rel="noopener">Details →</a>` : ''}
       </div>`).join('');
-    const links = [
-      `<a class="pa-deal-link" style="margin:0" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">map</a>`,
-      v.website ? `<a class="pa-deal-link" style="margin:0" href="${escapeAttr(v.website)}" target="_blank" rel="noopener">website</a>` : '',
-    ].filter(Boolean).join(' · ');
+    const actions = `<div class="resto-actions pa-card-actions">
+      ${v.website ? `<a class="resto-action" href="${escapeAttr(v.website)}" target="_blank" rel="noopener">🌐 Website</a>` : ''}
+      <a class="resto-action" href="${escapeAttr(mapHref)}" target="_blank" rel="noopener">🗺️ View on map</a>
+    </div>`;
     return `
       <div class="pa-card">
         <div class="pa-card-head">
@@ -6970,7 +6970,8 @@
           ${pickBtnHTML('arts', v.name)}
         </div>
         ${v.kind ? `<div class="pa-card-kind">${escapeHtml(v.kind)}</div>` : ''}
-        ${v.location ? `<div class="pa-card-loc">📍 ${escapeHtml(v.location)} · ${links}</div>` : ''}
+        ${v.location ? `<div class="pa-card-loc">📍 ${escapeHtml(v.location)}</div>` : ''}
+        ${actions}
         ${deals}
         ${v.note ? `<div class="pa-card-note">${escapeHtml(v.note)}</div>` : ''}
       </div>`;
