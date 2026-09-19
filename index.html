@@ -504,6 +504,15 @@
       color: var(--accent);
     }
 
+    /* Ongoing section: multi-day events shown once, with their date range. */
+    .ongoing-head { margin: 2rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--divider); }
+    .ongoing-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+    .ongoing-sub { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+    .event.long-run .event-time {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--accent); line-height: 1.3;
+    }
+
     /* Longer than a clock time, and shouldn't compete with real times for
        attention — so it wraps small and muted inside the 68px slot. */
     .event.time-unknown .event-time {
@@ -2727,6 +2736,33 @@
   // `!start.dateTime` only means "no time attached" — not "all day".
   function eventIsDateOnly(ev) { return !ev.start.dateTime; }
 
+  // Festivals and runs that go on for more than three days would otherwise
+  // repeat in every day's list. The events page leaves them out of the days
+  // and shows them once, in an "Ongoing" section at the bottom. (Everything
+  // else — planners, picks, tab data — still sees them on each day they cover.)
+  const LONG_RUN_DAYS = 3;
+  function eventSpanDays(ev) {
+    if (!ev.start) return 0;
+    if (eventIsDateOnly(ev)) {
+      if (!ev.end || !ev.end.date) return 1;
+      return Math.round((new Date(ev.end.date + 'T00:00:00') - new Date(ev.start.date + 'T00:00:00')) / 86400000);
+    }
+    if (!ev.end || !ev.end.dateTime) return 1;
+    return (new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 86400000;
+  }
+  function isLongRunning(ev) { return eventSpanDays(ev) > LONG_RUN_DAYS; }
+  // "Sep 5–12", "Sep 28 – Oct 4", or "From Sep 5" when there's no end.
+  function longRunningRangeLabel(ev) {
+    const mon = d => MONTHS[d.getMonth()].slice(0, 3);
+    const s = parseEventDate(ev.start);
+    if (!ev.end || !(ev.end.date || ev.end.dateTime)) return `From ${mon(s)} ${s.getDate()}`;
+    let e = parseEventDate(ev.end);
+    if (eventIsDateOnly(ev)) e = new Date(e.getTime() - 86400000); // a date-only end is exclusive
+    return s.getMonth() === e.getMonth()
+      ? `${mon(s)} ${s.getDate()}–${e.getDate()}`
+      : `${mon(s)} ${s.getDate()} – ${mon(e)} ${e.getDate()}`;
+  }
+
   // A date-only event covering 2+ days really does occupy whole days.
   function eventSpansMultipleDays(ev) {
     if (!eventIsDateOnly(ev) || !ev.end || !ev.end.date) return false;
@@ -3277,7 +3313,7 @@
     tabs.className = 'tabs';
 
     days.forEach((day, i) => {
-      const count = byDay[dayKey(day)].length;
+      const count = byDay[dayKey(day)].filter(ev => !isLongRunning(ev)).length;
       const btn = document.createElement('button');
       btn.className = 'tab' + (i === activeIdx ? ' active' : '') + (count === 0 ? ' no-events' : '');
       btn.innerHTML = `
@@ -3296,13 +3332,19 @@
 
     const activeDay = days[activeIdx];
     const dayEvs = byDay[dayKey(activeDay)];
-    let evs = dayEvs;
+    let evs = dayEvs.filter(ev => !isLongRunning(ev));
     if (proximityActive && userLoc) {
-      evs = [...evs].sort((a, b) => {
+      evs.sort((a, b) => {
         const da = eventDistance(a), db = eventDistance(b);
         return da === db ? 0 : da - db; // events without a location stay at the bottom, in order
       });
     }
+    // Long-running events, once each across the whole week, in start order.
+    const seenLong = new Set(), ongoing = [];
+    days.forEach(d => (byDay[dayKey(d)] || []).forEach(ev => {
+      if (isLongRunning(ev) && !seenLong.has(ev)) { seenLong.add(ev); ongoing.push(ev); }
+    }));
+    ongoing.sort((a, b) => parseEventDate(a.start) - parseEventDate(b.start));
     const eyebrow = relativeLabel(activeIdx);
 
     const quote = pickQuote(days[0]);
@@ -3317,6 +3359,12 @@
       </div>
       ${evs.length ? `<div class="events-list">${evs.map((ev, i) => eventHTML(ev, i, activeDay)).join('')}</div>`
                    : `<div class="empty"><div class="empty-icon">·</div><div class="empty-text">Nothing scheduled</div></div>`}
+      ${ongoing.length ? `
+        <div class="ongoing-head">
+          <div class="ongoing-title">📆 Ongoing</div>
+          <div class="ongoing-sub">Festivals and runs lasting more than three days</div>
+        </div>
+        <div class="events-list ongoing-list">${ongoing.map((ev, i) => eventHTML(ev, 1000 + i, activeDay, { timeLabel: longRunningRangeLabel(ev), cls: 'long-run' })).join('')}</div>` : ''}
       <div class="discover-row">
         <a class="our-philly-link" href="https://www.ourphilly.org/tonight" target="_blank" rel="noopener">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -3530,11 +3578,13 @@
     return kept.map(k => k.ev);
   }
 
-  function eventHTML(ev, idx, contextDay) {
-    const timeLabel = eventTimeLabel(ev);
+  // opts.timeLabel replaces the time column's text (the Ongoing section shows a
+  // date range there); opts.cls adds a class to the card.
+  function eventHTML(ev, idx, contextDay, opts = {}) {
+    const timeLabel = opts.timeLabel || eventTimeLabel(ev);
     const allDay = timeLabel === 'All day';
     const noTime = timeLabel === NO_TIME_LABEL;
-    const endLabel = (!eventIsDateOnly(ev) && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
+    const endLabel = (!opts.timeLabel && !eventIsDateOnly(ev) && ev.end?.dateTime) ? fmtTime(ev.end.dateTime) : '';
     const locStr = eventLocationStr(ev);
     const loc = ev.location
       ? `<div class="event-meta">${escapeHtml(ev.location)}</div>`
@@ -3566,7 +3616,7 @@
     const links = (siteBtn || mapBtn) ? `<div class="event-links">${siteBtn}${mapBtn}</div>` : '';
 
     return `
-      <div class="event${allDay ? ' all-day' : ''}${noTime ? ' time-unknown' : ''}" data-event-idx="${idx}">
+      <div class="event${allDay ? ' all-day' : ''}${noTime ? ' time-unknown' : ''}${opts.cls ? ' ' + opts.cls : ''}" data-event-idx="${idx}">
         <div class="event-time-block">
           <div class="event-time">${timeLabel}</div>
           ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
