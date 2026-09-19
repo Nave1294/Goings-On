@@ -515,14 +515,11 @@
 
     /* Longer than a clock time, and shouldn't compete with real times for
        attention — so it wraps small and muted inside the 68px slot. */
-    .event.time-unknown .event-time {
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      color: var(--text-tertiary);
-      line-height: 1.25;
-    }
+    .event.time-unknown .event-time { line-height: 1; }
+    /* A dashed clock stands in for "time unconfirmed"; the words stay in the
+       tooltip and for screen readers. */
+    .time-unknown-mark { display: inline-flex; color: var(--text-tertiary); cursor: help; }
+    .time-unknown-mark svg { display: block; }
 
     .event-body {
       flex: 1;
@@ -3618,7 +3615,9 @@
     return `
       <div class="event${allDay ? ' all-day' : ''}${noTime ? ' time-unknown' : ''}${opts.cls ? ' ' + opts.cls : ''}" data-event-idx="${idx}">
         <div class="event-time-block">
-          <div class="event-time">${timeLabel}</div>
+          <div class="event-time">${noTime
+            ? `<span class="time-unknown-mark" role="img" aria-label="${NO_TIME_LABEL}" title="${NO_TIME_LABEL}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.6"/><path d="M12 7.5V12l2.8 1.8"/></svg></span>`
+            : timeLabel}</div>
           ${endLabel ? `<div class="event-time-end">to ${endLabel}</div>` : ''}
         </div>
         <div class="event-body">
